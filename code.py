@@ -71,11 +71,11 @@ def update_scores():
     score_red = get_last_data(SCORES_RED_FEED)
     if score_red is None:
         score_red = 0
-    matrixportal.set_text(score_red, 0)
 
     score_blue = get_last_data(SCORES_BLUE_FEED)
     if score_blue is None:
         score_blue = 0
+    matrixportal.set_text(score_red, 0)
     matrixportal.set_text(score_blue, 1)
     show_connecting(False)
 
