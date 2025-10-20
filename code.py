@@ -9,20 +9,13 @@
 
 import time
 import board
-import terminalio
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
-import text_spacing
+from text_manager import ScoreboardTextManager
 
 # --- Display setup ---
 matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
-text_spacing.set(matrixportal)
-
-# Static 'Connecting' Text
-matrixportal.add_text(
-    text_font=terminalio.FONT,
-    text_position=(59, 0),
-)
+text_manager = ScoreboardTextManager(matrixportal)
 
 SCORES_RED_FEED = "scores-group.red-team-score-feed"
 SCORES_BLUE_FEED = "scores-group.blue-team-score-feed"
@@ -36,10 +29,7 @@ latest_blue_score = None
 
 
 def show_connecting(show):
-    if show:
-        matrixportal.set_text(".", 4)
-    else:
-        matrixportal.set_text(" ", 4)
+    text_manager.show_connecting(show)
 
 
 def get_last_data(feed_key):
@@ -59,12 +49,12 @@ def customize_team_names():
     if team_name is not None:
         print("Team {} is now Team {}".format(team_red, team_name))
         team_red = team_name
-    matrixportal.set_text(team_red, 2)
+    text_manager.set_text("red_team", team_red)
     team_name = get_last_data(TEAM_BLUE_FEED)
     if team_name is not None:
         print("Team {} is now Team {}".format(team_blue, team_name))
         team_blue = team_name
-    matrixportal.set_text(team_blue, 3)
+    text_manager.set_text("blue_team", team_blue)
     show_connecting(False)
 
 
@@ -91,8 +81,8 @@ def update_scores():
         # use this as a chance to update team names
         customize_team_names()
 
-    matrixportal.set_text(score_red, 0)
-    matrixportal.set_text(score_blue, 1)
+    text_manager.set_text("red_score", score_red)
+    text_manager.set_text("blue_score", score_blue)
     latest_red_score = score_red
     latest_blue_score = score_blue
     show_connecting(False)
