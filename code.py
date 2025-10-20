@@ -60,9 +60,6 @@ TEAM_RED_FEED = "scores-group.red-team-name"
 TEAM_BLUE_FEED = "scores-group.blue-team-name"
 UPDATE_DELAY = 4
 
-matrixportal.set_text_color(RED_COLOR, 0)
-matrixportal.set_text_color(BLUE_COLOR, 1)
-
 
 def show_connecting(show):
     if show:
