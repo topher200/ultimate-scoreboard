@@ -17,15 +17,15 @@ from text_manager import ScoreboardTextManager
 matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
 text_manager = ScoreboardTextManager(matrixportal)
 
-SCORES_RED_FEED = "scores-group.red-team-score-feed"
-SCORES_BLUE_FEED = "scores-group.blue-team-score-feed"
-TEAM_RED_FEED = "scores-group.red-team-name"
-TEAM_BLUE_FEED = "scores-group.blue-team-name"
+SCORES_LEFT_TEAM_FEED = "scores-group.red-team-score-feed"
+SCORES_RIGHT_TEAM_FEED = "scores-group.blue-team-score-feed"
+TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
+TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
 UPDATE_DELAY = 4
 
 # Store the latest scores to detect changes
-latest_red_score = None
-latest_blue_score = None
+latest_left_team_score = None
+latest_right_team_score = None
 
 
 def show_connecting(show):
@@ -41,50 +41,53 @@ def get_last_data(feed_key):
 
 
 def customize_team_names():
-    team_red = "Red"
-    team_blue = "Blue"
+    team_left_team = "Red"
+    team_right_team = "Blue"
 
     show_connecting(True)
-    team_name = get_last_data(TEAM_RED_FEED)
+    team_name = get_last_data(TEAM_LEFT_TEAM_FEED)
     if team_name is not None:
-        print("Team {} is now Team {}".format(team_red, team_name))
-        team_red = team_name
-    text_manager.set_text("red_team", team_red)
-    team_name = get_last_data(TEAM_BLUE_FEED)
+        print("Team {} is now Team {}".format(team_left_team, team_name))
+        team_left_team = team_name
+    text_manager.set_text("left_team", team_left_team)
+    team_name = get_last_data(TEAM_RIGHT_TEAM_FEED)
     if team_name is not None:
-        print("Team {} is now Team {}".format(team_blue, team_name))
-        team_blue = team_name
-    text_manager.set_text("blue_team", team_blue)
+        print("Team {} is now Team {}".format(team_right_team, team_name))
+        team_right_team = team_name
+    text_manager.set_text("right_team", team_right_team)
     show_connecting(False)
 
 
 def update_scores():
-    global latest_red_score, latest_blue_score
+    global latest_left_team_score, latest_right_team_score
 
     print("Updating data from Adafruit IO")
     show_connecting(True)
 
-    score_red = get_last_data(SCORES_RED_FEED)
-    if score_red is None:
-        score_red = 0
-    score_blue = get_last_data(SCORES_BLUE_FEED)
-    if score_blue is None:
-        score_blue = 0
+    score_left_team = get_last_data(SCORES_LEFT_TEAM_FEED)
+    if score_left_team is None:
+        score_left_team = 0
+    score_right_team = get_last_data(SCORES_RIGHT_TEAM_FEED)
+    if score_right_team is None:
+        score_right_team = 0
 
     change_detected = False
-    if latest_red_score is not None and score_red != latest_red_score:
+    if latest_left_team_score is not None and score_left_team != latest_left_team_score:
         change_detected = True
-    if latest_blue_score is not None and score_blue != latest_blue_score:
+    if (
+        latest_right_team_score is not None
+        and score_right_team != latest_right_team_score
+    ):
         change_detected = True
 
     if change_detected:
         # use this as a chance to update team names
         customize_team_names()
 
-    text_manager.set_text("red_score", score_red)
-    text_manager.set_text("blue_score", score_blue)
-    latest_red_score = score_red
-    latest_blue_score = score_blue
+    text_manager.set_text("left_team_score", score_left_team)
+    text_manager.set_text("right_team_score", score_right_team)
+    latest_left_team_score = score_left_team
+    latest_right_team_score = score_right_team
     show_connecting(False)
 
 

@@ -4,13 +4,13 @@ from adafruit_display_text import label
 
 
 # Color constants
-RED_COLOR = 0xAA0000
-BLUE_COLOR = 0x0000AA
+LEFT_TEAM_COLOR = 0xAA0000
+RIGHT_TEAM_COLOR = 0x0000AA
 
 # Display dimensions
 DISPLAY_WIDTH = 64
 BORDER_MARGIN_WIDTH = 2
-HALF_DISPLAY_WIDTH = DISPLAY_WIDTH / 2
+HALF_DISPLAY_WIDTH = DISPLAY_WIDTH // 2
 
 # Font and scaling constants
 TEAM_NAME_FONT_SCALE = 1
@@ -22,8 +22,8 @@ SCORE_HEIGHT_RATIO = 0.75
 TEAM_NAME_HEIGHT_RATIO = 0.25
 SCORE_VERTICAL_OFFSET = -3
 TEAM_NAME_VERTICAL_OFFSET = -4
-RED_TEAM_NAME_X_POSITION = 4
-BLUE_TEAM_NAME_X_POSITION = 36
+LEFT_TEAM_NAME_X_POSITION = 4
+RIGHT_TEAM_NAME_X_POSITION = 36
 
 
 class ScoreboardTextManager:
@@ -33,97 +33,97 @@ class ScoreboardTextManager:
         self.text_elements = {}
         self.main_group = displayio.Group()
         self._setup_layout()
-        self.display.show(self.main_group)
+        self.display.root_group = self.main_group
 
     def _setup_layout(self):
         """Initialize all text elements with their positions and properties."""
         display_height = self.display.height
 
-        # Red Score
-        red_score_label = label.Label(
+        # Left Team Score
+        left_team_score_label = label.Label(
             FONT_TYPE,
             text="0",
             scale=SCORE_FONT_SCALE,
-            color=RED_COLOR,
+            color=LEFT_TEAM_COLOR,
         )
-        red_score_label.x = BORDER_MARGIN_WIDTH
-        red_score_label.y = (
+        left_team_score_label.x = BORDER_MARGIN_WIDTH
+        left_team_score_label.y = (
             int(display_height * SCORE_HEIGHT_RATIO) + SCORE_VERTICAL_OFFSET
         )
 
-        self.text_elements["red_score"] = {
-            "label": red_score_label,
+        self.text_elements["left_team_score"] = {
+            "label": left_team_score_label,
             "base_scale": SCORE_FONT_SCALE,
-            "color": RED_COLOR,
+            "color": LEFT_TEAM_COLOR,
             "base_x": BORDER_MARGIN_WIDTH,
             "base_y": int(display_height * SCORE_HEIGHT_RATIO) + SCORE_VERTICAL_OFFSET,
         }
-        self.main_group.append(red_score_label)
+        self.main_group.append(left_team_score_label)
 
-        # Blue Score
-        blue_score_label = label.Label(
+        # Right Team Score
+        right_team_score_label = label.Label(
             FONT_TYPE,
             text="0",
             scale=SCORE_FONT_SCALE,
-            color=BLUE_COLOR,
+            color=RIGHT_TEAM_COLOR,
         )
-        blue_score_label.x = HALF_DISPLAY_WIDTH + BORDER_MARGIN_WIDTH
-        blue_score_label.y = (
+        right_team_score_label.x = HALF_DISPLAY_WIDTH + BORDER_MARGIN_WIDTH
+        right_team_score_label.y = (
             int(display_height * SCORE_HEIGHT_RATIO) + SCORE_VERTICAL_OFFSET
         )
 
-        self.text_elements["blue_score"] = {
-            "label": blue_score_label,
+        self.text_elements["right_team_score"] = {
+            "label": right_team_score_label,
             "base_scale": SCORE_FONT_SCALE,
-            "color": BLUE_COLOR,
+            "color": RIGHT_TEAM_COLOR,
             "base_x": HALF_DISPLAY_WIDTH + BORDER_MARGIN_WIDTH,
             "base_y": int(display_height * SCORE_HEIGHT_RATIO) + SCORE_VERTICAL_OFFSET,
         }
-        self.main_group.append(blue_score_label)
+        self.main_group.append(right_team_score_label)
 
-        # Red Team name
-        red_team_label = label.Label(
+        # Left Team name
+        left_team_label = label.Label(
             FONT_TYPE,
             text="Red",
             scale=TEAM_NAME_FONT_SCALE,
-            color=RED_COLOR,
+            color=LEFT_TEAM_COLOR,
         )
-        red_team_label.x = RED_TEAM_NAME_X_POSITION
-        red_team_label.y = (
+        left_team_label.x = LEFT_TEAM_NAME_X_POSITION
+        left_team_label.y = (
             int(display_height * TEAM_NAME_HEIGHT_RATIO) + TEAM_NAME_VERTICAL_OFFSET
         )
 
-        self.text_elements["red_team"] = {
-            "label": red_team_label,
+        self.text_elements["left_team"] = {
+            "label": left_team_label,
             "base_scale": TEAM_NAME_FONT_SCALE,
-            "color": RED_COLOR,
-            "base_x": RED_TEAM_NAME_X_POSITION,
+            "color": LEFT_TEAM_COLOR,
+            "base_x": LEFT_TEAM_NAME_X_POSITION,
             "base_y": int(display_height * TEAM_NAME_HEIGHT_RATIO)
             + TEAM_NAME_VERTICAL_OFFSET,
         }
-        self.main_group.append(red_team_label)
+        self.main_group.append(left_team_label)
 
-        # Blue Team name
-        blue_team_label = label.Label(
+        # Right Team name
+        right_team_label = label.Label(
             FONT_TYPE,
             text="Blue",
             scale=TEAM_NAME_FONT_SCALE,
-            color=BLUE_COLOR,
+            color=RIGHT_TEAM_COLOR,
         )
-        blue_team_label.x = BLUE_TEAM_NAME_X_POSITION
-        blue_team_label.y = (
+        right_team_label.x = RIGHT_TEAM_NAME_X_POSITION
+        right_team_label.y = (
             int(display_height * TEAM_NAME_HEIGHT_RATIO) + TEAM_NAME_VERTICAL_OFFSET
         )
 
-        self.text_elements["blue_team"] = {
-            "label": blue_team_label,
+        self.text_elements["right_team"] = {
+            "label": right_team_label,
             "base_scale": TEAM_NAME_FONT_SCALE,
-            "color": BLUE_COLOR,
-            "base_x": BLUE_TEAM_NAME_X_POSITION,
+            "color": RIGHT_TEAM_COLOR,
+            "base_x": RIGHT_TEAM_NAME_X_POSITION,
             "base_y": int(display_height * TEAM_NAME_HEIGHT_RATIO)
             + TEAM_NAME_VERTICAL_OFFSET,
         }
-        self.main_group.append(blue_team_label)
+        self.main_group.append(right_team_label)
 
         # Connecting indicator
         connecting_label = label.Label(
@@ -172,7 +172,7 @@ class ScoreboardTextManager:
         label_obj.scale = dynamic_scale
 
         # Recenter the text if it's a team name (since width changes with scale)
-        if element_id in ["red_team", "blue_team"]:
+        if element_id in ["left_team", "right_team"]:
             # For team names, we want to keep them left-aligned at their base position
             # but adjust if they get too wide
             label_obj.x = element["base_x"]
