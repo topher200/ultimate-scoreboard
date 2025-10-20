@@ -12,41 +12,11 @@ import board
 import terminalio
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
+import text_spacing
+
 # --- Display setup ---
 matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
-
-RED_COLOR = 0xAA0000
-BLUE_COLOR = 0x0000AA
-
-# Red Score
-matrixportal.add_text(
-    text_font=terminalio.FONT,
-    text_position=(4, int(matrixportal.graphics.display.height * 0.75) - 3),
-    text_color=RED_COLOR,
-    text_scale=2,
-)
-
-# Blue Score
-matrixportal.add_text(
-    text_font=terminalio.FONT,
-    text_position=(36, int(matrixportal.graphics.display.height * 0.75) - 3),
-    text_color=BLUE_COLOR,
-    text_scale=2,
-)
-
-# Red Team name
-matrixportal.add_text(
-    text_font=terminalio.FONT,
-    text_position=(4, int(matrixportal.graphics.display.height * 0.25) - 4),
-    text_color=RED_COLOR,
-)
-
-# Blue Team name
-matrixportal.add_text(
-    text_font=terminalio.FONT,
-    text_position=(36, int(matrixportal.graphics.display.height * 0.25) - 4),
-    text_color=BLUE_COLOR,
-)
+text_spacing.set(matrixportal)
 
 # Static 'Connecting' Text
 matrixportal.add_text(
