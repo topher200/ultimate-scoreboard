@@ -103,7 +103,8 @@ update_scores()
 last_update = time.monotonic()
 
 while True:
-    # Set the red score text
-    if time.monotonic() > last_update + UPDATE_DELAY:
+    current_time = time.monotonic()
+    if current_time > last_update + UPDATE_DELAY:
         update_scores()
         last_update = time.monotonic()
+    time.sleep(min(0.1, max(0, last_update + UPDATE_DELAY)))
