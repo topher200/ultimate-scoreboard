@@ -30,6 +30,10 @@ TEAM_RED_FEED = "scores-group.red-team-name"
 TEAM_BLUE_FEED = "scores-group.blue-team-name"
 UPDATE_DELAY = 4
 
+# Store the latest scores to detect changes
+latest_red_score = None
+latest_blue_score = None
+
 
 def show_connecting(show):
     if show:
@@ -65,18 +69,32 @@ def customize_team_names():
 
 
 def update_scores():
+    global latest_red_score, latest_blue_score
+
     print("Updating data from Adafruit IO")
     show_connecting(True)
 
     score_red = get_last_data(SCORES_RED_FEED)
     if score_red is None:
         score_red = 0
-
     score_blue = get_last_data(SCORES_BLUE_FEED)
     if score_blue is None:
         score_blue = 0
+
+    change_detected = False
+    if latest_red_score is not None and score_red != latest_red_score:
+        change_detected = True
+    if latest_blue_score is not None and score_blue != latest_blue_score:
+        change_detected = True
+
+    if change_detected:
+        # use this as a chance to update team names
+        customize_team_names()
+
     matrixportal.set_text(score_red, 0)
     matrixportal.set_text(score_blue, 1)
+    latest_red_score = score_red
+    latest_blue_score = score_blue
     show_connecting(False)
 
 
