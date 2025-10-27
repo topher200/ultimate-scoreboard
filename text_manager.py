@@ -53,7 +53,6 @@ class ScoreboardTextManager:
 
         self.text_elements["left_team_score"] = {
             "label": left_team_score_label,
-            "base_scale": SCORE_FONT_SCALE,
             "color": LEFT_TEAM_COLOR,
             "base_x": BORDER_MARGIN_WIDTH,
             "base_y": int(display_height * SCORE_HEIGHT_RATIO) + SCORE_VERTICAL_OFFSET,
@@ -74,7 +73,6 @@ class ScoreboardTextManager:
 
         self.text_elements["right_team_score"] = {
             "label": right_team_score_label,
-            "base_scale": SCORE_FONT_SCALE,
             "color": RIGHT_TEAM_COLOR,
             "base_x": HALF_DISPLAY_WIDTH + BORDER_MARGIN_WIDTH,
             "base_y": int(display_height * SCORE_HEIGHT_RATIO) + SCORE_VERTICAL_OFFSET,
@@ -95,7 +93,6 @@ class ScoreboardTextManager:
 
         self.text_elements["left_team"] = {
             "label": left_team_label,
-            "base_scale": TEAM_NAME_FONT_SCALE,
             "color": LEFT_TEAM_COLOR,
             "base_x": LEFT_TEAM_NAME_X_POSITION,
             "base_y": int(display_height * TEAM_NAME_HEIGHT_RATIO)
@@ -117,7 +114,6 @@ class ScoreboardTextManager:
 
         self.text_elements["right_team"] = {
             "label": right_team_label,
-            "base_scale": TEAM_NAME_FONT_SCALE,
             "color": RIGHT_TEAM_COLOR,
             "base_x": RIGHT_TEAM_NAME_X_POSITION,
             "base_y": int(display_height * TEAM_NAME_HEIGHT_RATIO)
@@ -136,58 +132,22 @@ class ScoreboardTextManager:
 
         self.text_elements["connecting"] = {
             "label": connecting_label,
-            "base_scale": 1,
             "color": None,
             "base_x": 59,
             "base_y": 0,
         }
         self.main_group.append(connecting_label)
 
-    def _calculate_dynamic_scale(self, base_scale, text):
-        """Calculate scale based on text length. Divide by 2 for every 10+ characters."""
-        scale = base_scale
-        text_length = len(str(text))
-
-        # Apply scaling: divide by 2 for every 10 characters over the limit
-        while text_length > 10:
-            scale /= 2
-            text_length -= 10
-
-        # Ensure scale doesn't go below 0.5 for readability
-        return max(scale, 0.5)
-
     def set_text(self, element_id, content):
-        """Set text content for a specific element with dynamic scaling."""
+        """Set text content for a specific element."""
         if element_id not in self.text_elements:
             raise ValueError(f"Unknown text element: {element_id}")
 
         element = self.text_elements[element_id]
         label_obj = element["label"]
-        dynamic_scale = self._calculate_dynamic_scale(element["base_scale"], content)
 
         # Update the text content
         label_obj.text = str(content)
-
-        # Update the scale
-        label_obj.scale = dynamic_scale
-
-        # Recenter the text if it's a team name (since width changes with scale)
-        if element_id in ["left_team", "right_team"]:
-            # For team names, we want to keep them left-aligned at their base position
-            # but adjust if they get too wide
-            label_obj.x = element["base_x"]
-            # If the text is too wide for the display, adjust position
-            text_width = label_obj.bounding_box[2] * dynamic_scale
-            if text_width > (DISPLAY_WIDTH - element["base_x"]):
-                # Adjust x position to fit
-                label_obj.x = DISPLAY_WIDTH - text_width - 2
-
-    def get_current_scale(self, element_id):
-        """Get the current scale of a text element for debugging."""
-        if element_id not in self.text_elements:
-            raise ValueError(f"Unknown text element: {element_id}")
-
-        return self.text_elements[element_id]["label"].scale
 
     def show_connecting(self, show):
         """Show or hide the connecting indicator."""
