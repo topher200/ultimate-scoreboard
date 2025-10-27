@@ -44,18 +44,16 @@ def customize_team_names():
     team_left_team = "Red"
     team_right_team = "Blue"
 
-    show_connecting(True)
     team_name = get_last_data(TEAM_LEFT_TEAM_FEED)
     if team_name is not None:
         print("Team {} is now Team {}".format(team_left_team, team_name))
         team_left_team = team_name
-    text_manager.set_text("left_team", team_left_team)
     team_name = get_last_data(TEAM_RIGHT_TEAM_FEED)
     if team_name is not None:
         print("Team {} is now Team {}".format(team_right_team, team_name))
         team_right_team = team_name
+    text_manager.set_text("left_team", team_left_team)
     text_manager.set_text("right_team", team_right_team)
-    show_connecting(False)
 
 
 def update_scores():
@@ -91,8 +89,10 @@ def update_scores():
     show_connecting(False)
 
 
+show_connecting(True)
 customize_team_names()
 update_scores()
+show_connecting(False)
 last_update = time.monotonic()
 
 while True:
