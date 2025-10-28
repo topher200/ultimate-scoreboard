@@ -21,7 +21,7 @@ SCORES_LEFT_TEAM_FEED = "scores-group.red-team-score-feed"
 SCORES_RIGHT_TEAM_FEED = "scores-group.blue-team-score-feed"
 TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
 TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
-UPDATE_DELAY = 4
+UPDATE_DELAY = 4  # seconds
 
 # Store the latest scores to detect changes
 latest_left_team_score = None
