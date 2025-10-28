@@ -7,15 +7,15 @@ from adafruit_display_text import label
 LEFT_TEAM_COLOR = 0xAA0000  # red
 RIGHT_TEAM_COLOR = 0x0000AA  # blue
 
-# Display dimensions
-DISPLAY_HEIGHT = 32
-DISPLAY_WIDTH = 64
-LEFT_BORDER_MARGIN_WIDTH = 2
-
 # Font and scaling constants
 TEAM_NAME_FONT_SCALE = 1
 SCORE_FONT_SCALE = 2
 FONT_TYPE = terminalio.FONT
+
+# Display dimensions
+DISPLAY_HEIGHT = 32
+DISPLAY_WIDTH = 64
+LEFT_BORDER_MARGIN_WIDTH = 2
 
 # Position constants
 TEAM_NAME_Y_POSITION = 0
