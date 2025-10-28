@@ -1,12 +1,3 @@
-# Adapted from:
-# SPDX-FileCopyrightText: 2020 John Park for Adafruit Industries
-#
-# SPDX-License-Identifier: MIT
-
-# Scoreboard matrix display
-# uses AdafruitIO to set scores and team names for a scoreboard
-# Perfect for cornhole, ping pong, and other games
-
 import time
 import board
 from adafruit_matrixportal.matrixportal import MatrixPortal
@@ -40,9 +31,11 @@ def get_last_data(feed_key):
     return None
 
 
-def customize_team_names():
+def update_teams_and_gender_matchup():
     team_left_team = "Red"
     team_right_team = "Blue"
+    gender_matchup = "WMP"
+    gender_matchup_count = 1
 
     team_name = get_last_data(TEAM_LEFT_TEAM_FEED)
     if team_name is not None:
@@ -54,6 +47,8 @@ def customize_team_names():
         team_right_team = team_name
     text_manager.set_text("left_team", team_left_team)
     text_manager.set_text("right_team", team_right_team)
+    text_manager.set_text("gender_matchup", gender_matchup)
+    text_manager.set_text("gender_matchup_counter", str(gender_matchup_count))
 
 
 def update_scores():
@@ -80,7 +75,7 @@ def update_scores():
 
     if change_detected:
         # use this as a chance to update team names
-        customize_team_names()
+        update_teams_and_gender_matchup()
 
     text_manager.set_text("left_team_score", score_left_team)
     text_manager.set_text("right_team_score", score_right_team)
@@ -90,14 +85,15 @@ def update_scores():
 
 
 show_connecting(True)
-customize_team_names()
+update_teams_and_gender_matchup()
 update_scores()
 show_connecting(False)
 last_update = time.monotonic()
 
 while True:
     current_time = time.monotonic()
+
     if current_time > last_update + UPDATE_DELAY:
         update_scores()
         last_update = time.monotonic()
-    time.sleep(min(0.1, max(0, last_update + UPDATE_DELAY)))
+    time.sleep(max(0.1, UPDATE_DELAY - (current_time - last_update)))

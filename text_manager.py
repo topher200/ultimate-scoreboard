@@ -6,10 +6,13 @@ from adafruit_display_text import label
 # Color constants
 LEFT_TEAM_COLOR = 0xAA0000  # red
 RIGHT_TEAM_COLOR = 0x0000AA  # blue
+MMP_GENDER_MATCHUP_COLOR = 0x00AA00  # green
+WMP_GENDER_MATCHUP_COLOR = 0xFFA500  # orange
 
 # Font and scaling constants
 TEAM_NAME_FONT_SCALE = 1
 SCORE_FONT_SCALE = 2
+GENDER_MATCHUP_FONT_SCALE = 1
 FONT_TYPE = terminalio.FONT
 
 # Display dimensions
@@ -20,7 +23,10 @@ LEFT_BORDER_MARGIN_WIDTH = 2
 # Position constants
 TEAM_NAME_Y_POSITION = 0
 SCORE_Y_POSITION = int(DISPLAY_HEIGHT * 0.25)
+GENDER_MATCHUP_X_POSITION = int(DISPLAY_WIDTH * 0.5) + 2
+GENDER_MATCHUP_Y_POSITION = int(DISPLAY_HEIGHT * 0.35)
 LEFT_JUSTIFY_ANCHOR_POINT = (0.0, 0.0)
+MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 
 
@@ -83,6 +89,35 @@ class ScoreboardTextManager:
         self.text_elements["right_team_score"] = {"label": right_team_score_label}
         self.main_group.append(right_team_score_label)
 
+        # Gender matchup
+        gender_matchup_label = label.Label(
+            FONT_TYPE,
+            text=" ",
+            scale=GENDER_MATCHUP_FONT_SCALE,
+            color=WMP_GENDER_MATCHUP_COLOR,
+            anchor_point=MIDDLE_JUSTIFY_ANCHOR_POINT,
+            anchored_position=(GENDER_MATCHUP_X_POSITION, GENDER_MATCHUP_Y_POSITION),
+        )
+        self.text_elements["gender_matchup"] = {"label": gender_matchup_label}
+        self.main_group.append(gender_matchup_label)
+
+        # Gender matchup counter
+        gender_matchup_counter_label = label.Label(
+            FONT_TYPE,
+            text=" ",
+            scale=GENDER_MATCHUP_FONT_SCALE,
+            color=WMP_GENDER_MATCHUP_COLOR,
+            anchor_point=MIDDLE_JUSTIFY_ANCHOR_POINT,
+            anchored_position=(
+                GENDER_MATCHUP_X_POSITION,
+                GENDER_MATCHUP_Y_POSITION + 10,
+            ),
+        )
+        self.text_elements["gender_matchup_counter"] = {
+            "label": gender_matchup_counter_label
+        }
+        self.main_group.append(gender_matchup_counter_label)
+
         # 'Connecting' indicator
         connecting_label = label.Label(FONT_TYPE, text=" ")
         connecting_label.x = DISPLAY_WIDTH - 5  # number may not be accurate
@@ -91,6 +126,12 @@ class ScoreboardTextManager:
         self.text_elements["connecting"] = {"label": connecting_label}
         self.main_group.append(connecting_label)
 
+    def _get_gender_matchup_color(self, gender_matchup):
+        if "MMP" in gender_matchup:
+            return MMP_GENDER_MATCHUP_COLOR
+        else:
+            return WMP_GENDER_MATCHUP_COLOR
+
     def set_text(self, element_id, content):
         """Set text content for a specific element."""
         if element_id not in self.text_elements:
@@ -98,6 +139,8 @@ class ScoreboardTextManager:
         element = self.text_elements[element_id]
         label_obj = element["label"]
         label_obj.text = str(content)
+        if element_id == "gender_matchup" or element_id == "gender_matchup_counter":
+            label_obj.color = self._get_gender_matchup_color(content)
 
     def show_connecting(self, show):
         """Show or hide the connecting indicator."""

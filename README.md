@@ -21,7 +21,7 @@ is MIT licensed so this project is MIT licensed.
 
 The [matrixportal
 lib](https://github.com/adafruit/Adafruit_CircuitPython_MatrixPortal) is
-copied into this repo.
+copied into this repo, mostly for development help.
 
 ```
 $ git clone https://github.com/adafruit/Adafruit_CircuitPython_MatrixPortal lib/
