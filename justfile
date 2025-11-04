@@ -9,6 +9,8 @@ default:
 lint:
     uv run ruff check --fix .
 
+alias fmt := lint
+
 # Run all tests
 test:
     uv run pytest
