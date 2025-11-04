@@ -15,9 +15,11 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["lib"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+norecursedirs = [".git", ".venv", "__pycache__"]
 addopts = [
     "-v",
     "--strict-markers",

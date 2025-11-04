@@ -1,9 +1,9 @@
 """Tests for ScoreManager using fake implementations."""
 
 import pytest
+from score_manager import ScoreManager
 
 from fakes import FakeMatrixPortal
-from score_manager import ScoreManager
 
 
 class TestScoreManager:

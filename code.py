@@ -2,7 +2,6 @@ import time
 
 import board
 from adafruit_matrixportal.matrixportal import MatrixPortal
-
 from score_manager import ScoreManager
 from text_manager import ScoreboardTextManager
 

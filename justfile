@@ -23,7 +23,7 @@ ci:
 # Set up watchman to copy Python files to CircuitPython board
 watchman-setup-circuitpy:
     watchman watch-project .
-    watchman -- trigger . copy-to-CIRCUITPY '*.py' -- sh -c 'cp *.py /media/CIRCUITPY'
+    watchman -- trigger . copy-to-CIRCUITPY '*.py' 'lib/*.py' -- sh -c 'cp *.py /media/CIRCUITPY/ 2>/dev/null || true; mkdir -p /media/CIRCUITPY/lib && cp lib/*.py /media/CIRCUITPY/lib/ 2>/dev/null || true'
     @echo "Watchman trigger 'copy-to-CIRCUITPY' has been set up"
 
 # Remove the watchman trigger for CircuitPython
