@@ -10,6 +10,21 @@ To set up your development environment:
 uv sync
 ```
 
+## Just Command Runner
+
+This project uses [just](https://github.com/casey/just) for running common development tasks.
+
+To install just, visit the [installation instructions](https://github.com/casey/just#installation).
+
+Common commands:
+
+- `just` - List all available commands
+- `just lint` - Run linter and formatter to automatically fix issues
+- `just test` - Run all tests
+- `just ci` - Check code without fixing (runs the same checks as CI)
+- `just watchman-setup-circuitpy` - Set up file watching to sync to CircuitPython board
+- `just watchman-remove` - Remove the file watching trigger
+
 ## Running Tests
 
 This project includes tests that use fake hardware implementations to test the
@@ -20,10 +35,10 @@ code logic without requiring actual CircuitPython hardware.
 To run all tests:
 
 ```bash
-uv run pytest
+just test
 ```
 
-Or run specific test files:
+Or run specific test files directly:
 
 ```bash
 uv run pytest tests/test_text_manager.py
@@ -40,19 +55,26 @@ components that allow testing without physical hardware:
 - **`fakes/fake_label.py`** - Fake `Label` class that mimics `adafruit_display_text.label.Label`
 - **`fakes/__init__.py`** - Package exports for easy importing
 
-## Commands
+## Development Commands
+
+### Linting and Formatting
+
+Run linter and formatter to automatically fix issues:
+
+```bash
+just lint
+```
 
 ### Set watchman to send updates to CircuitPython board
 
 ```bash
-watchman watch-project .
-watchman -- trigger . copy-to-CIRCUITPY '*.py' -- sh -c 'cp *.py /media/CIRCUITPY'
+just watchman-setup-circuitpy
 ```
 
-Delete with:
+Remove the watchman trigger:
 
 ```bash
-watchman trigger-del . copy-to-CIRCUITPY
+just watchman-remove
 ```
 
 ## Resources
