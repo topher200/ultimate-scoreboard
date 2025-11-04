@@ -26,11 +26,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --group dev
 
-      - name: Run ruff linter
-        run: uv run ruff check .
+      - name: Install just
+        uses: extractions/setup-just@v2
 
-      - name: Run ruff formatter
-        run: uv run ruff format --check .
-
-      - name: Run tests
-        run: uv run pytest
+      - name: Run CI checks
+        run: just ci
