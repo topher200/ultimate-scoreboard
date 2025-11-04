@@ -8,7 +8,6 @@ default:
 # Run linter and formatter to fix issues automatically
 lint:
     uv run ruff check --fix .
-    uv run ruff format .
 
 # Run all tests
 test:
