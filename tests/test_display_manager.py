@@ -1,4 +1,4 @@
-"""Basic tests for text_manager using fake implementations."""
+"""Basic tests for display_manager using fake implementations."""
 
 import sys
 from unittest.mock import MagicMock, patch
@@ -8,8 +8,8 @@ import pytest
 from fakes import FakeGroup, FakeLabel, FakeMatrixPortal, FakeTerminalio
 
 
-class TestScoreboardTextManager:
-    """Test ScoreboardTextManager with fake hardware."""
+class TestDisplayManager:
+    """Test DisplayManager with fake hardware."""
 
     @pytest.fixture(autouse=True)
     @patch.dict(
@@ -23,14 +23,14 @@ class TestScoreboardTextManager:
     )
     def setup(self):
         """Set up test fixtures with mocked imports."""
-        from text_manager import ScoreboardTextManager  # noqa: PLC0415
+        from display_manager import DisplayManager  # noqa: PLC0415
 
-        self.ScoreboardTextManager = ScoreboardTextManager
+        self.DisplayManager = DisplayManager
         self.fake_portal = FakeMatrixPortal()
-        self.text_manager = ScoreboardTextManager(self.fake_portal)
+        self.text_manager = DisplayManager(self.fake_portal)
 
     def test_initialization(self):
-        """Test that ScoreboardTextManager initializes without errors."""
+        """Test that DisplayManager initializes without errors."""
         assert self.text_manager is not None
         assert self.text_manager.matrixportal == self.fake_portal
         assert self.text_manager.display == self.fake_portal.display
@@ -100,11 +100,15 @@ class TestScoreboardTextManager:
 
         # Test counter also changes color correctly
         self.text_manager.set_text("gender_matchup_counter", "WMP")
-        counter_label = self.text_manager.text_elements["gender_matchup_counter"]["label"]
+        counter_label = self.text_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
         counter_wmp_color = counter_label.color
 
         self.text_manager.set_text("gender_matchup_counter", "MMP")
-        counter_label = self.text_manager.text_elements["gender_matchup_counter"]["label"]
+        counter_label = self.text_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
         counter_mmp_color = counter_label.color
         assert counter_wmp_color != counter_mmp_color
 
