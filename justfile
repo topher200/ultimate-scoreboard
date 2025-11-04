@@ -8,12 +8,17 @@ default:
 # Run linter and formatter to fix issues automatically
 lint:
     uv run ruff check --fix .
+    uv run ty check --error-on-warning .
 
 alias fmt := lint
 
 # Run all tests
 test:
     uv run pytest
+
+# Monitor the board over serial
+monitor:
+    python3 -m serial.tools.miniterm /dev/ttyACM0 115200 || python3 -m serial.tools.miniterm /dev/ttyACM1 115200
 
 # Set up watchman to copy Python files to CircuitPython board
 watchman-setup-circuitpy:

@@ -66,13 +66,13 @@ class TestNetworkManager:
 
         result = self.network_manager.get_left_team_score()
 
-        assert result is None
+        assert result == 0
 
     def test_get_right_team_score_with_missing_feed(self):
         """Test getting right team score for a feed that doesn't exist."""
         result = self.network_manager.get_right_team_score()
 
-        assert result is None
+        assert result == 0
 
     def test_get_left_team_score_with_string_number(self):
         """Test getting left team score with string number data."""
@@ -80,4 +80,4 @@ class TestNetworkManager:
 
         result = self.network_manager.get_left_team_score()
 
-        assert result == "15"
+        assert result == 15

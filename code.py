@@ -1,13 +1,16 @@
 import time
 
-import board
+import board  # ty: ignore[unresolved-import]
 from adafruit_matrixportal.matrixportal import MatrixPortal
 from display_manager import DisplayManager
 from network_manager import NetworkManager
 from score_manager import ScoreManager
 
 # --- Display setup ---
-matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
+matrixportal = MatrixPortal(
+    status_neopixel=board.NEOPIXEL,  # ty: ignore[possibly-missing-attribute]
+    debug=False,
+)
 text_manager = DisplayManager(matrixportal)
 network_manager = NetworkManager(matrixportal)
 
