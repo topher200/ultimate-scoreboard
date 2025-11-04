@@ -3,33 +3,21 @@ import time
 import board
 from adafruit_matrixportal.matrixportal import MatrixPortal
 from display_manager import DisplayManager
+from network_manager import NetworkManager
 from score_manager import ScoreManager
 
 # --- Display setup ---
 matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
 text_manager = DisplayManager(matrixportal)
+network_manager = NetworkManager(matrixportal)
 
-SCORES_LEFT_TEAM_FEED = "scores-group.red-team-score-feed"
-SCORES_RIGHT_TEAM_FEED = "scores-group.blue-team-score-feed"
-TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
-TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
 UPDATE_DELAY = 4  # seconds
 
-score_manager = ScoreManager(
-    matrixportal, SCORES_LEFT_TEAM_FEED, SCORES_RIGHT_TEAM_FEED
-)
+score_manager = ScoreManager(network_manager)
 
 
 def show_connecting(show):
     text_manager.show_connecting(show)
-
-
-def get_last_data(feed_key):
-    feed = matrixportal.get_io_feed(feed_key, detailed=True)
-    value = feed["details"]["data"]["last"]
-    if value is not None:
-        return value["value"]
-    return None
 
 
 def update_teams_and_gender_matchup():
@@ -38,11 +26,11 @@ def update_teams_and_gender_matchup():
     gender_matchup = "WMP"
     gender_matchup_count = 1
 
-    team_name = get_last_data(TEAM_LEFT_TEAM_FEED)
+    team_name = network_manager.get_left_team_name()
     if team_name is not None:
         print(f"Team {team_left_team} is now Team {team_name}")
         team_left_team = team_name
-    team_name = get_last_data(TEAM_RIGHT_TEAM_FEED)
+    team_name = network_manager.get_right_team_name()
     if team_name is not None:
         print(f"Team {team_right_team} is now Team {team_name}")
         team_right_team = team_name
