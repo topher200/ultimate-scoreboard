@@ -1,7 +1,6 @@
-import terminalio
 import displayio
+import terminalio
 from adafruit_display_text import label
-
 
 # Color constants
 LEFT_TEAM_COLOR = 0xAA0000  # red
@@ -113,9 +112,7 @@ class ScoreboardTextManager:
                 GENDER_MATCHUP_Y_POSITION + 10,
             ),
         )
-        self.text_elements["gender_matchup_counter"] = {
-            "label": gender_matchup_counter_label
-        }
+        self.text_elements["gender_matchup_counter"] = {"label": gender_matchup_counter_label}
         self.main_group.append(gender_matchup_counter_label)
 
         # 'Connecting' indicator
@@ -139,7 +136,7 @@ class ScoreboardTextManager:
         element = self.text_elements[element_id]
         label_obj = element["label"]
         label_obj.text = str(content)
-        if element_id == "gender_matchup" or element_id == "gender_matchup_counter":
+        if element_id in {"gender_matchup", "gender_matchup_counter"}:
             label_obj.color = self._get_gender_matchup_color(content)
 
     def show_connecting(self, show):

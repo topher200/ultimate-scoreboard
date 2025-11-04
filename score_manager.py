@@ -47,14 +47,9 @@ class ScoreManager:
         if previous_left_score is None and previous_right_score is None:
             return False
 
-        left_changed = (
-            previous_left_score is not None
-            and self.left_score != previous_left_score
-        )
+        left_changed = previous_left_score is not None and self.left_score != previous_left_score
         right_changed = (
-            previous_right_score is not None
-            and self.right_score != previous_right_score
+            previous_right_score is not None and self.right_score != previous_right_score
         )
 
         return left_changed or right_changed
-
