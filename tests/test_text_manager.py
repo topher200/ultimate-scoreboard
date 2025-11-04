@@ -100,15 +100,11 @@ class TestScoreboardTextManager:
 
         # Test counter also changes color correctly
         self.text_manager.set_text("gender_matchup_counter", "WMP")
-        counter_label = self.text_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = self.text_manager.text_elements["gender_matchup_counter"]["label"]
         counter_wmp_color = counter_label.color
 
         self.text_manager.set_text("gender_matchup_counter", "MMP")
-        counter_label = self.text_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = self.text_manager.text_elements["gender_matchup_counter"]["label"]
         counter_mmp_color = counter_label.color
         assert counter_wmp_color != counter_mmp_color
 

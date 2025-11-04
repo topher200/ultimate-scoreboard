@@ -15,9 +15,7 @@ class TestScoreManager:
         self.fake_portal = FakeMatrixPortal()
         self.left_feed_key = "scores-group.red-team-score-feed"
         self.right_feed_key = "scores-group.blue-team-score-feed"
-        self.score_manager = ScoreManager(
-            self.fake_portal, self.left_feed_key, self.right_feed_key
-        )
+        self.score_manager = ScoreManager(self.fake_portal, self.left_feed_key, self.right_feed_key)
 
     def test_initialization(self):
         """Test that ScoreManager initializes without errors."""
