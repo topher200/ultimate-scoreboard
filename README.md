@@ -17,6 +17,7 @@ Or run tests directly:
 
 ```bash
 python3 -m unittest tests/test_text_manager.py
+python3 -m unittest tests/test_score_manager.py
 ```
 
 ### Fakes Directory
@@ -24,7 +25,7 @@ python3 -m unittest tests/test_text_manager.py
 The `fakes/` directory contains mock implementations of CircuitPython hardware
 components that allow testing without physical hardware:
 
-- **`fakes/fake_matrixportal.py`** - Fake `MatrixPortal` and `Display` classes that mimic the hardware display interface
+- **`fakes/fake_matrixportal.py`** - Fake `MatrixPortal` and `Display` classes that mimic the hardware display interface, including `get_io_feed()` for Adafruit IO feed access
 - **`fakes/fake_displayio.py`** - Fake `displayio.Group` class for managing display elements
 - **`fakes/fake_label.py`** - Fake `Label` class that mimics `adafruit_display_text.label.Label`
 - **`fakes/__init__.py`** - Package exports for easy importing
