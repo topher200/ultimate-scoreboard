@@ -29,7 +29,7 @@ MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 
 
-class ScoreboardTextManager:
+class DisplayManager:
     def __init__(self, matrixportal):
         self.matrixportal = matrixportal
         self.display = matrixportal.display
@@ -145,3 +145,4 @@ class ScoreboardTextManager:
             self.set_text("connecting", ".")
         else:
             self.set_text("connecting", " ")
+

@@ -2,12 +2,12 @@ import time
 
 import board
 from adafruit_matrixportal.matrixportal import MatrixPortal
+from display_manager import DisplayManager
 from score_manager import ScoreManager
-from text_manager import ScoreboardTextManager
 
 # --- Display setup ---
 matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
-text_manager = ScoreboardTextManager(matrixportal)
+text_manager = DisplayManager(matrixportal)
 
 SCORES_LEFT_TEAM_FEED = "scores-group.red-team-score-feed"
 SCORES_RIGHT_TEAM_FEED = "scores-group.blue-team-score-feed"
@@ -15,7 +15,9 @@ TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
 TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
 UPDATE_DELAY = 4  # seconds
 
-score_manager = ScoreManager(matrixportal, SCORES_LEFT_TEAM_FEED, SCORES_RIGHT_TEAM_FEED)
+score_manager = ScoreManager(
+    matrixportal, SCORES_LEFT_TEAM_FEED, SCORES_RIGHT_TEAM_FEED
+)
 
 
 def show_connecting(show):
