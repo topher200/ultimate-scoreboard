@@ -14,12 +14,6 @@ lint:
 test:
     uv run pytest
 
-# Check code without fixing (for CI)
-ci:
-    uv run ruff check .
-    uv run ruff format --check .
-    uv run pytest
-
 # Set up watchman to copy Python files to CircuitPython board
 watchman-setup-circuitpy:
     watchman watch-project .
@@ -30,4 +24,3 @@ watchman-setup-circuitpy:
 watchman-remove:
     watchman trigger-del . copy-to-CIRCUITPY
     @echo "Watchman trigger 'copy-to-CIRCUITPY' has been removed"
-
