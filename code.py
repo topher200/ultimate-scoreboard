@@ -3,6 +3,7 @@ import board
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
 from text_manager import ScoreboardTextManager
+from score_manager import ScoreManager
 
 # --- Display setup ---
 matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=False)
@@ -14,9 +15,9 @@ TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
 TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
 UPDATE_DELAY = 4  # seconds
 
-# Store the latest scores to detect changes
-latest_left_team_score = None
-latest_right_team_score = None
+score_manager = ScoreManager(
+    matrixportal, SCORES_LEFT_TEAM_FEED, SCORES_RIGHT_TEAM_FEED
+)
 
 
 def show_connecting(show):
@@ -52,35 +53,14 @@ def update_teams_and_gender_matchup():
 
 
 def update_scores():
-    global latest_left_team_score, latest_right_team_score
-
     print("Updating data from Adafruit IO")
     show_connecting(True)
 
-    score_left_team = get_last_data(SCORES_LEFT_TEAM_FEED)
-    if score_left_team is None:
-        score_left_team = 0
-    score_right_team = get_last_data(SCORES_RIGHT_TEAM_FEED)
-    if score_right_team is None:
-        score_right_team = 0
-
-    change_detected = False
-    if latest_left_team_score is not None and score_left_team != latest_left_team_score:
-        change_detected = True
-    if (
-        latest_right_team_score is not None
-        and score_right_team != latest_right_team_score
-    ):
-        change_detected = True
-
-    if change_detected:
-        # use this as a chance to update team names
+    if score_manager.update_scores():
         update_teams_and_gender_matchup()
 
-    text_manager.set_text("left_team_score", score_left_team)
-    text_manager.set_text("right_team_score", score_right_team)
-    latest_left_team_score = score_left_team
-    latest_right_team_score = score_right_team
+    text_manager.set_text("left_team_score", score_manager.left_score)
+    text_manager.set_text("right_team_score", score_manager.right_score)
     show_connecting(False)
 
 

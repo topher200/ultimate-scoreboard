@@ -29,8 +29,46 @@ class FakeMatrixPortal:
         but doesn't use them since this is a fake.
         """
         self._display = FakeDisplay()
+        self._feed_data = {}
 
     @property
     def display(self):
         """Get the display object."""
         return self._display
+
+    def set_feed_value(self, feed_key, value):
+        """Set a value for a feed key for testing.
+
+        :param feed_key: The feed key to set
+        :param value: The value to return for this feed
+        """
+        self._feed_data[feed_key] = value
+
+    def get_io_feed(self, feed_key, detailed=False):
+        """Get an IO feed value.
+
+        :param feed_key: The feed key to retrieve
+        :param detailed: If True, returns detailed structure
+        :return: Feed data structure
+        """
+        value = self._feed_data.get(feed_key)
+        if detailed:
+            if value is not None:
+                return {
+                    "details": {
+                        "data": {
+                            "last": {
+                                "value": value,
+                            }
+                        }
+                    }
+                }
+            else:
+                return {
+                    "details": {
+                        "data": {
+                            "last": None,
+                        }
+                    }
+                }
+        return value
