@@ -1,5 +1,15 @@
 # LED Scoreboard
 
+## Development Setup
+
+This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
+
+To set up your development environment:
+
+```bash
+uv sync
+```
+
 ## Running Tests
 
 This project includes tests that use fake hardware implementations to test the
@@ -10,14 +20,14 @@ code logic without requiring actual CircuitPython hardware.
 To run all tests:
 
 ```bash
-python3 -m unittest discover tests
+uv run pytest
 ```
 
-Or run tests directly:
+Or run specific test files:
 
 ```bash
-python3 -m unittest tests/test_text_manager.py
-python3 -m unittest tests/test_score_manager.py
+uv run pytest tests/test_text_manager.py
+uv run pytest tests/test_score_manager.py
 ```
 
 ### Fakes Directory
