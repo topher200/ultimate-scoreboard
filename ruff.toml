@@ -4,6 +4,7 @@
 
 target-version = "py38"
 line-length = 100
+exclude = ["lib/**"]
 
 [lint]
 preview = true
