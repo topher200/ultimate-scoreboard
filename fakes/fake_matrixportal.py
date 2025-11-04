@@ -30,6 +30,7 @@ class FakeMatrixPortal:
         """
         self._display = FakeDisplay()
         self._feed_data = {}
+        self._pushed_data = {}
 
     @property
     def display(self):
@@ -72,3 +73,20 @@ class FakeMatrixPortal:
                     }
                 }
         return value
+
+    def push_to_io(self, feed_key, value):
+        """Push a value to an IO feed.
+
+        :param feed_key: The feed key to push to
+        :param value: The value to push
+        """
+        self._pushed_data[feed_key] = value
+        self._feed_data[feed_key] = value
+
+    def get_pushed_value(self, feed_key):
+        """Get the last pushed value for a feed key (for testing).
+
+        :param feed_key: The feed key to retrieve
+        :return: The last pushed value, or None if not found
+        """
+        return self._pushed_data.get(feed_key)

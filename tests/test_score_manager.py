@@ -113,3 +113,57 @@ class TestScoreManager:
 
         changed3 = self.score_manager.update_scores()
         assert not changed3
+
+    def test_increment_scores_from_zero(self):
+        """Test incrementing both scores when they are at zero."""
+        left_result = self.score_manager.increment_left_score()
+        right_result = self.score_manager.increment_right_score()
+
+        assert left_result is True
+        assert right_result is True
+        assert self.score_manager.left_score == 1
+        assert self.score_manager.right_score == 1
+        assert (
+            self.fake_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 1
+        )
+        assert (
+            self.fake_portal.get_pushed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED)
+            == 1
+        )
+
+    def test_increment_scores_from_existing_values(self):
+        """Test incrementing both scores from existing values."""
+        self.score_manager.left_score = 5
+        self.score_manager.right_score = 3
+
+        left_result = self.score_manager.increment_left_score()
+        right_result = self.score_manager.increment_right_score()
+
+        assert left_result is True
+        assert right_result is True
+        assert self.score_manager.left_score == 6
+        assert self.score_manager.right_score == 4
+        assert (
+            self.fake_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 6
+        )
+        assert (
+            self.fake_portal.get_pushed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED)
+            == 4
+        )
+
+    def test_increment_scores_multiple_times(self):
+        """Test incrementing both scores multiple times."""
+        self.score_manager.increment_left_score()
+        self.score_manager.increment_right_score()
+        assert self.score_manager.left_score == 1
+        assert self.score_manager.right_score == 1
+
+        self.score_manager.increment_left_score()
+        self.score_manager.increment_right_score()
+        assert self.score_manager.left_score == 2
+        assert self.score_manager.right_score == 2
+
+        self.score_manager.increment_left_score()
+        self.score_manager.increment_right_score()
+        assert self.score_manager.left_score == 3
+        assert self.score_manager.right_score == 3

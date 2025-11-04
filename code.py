@@ -1,6 +1,7 @@
 import time
 
 import board  # ty: ignore[unresolved-import]
+import digitalio  # type: ignore[import-untyped]
 from adafruit_matrixportal.matrixportal import MatrixPortal
 from display_manager import DisplayManager
 from network_manager import NetworkManager
@@ -14,9 +15,21 @@ matrixportal = MatrixPortal(
 text_manager = DisplayManager(matrixportal)
 network_manager = NetworkManager(matrixportal)
 
-UPDATE_DELAY = 4  # seconds
+NETWORK_REFRESH_DELAY = 4  # seconds
+"""The delay between requests to refresh data from the network."""
 
 score_manager = ScoreManager(network_manager)
+
+# --- Button setup ---
+button_up = digitalio.DigitalInOut(board.BUTTON_UP)  # type: ignore[attr-defined]
+button_up.direction = digitalio.Direction.INPUT
+button_up.pull = digitalio.Pull.UP
+button_up_pressed = False
+
+button_down = digitalio.DigitalInOut(board.BUTTON_DOWN)  # type: ignore[attr-defined]
+button_down.direction = digitalio.Direction.INPUT
+button_down.pull = digitalio.Pull.UP
+button_down_pressed = False
 
 
 def show_connecting(show):
@@ -64,7 +77,33 @@ last_update = time.monotonic()
 while True:
     current_time = time.monotonic()
 
-    if current_time > last_update + UPDATE_DELAY:
+    # Check for UP button press (increment left score)
+    if not button_up.value and not button_up_pressed:
+        button_up_pressed = True
+        print("UP button pressed! Incrementing left score...")
+        show_connecting(True)
+        if score_manager.increment_left_score():
+            text_manager.set_text("left_team_score", score_manager.left_score)
+            print(f"Left score updated: {score_manager.left_score}")
+        show_connecting(False)
+    elif button_up.value:
+        button_up_pressed = False
+
+    # Check for DOWN button press (increment right score)
+    if not button_down.value and not button_down_pressed:
+        button_down_pressed = True
+        print("DOWN button pressed! Incrementing right score...")
+        show_connecting(True)
+        if score_manager.increment_right_score():
+            text_manager.set_text("right_team_score", score_manager.right_score)
+            print(f"Right score updated: {score_manager.right_score}")
+        show_connecting(False)
+    elif button_down.value:
+        button_down_pressed = False
+
+    if current_time > last_update + NETWORK_REFRESH_DELAY:
         update_scores()
         last_update = time.monotonic()
-    time.sleep(max(0.1, UPDATE_DELAY - (current_time - last_update)))
+
+    # Sleep for a short time to check button frequently
+    time.sleep(0.1)

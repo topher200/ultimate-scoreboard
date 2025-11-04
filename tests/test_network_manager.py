@@ -81,3 +81,21 @@ class TestNetworkManager:
         result = self.network_manager.get_left_team_score()
 
         assert result == 15
+
+    def test_set_left_team_score(self):
+        """Test setting left team score pushes to Adafruit IO."""
+        self.network_manager.set_left_team_score(10)
+
+        pushed_value = self.fake_portal.get_pushed_value(
+            NetworkManager.SCORES_LEFT_TEAM_FEED
+        )
+        assert pushed_value == 10
+
+    def test_set_right_team_score(self):
+        """Test setting right team score pushes to Adafruit IO."""
+        self.network_manager.set_right_team_score(7)
+
+        pushed_value = self.fake_portal.get_pushed_value(
+            NetworkManager.SCORES_RIGHT_TEAM_FEED
+        )
+        assert pushed_value == 7
