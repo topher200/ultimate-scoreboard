@@ -21,7 +21,6 @@ Common commands:
 - `just` - List all available commands
 - `just lint` - Run linter and formatter to automatically fix issues
 - `just test` - Run all tests
-- `just ci` - Check code without fixing (runs the same checks as CI)
 - `just watchman-setup-circuitpy` - Set up file watching to sync to CircuitPython board
 - `just watchman-remove` - Remove the file watching trigger
 
