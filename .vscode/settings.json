@@ -1,0 +1,6 @@
+{
+  "[just]": {
+    "editor.defaultFormatter": "nefrob.vscode-just",
+    "editor.formatOnSave": true
+  }
+}
