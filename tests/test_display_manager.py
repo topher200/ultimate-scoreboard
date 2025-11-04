@@ -1,31 +1,17 @@
 """Basic tests for display_manager using fake implementations."""
 
-import sys
-from unittest.mock import MagicMock, patch
-
 import pytest
+from display_manager import DisplayManager
 
-from fakes import FakeGroup, FakeLabel, FakeMatrixPortal, FakeTerminalio
+from fakes import FakeMatrixPortal
 
 
 class TestDisplayManager:
     """Test DisplayManager with fake hardware."""
 
     @pytest.fixture(autouse=True)
-    @patch.dict(
-        sys.modules,
-        {
-            "terminalio": MagicMock(FONT=FakeTerminalio.FONT),
-            "displayio": MagicMock(Group=FakeGroup),
-            "adafruit_display_text": MagicMock(),
-            "adafruit_display_text.label": MagicMock(Label=FakeLabel),
-        },
-    )
     def setup(self):
-        """Set up test fixtures with mocked imports."""
-        from display_manager import DisplayManager  # noqa: PLC0415
-
-        self.DisplayManager = DisplayManager
+        """Set up test fixtures."""
         self.fake_portal = FakeMatrixPortal()
         self.text_manager = DisplayManager(self.fake_portal)
 

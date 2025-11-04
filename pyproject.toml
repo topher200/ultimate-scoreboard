@@ -4,13 +4,16 @@ version = "0.1.0"
 description = "A scoreboard for ultimate frisbee, keeping track of score and WMP/MMP matchup"
 readme = "README.md"
 requires-python = "==3.13.3"
-dependencies = []
+dependencies = [
+    "adafruit-circuitpython-matrixportal>=3.2.9",
+]
 
 [dependency-groups]
 dev = [
     "pytest>=8.4.2",
     "pytest-mock>=3.15.1",
     "ruff>=0.8.0",
+    "ty>=0.0.1a25",
 ]
 
 [tool.pytest.ini_options]
@@ -25,3 +28,6 @@ addopts = [
     "--strict-markers",
     "--tb=short",
 ]
+
+[tool.ty.environment]
+extra-paths = ["./lib"]

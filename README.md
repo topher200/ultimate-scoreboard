@@ -40,7 +40,7 @@ just test
 Or run specific test files directly:
 
 ```bash
-uv run pytest tests/test_text_manager.py
+uv run pytest tests/test_display_manager.py
 uv run pytest tests/test_score_manager.py
 ```
 
