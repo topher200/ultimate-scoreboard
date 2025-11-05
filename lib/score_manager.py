@@ -29,3 +29,21 @@ class ScoreManager:
         left_changed = self.left_score != previous_left_score
         right_changed = self.right_score != previous_right_score
         return left_changed or right_changed
+
+    def increment_left_score(self) -> None:
+        """Increment left team score by 1 and push to network."""
+        self.left_score += 1
+
+        try:
+            self._network_manager.set_left_team_score(self.left_score)
+        except Exception as e:
+            print(f"Error updating left score: {e}")
+
+    def increment_right_score(self) -> None:
+        """Increment right team score by 1 and push to network."""
+        self.right_score += 1
+
+        try:
+            self._network_manager.set_right_team_score(self.right_score)
+        except Exception as e:
+            print(f"Error updating right score: {e}")

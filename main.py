@@ -1,70 +1,69 @@
 import time
 
 import board  # ty: ignore[unresolved-import]
+import digitalio  # type: ignore[import-untyped]
 from adafruit_matrixportal.matrixportal import MatrixPortal
 from display_manager import DisplayManager
+from game_controller import GameController
+from hardware_manager import HardwareManager
 from network_manager import NetworkManager
 from score_manager import ScoreManager
 
-UPDATE_DELAY = 4  # seconds
+NETWORK_REFRESH_DELAY = 4  # seconds
 
 
 def main():
     """Main application entry point."""
+    # Initialize hardware
     matrixportal = MatrixPortal(
         status_neopixel=board.NEOPIXEL,  # ty: ignore[possibly-missing-attribute]
         debug=False,
     )
+
+    # Set up buttons
+    button_up = digitalio.DigitalInOut(board.BUTTON_UP)  # type: ignore[attr-defined]
+    button_up.direction = digitalio.Direction.INPUT
+    button_up.pull = digitalio.Pull.UP
+
+    button_down = digitalio.DigitalInOut(board.BUTTON_DOWN)  # type: ignore[attr-defined]
+    button_down.direction = digitalio.Direction.INPUT
+    button_down.pull = digitalio.Pull.UP
+
+    # Initialize managers
     text_manager = DisplayManager(matrixportal)
     network_manager = NetworkManager(matrixportal)
     score_manager = ScoreManager(network_manager)
+    hardware_manager = HardwareManager({"up": button_up, "down": button_down})
+    game_controller = GameController(score_manager, text_manager, network_manager)
 
-    def show_connecting(show):
-        text_manager.show_connecting(show)
-
-    def update_teams_and_gender_matchup():
-        team_left_team = "Red"
-        team_right_team = "Blue"
-        gender_matchup = "WMP"
-        gender_matchup_count = 1
-
-        team_name = network_manager.get_left_team_name()
-        if team_name is not None:
-            print(f"Team {team_left_team} is now Team {team_name}")
-            team_left_team = team_name
-        team_name = network_manager.get_right_team_name()
-        if team_name is not None:
-            print(f"Team {team_right_team} is now Team {team_name}")
-            team_right_team = team_name
-        text_manager.set_text("left_team", team_left_team)
-        text_manager.set_text("right_team", team_right_team)
-        text_manager.set_text("gender_matchup", gender_matchup)
-        text_manager.set_text("gender_matchup_counter", str(gender_matchup_count))
-
-    def update_scores():
-        print("Updating data from Adafruit IO")
-        show_connecting(True)
-
-        if score_manager.update_scores():
-            update_teams_and_gender_matchup()
-
-        text_manager.set_text("left_team_score", score_manager.left_score)
-        text_manager.set_text("right_team_score", score_manager.right_score)
-        show_connecting(False)
-
-    show_connecting(True)
-    update_teams_and_gender_matchup()
-    update_scores()
-    show_connecting(False)
+    # Initial setup
+    text_manager.show_connecting(True)
+    game_controller.update_team_names()
+    game_controller.update_from_network()
+    text_manager.show_connecting(False)
     last_update = time.monotonic()
 
+    # Main loop
     while True:
         current_time = time.monotonic()
 
-        if current_time > last_update + UPDATE_DELAY:
-            update_scores()
+        # Update button states
+        hardware_manager.update()
+
+        # Check for button presses
+        if hardware_manager.is_button_pressed("up"):
+            game_controller.handle_left_score_button()
+
+        if hardware_manager.is_button_pressed("down"):
+            game_controller.handle_right_score_button()
+
+        # Periodic network update
+        if current_time > last_update + NETWORK_REFRESH_DELAY:
+            game_controller.update_from_network()
             last_update = time.monotonic()
-        time.sleep(max(0.1, UPDATE_DELAY - (current_time - last_update)))
+
+        # Sleep for responsive button checking
+        time.sleep(0.1)
 
 
 if __name__ == "__main__":
