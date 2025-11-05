@@ -1,5 +1,9 @@
 """Manages network interactions with Adafruit IO feeds."""
 
+from __future__ import annotations
+
+from adafruit_matrixportal.matrixportal import MatrixPortal
+
 
 class NetworkManager:
     """Manages fetching data from Adafruit IO feeds."""
@@ -10,14 +14,17 @@ class NetworkManager:
     TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
     TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
 
-    def __init__(self, matrixportal):
+    DEFAULT_LEFT_TEAM_NAME = "Red"
+    DEFAULT_RIGHT_TEAM_NAME = "Blue"
+
+    def __init__(self, matrixportal: MatrixPortal):
         """Initialize NetworkManager with MatrixPortal.
 
         :param matrixportal: MatrixPortal instance for network operations
         """
         self._matrixportal = matrixportal
 
-    def _get_feed_value(self, feed_key):
+    def _get_feed_value(self, feed_key: str) -> None | str:
         """Fetch the last value from an Adafruit IO feed.
 
         :param feed_key: The feed key to fetch from
@@ -32,14 +39,22 @@ class NetworkManager:
         except (KeyError, TypeError):
             return None
 
-    def get_left_team_score(self):
-        return self._get_feed_value(self.SCORES_LEFT_TEAM_FEED)
+    def get_left_team_score(self) -> int:
+        if value := self._get_feed_value(self.SCORES_LEFT_TEAM_FEED):
+            return int(value)
+        return 0
 
-    def get_right_team_score(self):
-        return self._get_feed_value(self.SCORES_RIGHT_TEAM_FEED)
+    def get_right_team_score(self) -> int:
+        if value := self._get_feed_value(self.SCORES_RIGHT_TEAM_FEED):
+            return int(value)
+        return 0
 
-    def get_left_team_name(self):
-        return self._get_feed_value(self.TEAM_LEFT_TEAM_FEED)
+    def get_left_team_name(self) -> str:
+        if value := self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
+            return value
+        return self.DEFAULT_LEFT_TEAM_NAME
 
-    def get_right_team_name(self):
-        return self._get_feed_value(self.TEAM_RIGHT_TEAM_FEED)
+    def get_right_team_name(self) -> str:
+        if value := self._get_feed_value(self.TEAM_RIGHT_TEAM_FEED):
+            return value
+        return self.DEFAULT_RIGHT_TEAM_NAME
