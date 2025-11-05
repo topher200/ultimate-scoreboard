@@ -1,4 +1,4 @@
-import time
+import asyncio
 
 import board  # ty: ignore[unresolved-import]
 import digitalio  # type: ignore[import-untyped]
@@ -12,8 +12,40 @@ from score_manager import ScoreManager
 NETWORK_REFRESH_DELAY = 4  # seconds
 
 
-def main():
-    """Main application entry point."""
+async def monitor_buttons(
+    hardware_manager: HardwareManager, game_controller: GameController
+):
+    """Monitor button presses and handle score updates."""
+    while True:
+        hardware_manager.update()
+
+        if hardware_manager.is_button_pressed("up"):
+            await game_controller.handle_left_score_button()
+
+        if hardware_manager.is_button_pressed("down"):
+            await game_controller.handle_right_score_button()
+
+        await asyncio.sleep(0.1)
+
+
+async def sync_pending_changes(score_manager: ScoreManager):
+    """Periodically attempt to sync pending changes with exponential backoff."""
+    while True:
+        if score_manager.has_pending_changes():
+            await score_manager.try_sync_scores()
+
+        await asyncio.sleep(score_manager.get_next_retry_delay())
+
+
+async def fetch_network_updates(game_controller: GameController):
+    """Periodically fetch updates from the network."""
+    while True:
+        await asyncio.sleep(NETWORK_REFRESH_DELAY)
+        await game_controller.update_from_network()
+
+
+async def main():
+    """Main application entry point with asyncio tasks."""
     # Initialize hardware
     matrixportal = MatrixPortal(
         status_neopixel=board.NEOPIXEL,  # ty: ignore[possibly-missing-attribute]
@@ -38,33 +70,17 @@ def main():
 
     # Initial setup
     text_manager.show_connecting(True)
-    game_controller.update_team_names()
-    game_controller.update_from_network()
+    await game_controller.update_team_names()
+    await game_controller.update_from_network()
     text_manager.show_connecting(False)
-    last_update = time.monotonic()
 
-    # Main loop
-    while True:
-        current_time = time.monotonic()
-
-        # Update button states
-        hardware_manager.update()
-
-        # Check for button presses
-        if hardware_manager.is_button_pressed("up"):
-            game_controller.handle_left_score_button()
-
-        if hardware_manager.is_button_pressed("down"):
-            game_controller.handle_right_score_button()
-
-        # Periodic network update
-        if current_time > last_update + NETWORK_REFRESH_DELAY:
-            game_controller.update_from_network()
-            last_update = time.monotonic()
-
-        # Sleep for responsive button checking
-        time.sleep(0.1)
+    # Run all tasks concurrently
+    await asyncio.gather(
+        monitor_buttons(hardware_manager, game_controller),
+        sync_pending_changes(score_manager),
+        fetch_network_updates(game_controller),
+    )
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
