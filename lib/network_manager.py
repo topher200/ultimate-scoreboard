@@ -14,8 +14,8 @@ class NetworkManager:
     TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
     TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
 
-    DEFAULT_LEFT_TEAM_NAME = "Red"
-    DEFAULT_RIGHT_TEAM_NAME = "Blue"
+    DEFAULT_LEFT_TEAM_NAME = "AWAY"
+    DEFAULT_RIGHT_TEAM_NAME = "HOME"
 
     def __init__(self, matrixportal: MatrixPortal):
         """Initialize NetworkManager with MatrixPortal.
