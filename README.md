@@ -1,5 +1,25 @@
 # LED Scoreboard
 
+## Board Setup
+
+- connect the board to USB
+- install firmware from https://circuitpython.org/board/adafruit_matrixportal_s3/
+- add `settings.toml` to the root of the board (see below)
+- `just install-packages-on-circuitpy`
+- `just watchman-setup-circuitpy`
+- touch a python file to trigger a sync to the board
+- `just monitor` to see the serial output
+
+### settings.toml
+
+```toml
+CIRCUITPY_WIFI_SSID =  ""
+CIRCUITPY_WIFI_PASSWORD = ""
+
+ADAFRUIT_AIO_USERNAME = ""
+ADAFRUIT_AIO_KEY      = "aio_..."
+```
+
 ## Development Setup
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
