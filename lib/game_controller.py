@@ -27,39 +27,41 @@ class GameController:
         self._display_manager = display_manager
         self._network_manager = network_manager
 
-    def handle_left_score_button(self) -> None:
+    async def handle_left_score_button(self) -> None:
         """Handle left team score button press.
-        
+
         Increments the left team score and updates the display.
         """
         print("UP button pressed! Incrementing left score...")
         self._display_manager.show_connecting(True)
-        
+
         self._score_manager.increment_left_score()
         self._display_manager.set_text(
             "left_team_score", self._score_manager.left_score
         )
         print(f"Left score updated: {self._score_manager.left_score}")
-        
+
+        await self._score_manager.try_sync_scores()
         self._display_manager.show_connecting(False)
 
-    def handle_right_score_button(self) -> None:
+    async def handle_right_score_button(self) -> None:
         """Handle right team score button press.
-        
+
         Increments the right team score and updates the display.
         """
         print("DOWN button pressed! Incrementing right score...")
         self._display_manager.show_connecting(True)
-        
+
         self._score_manager.increment_right_score()
         self._display_manager.set_text(
             "right_team_score", self._score_manager.right_score
         )
         print(f"Right score updated: {self._score_manager.right_score}")
-        
+
+        await self._score_manager.try_sync_scores()
         self._display_manager.show_connecting(False)
 
-    def update_team_names(self) -> None:
+    async def update_team_names(self) -> None:
         """Update team names and gender matchup from network.
 
         Fetches team names from the network and updates the display.
@@ -69,12 +71,12 @@ class GameController:
         gender_matchup = "WMP"
         gender_matchup_count = 1
 
-        team_name = self._network_manager.get_left_team_name()
+        team_name = await self._network_manager.get_left_team_name()
         if team_name is not None:
             print(f"Team {team_left_team} is now Team {team_name}")
             team_left_team = team_name
 
-        team_name = self._network_manager.get_right_team_name()
+        team_name = await self._network_manager.get_right_team_name()
         if team_name is not None:
             print(f"Team {team_right_team} is now Team {team_name}")
             team_right_team = team_name
@@ -86,7 +88,7 @@ class GameController:
             "gender_matchup_counter", str(gender_matchup_count)
         )
 
-    def update_from_network(self) -> None:
+    async def update_from_network(self) -> None:
         """Update scores and team information from network.
 
         Fetches latest scores from Adafruit IO and updates display.
@@ -95,8 +97,8 @@ class GameController:
         print("Updating data from Adafruit IO")
         self._display_manager.show_connecting(True)
 
-        if self._score_manager.update_scores():
-            self.update_team_names()
+        if await self._score_manager.update_scores():
+            await self.update_team_names()
 
         self._display_manager.set_text(
             "left_team_score", self._score_manager.left_score

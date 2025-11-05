@@ -1,7 +1,10 @@
 """Pytest configuration and fixtures for mocking CircuitPython modules."""
 
+import asyncio
 import sys
 from unittest.mock import MagicMock
+
+import pytest
 
 from fakes import FakeGroup, FakeLabel, FakeTerminalio
 
@@ -29,3 +32,14 @@ sys.modules["displayio"] = MagicMock(Group=FakeGroup)
 sys.modules["terminalio"] = MagicMock(FONT=FakeTerminalio.FONT)
 sys.modules["adafruit_display_text"] = MagicMock()
 sys.modules["adafruit_display_text.label"] = MagicMock(Label=FakeLabel)
+
+# Configure pytest-asyncio
+pytest_plugins = ("pytest_asyncio",)
+
+
+@pytest.fixture
+def event_loop():
+    """Create an event loop for async tests."""
+    loop = asyncio.new_event_loop()
+    yield loop
+    loop.close()

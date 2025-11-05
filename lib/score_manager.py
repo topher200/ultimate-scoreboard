@@ -1,8 +1,14 @@
+import asyncio
+import time
+
 from lib.network_manager import NetworkManager
 
 
 class ScoreManager:
-    """Manages score state."""
+    """Manages score state with async network sync and exponential backoff."""
+
+    MIN_RETRY_DELAY = 1.0
+    MAX_RETRY_DELAY = 60.0
 
     def __init__(self, network_manager: NetworkManager):
         """Initialize ScoreManager with NetworkManager.
@@ -12,38 +18,88 @@ class ScoreManager:
         self._network_manager = network_manager
         self.left_score: int = 0
         self.right_score: int = 0
+        self._has_pending_sync = False
+        self._last_synced_left = 0
+        self._last_synced_right = 0
+        self._sync_retry_delay = self.MIN_RETRY_DELAY
+        self._last_sync_attempt = 0.0
 
-    def update_scores(self):
+    def has_pending_changes(self) -> bool:
+        """Check if there are pending local changes to sync.
+
+        :return: True if changes need to be synced
+        """
+        return self._has_pending_sync
+
+    def get_next_retry_delay(self) -> float:
+        """Get the delay before next sync retry attempt.
+
+        :return: Delay in seconds
+        """
+        return self._sync_retry_delay
+
+    async def try_sync_scores(self) -> bool:
+        """Attempt to sync local scores to network with exponential backoff.
+
+        :return: True if sync was successful, False otherwise
+        """
+        current_time = time.monotonic()
+        if current_time - self._last_sync_attempt < self._sync_retry_delay:
+            return False
+
+        self._last_sync_attempt = current_time
+
+        try:
+            if self.left_score != self._last_synced_left:
+                await self._network_manager.set_left_team_score(self.left_score)
+                self._last_synced_left = self.left_score
+
+            if self.right_score != self._last_synced_right:
+                await self._network_manager.set_right_team_score(self.right_score)
+                self._last_synced_right = self.right_score
+
+            self._has_pending_sync = False
+            self._sync_retry_delay = self.MIN_RETRY_DELAY
+            return True
+        except Exception as e:
+            print(f"Sync failed: {e}")
+            self._sync_retry_delay = min(
+                self._sync_retry_delay * 2, self.MAX_RETRY_DELAY
+            )
+            return False
+
+    async def update_scores(self):
         """Fetch latest scores from Adafruit IO and update internal state.
+
+        Will skip network fetch if there are pending local changes to sync.
 
         :return: True if either score has changed, False otherwise
         """
-        score_left = self._network_manager.get_left_team_score()
-        score_right = self._network_manager.get_right_team_score()
+        if self._has_pending_sync:
+            if not await self.try_sync_scores():
+                print("Skipping network update - local changes pending")
+                return False
+
+        score_left = await self._network_manager.get_left_team_score()
+        score_right = await self._network_manager.get_right_team_score()
 
         previous_left_score = self.left_score
         previous_right_score = self.right_score
         self.left_score = score_left
         self.right_score = score_right
+        self._last_synced_left = score_left
+        self._last_synced_right = score_right
 
         left_changed = self.left_score != previous_left_score
         right_changed = self.right_score != previous_right_score
         return left_changed or right_changed
 
     def increment_left_score(self) -> None:
-        """Increment left team score by 1 and push to network."""
+        """Increment left team score by 1 and mark for network sync."""
         self.left_score += 1
-
-        try:
-            self._network_manager.set_left_team_score(self.left_score)
-        except Exception as e:
-            print(f"Error updating left score: {e}")
+        self._has_pending_sync = True
 
     def increment_right_score(self) -> None:
-        """Increment right team score by 1 and push to network."""
+        """Increment right team score by 1 and mark for network sync."""
         self.right_score += 1
-
-        try:
-            self._network_manager.set_right_team_score(self.right_score)
-        except Exception as e:
-            print(f"Error updating right score: {e}")
+        self._has_pending_sync = True
