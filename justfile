@@ -7,14 +7,14 @@ default:
 
 # Run linter and formatter to fix issues automatically
 lint:
-    uv run ruff check --fix .
-    uv run ty check --error-on-warning .
+    uv run ruff check --fix --quiet .
+    uv run ty check --error-on-warning --quiet .
 
 alias fmt := lint
 
 # Run all tests
 test:
-    uv run pytest
+    uv run pytest -qq
 
 # shortcut: run linter and tests
 ci:
