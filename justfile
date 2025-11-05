@@ -16,6 +16,11 @@ alias fmt := lint
 test:
     uv run pytest
 
+# shortcut: run linter and tests
+ci:
+    @just lint
+    @just test
+
 # Monitor the board over serial
 monitor:
     python3 -m serial.tools.miniterm /dev/ttyACM0 115200 || python3 -m serial.tools.miniterm /dev/ttyACM1 115200
