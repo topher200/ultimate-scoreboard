@@ -9,8 +9,6 @@ from hardware_manager import HardwareManager
 from network_manager import NetworkManager
 from score_manager import ScoreManager
 
-NETWORK_REFRESH_DELAY = 4  # seconds
-
 
 async def monitor_buttons(
     hardware_manager: HardwareManager, game_controller: GameController
@@ -38,10 +36,10 @@ async def sync_pending_changes(score_manager: ScoreManager):
 
 
 async def fetch_network_updates(game_controller: GameController):
-    """Periodically fetch updates from the network."""
+    """Periodically fetch updates from the network with exponential backoff."""
     while True:
-        await asyncio.sleep(NETWORK_REFRESH_DELAY)
         await game_controller.update_from_network()
+        await asyncio.sleep(game_controller.get_next_update_delay())
 
 
 async def main():

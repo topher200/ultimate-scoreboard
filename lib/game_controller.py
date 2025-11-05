@@ -1,5 +1,7 @@
 """Coordinates game actions and state changes."""
 
+import time
+
 from lib.display_manager import DisplayManager
 from lib.network_manager import NetworkManager
 from lib.score_manager import ScoreManager
@@ -10,6 +12,10 @@ class GameController:
 
     Handles business logic for button presses, network updates, and display coordination.
     """
+
+    # Network update delay; how often to check for score updates from the internet
+    MIN_UPDATE_DELAY = 5.0
+    MAX_UPDATE_DELAY = 60.0
 
     def __init__(
         self,
@@ -26,6 +32,8 @@ class GameController:
         self._score_manager = score_manager
         self._display_manager = display_manager
         self._network_manager = network_manager
+        self._update_retry_delay = self.MIN_UPDATE_DELAY
+        self._last_update_attempt = 0.0
 
     async def handle_left_score_button(self) -> None:
         """Handle left team score button press.
@@ -88,22 +96,47 @@ class GameController:
             "gender_matchup_counter", str(gender_matchup_count)
         )
 
-    async def update_from_network(self) -> None:
-        """Update scores and team information from network.
+    def get_next_update_delay(self) -> float:
+        """Get the delay before next network update attempt.
+
+        :return: Delay in seconds
+        """
+        return self._update_retry_delay
+
+    async def update_from_network(self) -> bool:
+        """Update scores and team information from network with exponential backoff.
 
         Fetches latest scores from Adafruit IO and updates display.
         Also updates team names if scores have changed.
+
+        :return: True if update was successful, False otherwise
         """
-        print("Updating data from Adafruit IO")
-        self._display_manager.show_connecting(True)
+        current_time = time.monotonic()
+        if current_time - self._last_update_attempt < self._update_retry_delay:
+            return False
 
-        if await self._score_manager.update_scores():
-            await self.update_team_names()
+        self._last_update_attempt = current_time
 
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
-        )
-        self._display_manager.show_connecting(False)
+        try:
+            print("Updating data from Adafruit IO")
+            self._display_manager.show_connecting(True)
+
+            if await self._score_manager.update_scores():
+                await self.update_team_names()
+        except Exception as e:
+            print(f"Network update failed: {e}")
+            self._update_retry_delay = min(
+                self._update_retry_delay * 2, self.MAX_UPDATE_DELAY
+            )
+            self._display_manager.show_connecting(False)
+            return False
+        else:
+            self._display_manager.set_text(
+                "left_team_score", self._score_manager.left_score
+            )
+            self._display_manager.set_text(
+                "right_team_score", self._score_manager.right_score
+            )
+            self._display_manager.show_connecting(False)
+            self._update_retry_delay = self.MIN_UPDATE_DELAY
+            return True

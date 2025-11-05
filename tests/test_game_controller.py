@@ -113,15 +113,11 @@ class TestGameControllerOnlineMode:
     @pytest.mark.asyncio
     async def test_update_from_network_updates_team_names_on_score_change(self):
         """Test that team names are fetched when scores change."""
-        # Set initial scores
-        self.fake_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
-        self.fake_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
-        await self.game_controller.update_from_network()
-
-        # Set team names and change scores
+        # Set team names and scores
         self.fake_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "Warriors")
         self.fake_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Dragons")
         self.fake_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 6)
+        self.fake_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
 
         # Update from network
         await self.game_controller.update_from_network()
@@ -129,6 +125,9 @@ class TestGameControllerOnlineMode:
         # Verify scores updated
         assert self.score_manager.left_score == 6
         assert self.score_manager.right_score == 3
+        # Verify team names were fetched
+        assert await self.network_manager.get_left_team_name() == "Warriors"
+        assert await self.network_manager.get_right_team_name() == "Dragons"
 
     @pytest.mark.asyncio
     async def test_update_team_names_with_custom_names(self):
