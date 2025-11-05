@@ -54,6 +54,8 @@ class ScoreManager:
                 await self._network_manager.set_left_team_score(self.left_score)
                 self._last_synced_left = self.left_score
 
+            await asyncio.sleep(0)
+
             if self.right_score != self._last_synced_right:
                 await self._network_manager.set_right_team_score(self.right_score)
                 self._last_synced_right = self.right_score
@@ -81,6 +83,9 @@ class ScoreManager:
                 return False
 
         score_left = await self._network_manager.get_left_team_score()
+
+        await asyncio.sleep(0)
+
         score_right = await self._network_manager.get_right_team_score()
 
         previous_left_score = self.left_score
