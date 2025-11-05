@@ -140,8 +140,8 @@ class TestGameController:
         self.game_controller.update_team_names()
 
         # Verify defaults are used
-        assert self.network_manager.get_left_team_name() == "Red"
-        assert self.network_manager.get_right_team_name() == "Blue"
+        assert self.network_manager.get_left_team_name() == "AWAY"
+        assert self.network_manager.get_right_team_name() == "HOME"
 
     def test_button_press_with_existing_scores(self):
         """Test button press increments from existing score."""
@@ -162,15 +162,15 @@ class TestGameController:
     def test_full_game_workflow(self):
         """Test a complete game workflow."""
         # Initialize with team names
-        self.fake_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "Red")
-        self.fake_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Blue")
+        self.fake_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "AWAY")
+        self.fake_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "HOME")
         self.game_controller.update_team_names()
 
         # Simulate a game with button presses
-        self.game_controller.handle_left_score_button()  # Red: 1, Blue: 0
-        self.game_controller.handle_right_score_button()  # Red: 1, Blue: 1
-        self.game_controller.handle_left_score_button()  # Red: 2, Blue: 1
-        self.game_controller.handle_left_score_button()  # Red: 3, Blue: 1
+        self.game_controller.handle_left_score_button()  # AWAY: 1, HOME: 0
+        self.game_controller.handle_right_score_button()  # AWAY: 1, HOME: 1
+        self.game_controller.handle_left_score_button()  # AWAY: 2, HOME: 1
+        self.game_controller.handle_left_score_button()  # AWAY: 3, HOME: 1
 
         # Verify final state
         assert self.score_manager.left_score == 3

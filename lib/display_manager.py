@@ -3,8 +3,8 @@ import terminalio
 from adafruit_display_text import label
 
 # Color constants
-LEFT_TEAM_COLOR = 0xAA0000  # red
-RIGHT_TEAM_COLOR = 0x0000AA  # blue
+LEFT_TEAM_COLOR = 0xAA0000  # AWAY team color (red)
+RIGHT_TEAM_COLOR = 0x0000AA  # HOME team color (blue)
 MMP_GENDER_MATCHUP_COLOR = 0x00AA00  # green
 WMP_GENDER_MATCHUP_COLOR = 0xFFA500  # orange
 
@@ -112,7 +112,9 @@ class DisplayManager:
                 GENDER_MATCHUP_Y_POSITION + 10,
             ),
         )
-        self.text_elements["gender_matchup_counter"] = {"label": gender_matchup_counter_label}
+        self.text_elements["gender_matchup_counter"] = {
+            "label": gender_matchup_counter_label
+        }
         self.main_group.append(gender_matchup_counter_label)
 
         # 'Connecting' indicator
@@ -145,4 +147,3 @@ class DisplayManager:
             self.set_text("connecting", ".")
         else:
             self.set_text("connecting", " ")
-
