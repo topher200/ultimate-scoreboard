@@ -295,9 +295,6 @@ class TestScoreManagerPendingSync:
             patch.object(self.network_manager, "set_left_team_score") as mock_left,
             patch.object(self.network_manager, "set_right_team_score") as mock_right,
         ):
-            mock_left.return_value = AsyncMock()
-            mock_right.return_value = AsyncMock()
-
             await self.score_manager.try_sync_scores()
 
             mock_left.assert_called_once_with(1)
