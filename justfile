@@ -35,3 +35,7 @@ watchman-setup-circuitpy:
 watchman-remove:
     watchman trigger-del . copy-to-CIRCUITPY
     @echo "Watchman trigger 'copy-to-CIRCUITPY' has been removed"
+
+# Install packages on CircuitPython board
+install-packages-on-circuitpy:
+    uv run circup install -r requirements.txt

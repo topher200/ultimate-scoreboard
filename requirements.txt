@@ -1,0 +1,19 @@
+# install with 'just install-packages-on-board'
+adafruit_connection_manager==3.1.6
+adafruit_fakerequests==1.1.1
+adafruit_miniqr==2.1.7
+adafruit_pixelbuf==2.0.10
+adafruit_requests==4.1.15
+adafruit_ticks==1.1.5
+neopixel==6.3.18
+simpleio==3.0.18
+adafruit_bitmap_font==2.3.2
+adafruit_bus_device==5.2.14
+adafruit_display_text==3.3.4
+adafruit_esp32spi==9.0.4
+adafruit_imageload==1.24.5
+adafruit_io==6.0.4
+adafruit_matrixportal==3.2.9
+adafruit_minimqtt==8.0.3
+adafruit_portalbase==3.4.2
+asyncio==3.0.3
