@@ -58,3 +58,17 @@ class NetworkManager:
         if value := self._get_feed_value(self.TEAM_RIGHT_TEAM_FEED):
             return value
         return self.DEFAULT_RIGHT_TEAM_NAME
+
+    def set_left_team_score(self, score: int) -> None:
+        """Set the left team score on Adafruit IO.
+
+        :param score: The score value to set
+        """
+        self._matrixportal.push_to_io(self.SCORES_LEFT_TEAM_FEED, score)
+
+    def set_right_team_score(self, score: int) -> None:
+        """Set the right team score on Adafruit IO.
+
+        :param score: The score value to set
+        """
+        self._matrixportal.push_to_io(self.SCORES_RIGHT_TEAM_FEED, score)

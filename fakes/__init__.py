@@ -1,5 +1,6 @@
 """Fake implementations for testing without hardware."""
 
+from .fake_button import FakeButton
 from .fake_displayio import FakeGroup
 from .fake_label import FakeLabel
 from .fake_matrixportal import FakeDisplay, FakeMatrixPortal
@@ -13,4 +14,5 @@ __all__ = [
     "FakeGroup",
     "FakeLabel",
     "FakeTerminalio",
+    "FakeButton",
 ]
