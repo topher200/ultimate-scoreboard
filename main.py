@@ -69,6 +69,7 @@ async def main():
     # Initial setup
     text_manager.show_connecting(True)
     await game_controller.update_team_names()
+    await asyncio.sleep(0)
     await game_controller.update_from_network()
     text_manager.show_connecting(False)
 

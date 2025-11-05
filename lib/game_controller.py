@@ -1,5 +1,6 @@
 """Coordinates game actions and state changes."""
 
+import asyncio
 import time
 
 from lib.display_manager import DisplayManager
@@ -84,6 +85,8 @@ class GameController:
             print(f"Team {team_left_team} is now Team {team_name}")
             team_left_team = team_name
 
+        await asyncio.sleep(0)
+
         team_name = await self._network_manager.get_right_team_name()
         if team_name is not None:
             print(f"Team {team_right_team} is now Team {team_name}")
@@ -122,6 +125,7 @@ class GameController:
             self._display_manager.show_connecting(True)
 
             if await self._score_manager.update_scores():
+                await asyncio.sleep(0)
                 await self.update_team_names()
         except Exception as e:
             print(f"Network update failed: {e}")
