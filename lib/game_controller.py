@@ -74,8 +74,8 @@ class GameController:
 
         Fetches team names from the network and updates the display.
         """
-        team_left_team = "AWAY"
-        team_right_team = "HOME"
+        team_left_team = NetworkManager.DEFAULT_LEFT_TEAM_NAME
+        team_right_team = NetworkManager.DEFAULT_RIGHT_TEAM_NAME
         gender_matchup = "WMP"
         gender_matchup_count = 1
 
