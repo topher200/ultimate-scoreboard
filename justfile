@@ -8,7 +8,7 @@ default:
 # Run linter and formatter to fix issues automatically
 lint:
     uv run ruff check --fix --quiet .
-    uv run ty check --error-on-warning --quiet .
+    uv run pyrefly check --summary=none .
 
 alias fmt := lint
 
