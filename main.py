@@ -1,13 +1,14 @@
 import asyncio
 
-import board  # ty: ignore[unresolved-import]
-import digitalio  # type: ignore[import-untyped]
+import board
+import digitalio
 from adafruit_matrixportal.matrixportal import MatrixPortal
-from display_manager import DisplayManager
-from game_controller import GameController
-from hardware_manager import HardwareManager
-from network_manager import NetworkManager
-from score_manager import ScoreManager
+
+from lib.display_manager import DisplayManager
+from lib.game_controller import GameController
+from lib.hardware_manager import HardwareManager
+from lib.network_manager import NetworkManager
+from lib.score_manager import ScoreManager
 
 
 async def monitor_buttons(
@@ -46,16 +47,16 @@ async def main():
     """Main application entry point with asyncio tasks."""
     # Initialize hardware
     matrixportal = MatrixPortal(
-        status_neopixel=board.NEOPIXEL,  # ty: ignore[possibly-missing-attribute]
+        status_neopixel=board.NEOPIXEL,
         debug=False,
     )
 
     # Set up buttons
-    button_up = digitalio.DigitalInOut(board.BUTTON_UP)  # type: ignore[attr-defined]
+    button_up = digitalio.DigitalInOut(board.BUTTON_UP)
     button_up.direction = digitalio.Direction.INPUT
     button_up.pull = digitalio.Pull.UP
 
-    button_down = digitalio.DigitalInOut(board.BUTTON_DOWN)  # type: ignore[attr-defined]
+    button_down = digitalio.DigitalInOut(board.BUTTON_DOWN)
     button_down.direction = digitalio.Direction.INPUT
     button_down.pull = digitalio.Pull.UP
 
