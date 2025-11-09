@@ -36,6 +36,28 @@ class GameController:
         self._update_retry_delay = self.MIN_UPDATE_DELAY
         self._last_update_attempt = 0.0
 
+    def _calculate_gender_matchup(self, score_sum: int) -> tuple[str, int]:
+        """Calculate gender matchup based on score sum.
+
+        Pattern repeats every 4 points:
+        - sum % 4 == 0: WMP2
+        - sum % 4 == 1: MMP1
+        - sum % 4 == 2: MMP2
+        - sum % 4 == 3: WMP1
+
+        :param score_sum: Sum of left and right scores
+        :return: Tuple of (matchup_type, counter)
+        """
+        remainder = score_sum % 4
+        if remainder == 0:
+            return ("WMP", 2)
+        elif remainder == 1:
+            return ("MMP", 1)
+        elif remainder == 2:
+            return ("MMP", 2)
+        else:  # remainder == 3
+            return ("WMP", 1)
+
     async def handle_left_score_button(self) -> None:
         """Handle left team score button press.
 
@@ -49,6 +71,13 @@ class GameController:
             "left_team_score", self._score_manager.left_score
         )
         print(f"Left score updated: {self._score_manager.left_score}")
+
+        score_sum = self._score_manager.left_score + self._score_manager.right_score
+        gender_matchup, gender_matchup_count = self._calculate_gender_matchup(score_sum)
+        self._display_manager.set_text("gender_matchup", gender_matchup)
+        self._display_manager.set_text(
+            "gender_matchup_counter", str(gender_matchup_count)
+        )
 
         await self._score_manager.try_sync_scores()
         self._display_manager.show_connecting(False)
@@ -67,6 +96,13 @@ class GameController:
         )
         print(f"Right score updated: {self._score_manager.right_score}")
 
+        score_sum = self._score_manager.left_score + self._score_manager.right_score
+        gender_matchup, gender_matchup_count = self._calculate_gender_matchup(score_sum)
+        self._display_manager.set_text("gender_matchup", gender_matchup)
+        self._display_manager.set_text(
+            "gender_matchup_counter", str(gender_matchup_count)
+        )
+
         await self._score_manager.try_sync_scores()
         self._display_manager.show_connecting(False)
 
@@ -77,8 +113,6 @@ class GameController:
         """
         team_left_team = NetworkManager.DEFAULT_LEFT_TEAM_NAME
         team_right_team = NetworkManager.DEFAULT_RIGHT_TEAM_NAME
-        gender_matchup = "WMP"
-        gender_matchup_count = 1
 
         team_name = await self._network_manager.get_left_team_name()
         if team_name is not None:
@@ -91,6 +125,9 @@ class GameController:
         if team_name is not None:
             print(f"Team {team_right_team} is now Team {team_name}")
             team_right_team = team_name
+
+        score_sum = self._score_manager.left_score + self._score_manager.right_score
+        gender_matchup, gender_matchup_count = self._calculate_gender_matchup(score_sum)
 
         self._display_manager.set_text("left_team", team_left_team)
         self._display_manager.set_text("right_team", team_right_team)

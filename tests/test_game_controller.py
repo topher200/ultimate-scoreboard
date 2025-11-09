@@ -11,6 +11,165 @@ from lib.network_manager import NetworkManager
 from lib.score_manager import ScoreManager
 
 
+class TestGenderMatchupCalculation:
+    """Test gender matchup calculation based on score sum."""
+
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        """Set up test fixtures."""
+        self.fake_portal = FakeMatrixPortal()
+        self.network_manager = NetworkManager(self.fake_portal)
+        self.score_manager = ScoreManager(self.network_manager)
+        self.display_manager = DisplayManager(self.fake_portal)
+        self.game_controller = GameController(
+            self.score_manager,
+            self.display_manager,
+            self.network_manager,
+        )
+
+    def test_calculate_gender_matchup_sum_0(self):
+        """Test gender matchup for score sum 0 (0-0) returns WMP2."""
+        matchup, count = self.game_controller._calculate_gender_matchup(0)
+        assert matchup == "WMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_1(self):
+        """Test gender matchup for score sum 1 (1-0 or 0-1) returns MMP1."""
+        matchup, count = self.game_controller._calculate_gender_matchup(1)
+        assert matchup == "MMP"
+        assert count == 1
+
+    def test_calculate_gender_matchup_sum_2(self):
+        """Test gender matchup for score sum 2 returns MMP2."""
+        matchup, count = self.game_controller._calculate_gender_matchup(2)
+        assert matchup == "MMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_3(self):
+        """Test gender matchup for score sum 3 returns WMP1."""
+        matchup, count = self.game_controller._calculate_gender_matchup(3)
+        assert matchup == "WMP"
+        assert count == 1
+
+    def test_calculate_gender_matchup_sum_4_cycle_repeats(self):
+        """Test gender matchup for score sum 4 returns WMP2 (cycle repeats)."""
+        matchup, count = self.game_controller._calculate_gender_matchup(4)
+        assert matchup == "WMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_5(self):
+        """Test gender matchup for score sum 5 returns MMP1."""
+        matchup, count = self.game_controller._calculate_gender_matchup(5)
+        assert matchup == "MMP"
+        assert count == 1
+
+    def test_calculate_gender_matchup_sum_6(self):
+        """Test gender matchup for score sum 6 returns MMP2."""
+        matchup, count = self.game_controller._calculate_gender_matchup(6)
+        assert matchup == "MMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_7(self):
+        """Test gender matchup for score sum 7 returns WMP1."""
+        matchup, count = self.game_controller._calculate_gender_matchup(7)
+        assert matchup == "WMP"
+        assert count == 1
+
+    def test_calculate_gender_matchup_large_sum(self):
+        """Test gender matchup calculation for large score sums."""
+        # Test sum 20 (20 % 4 == 0)
+        matchup, count = self.game_controller._calculate_gender_matchup(20)
+        assert matchup == "WMP"
+        assert count == 2
+
+        # Test sum 21 (21 % 4 == 1)
+        matchup, count = self.game_controller._calculate_gender_matchup(21)
+        assert matchup == "MMP"
+        assert count == 1
+
+    @pytest.mark.asyncio
+    async def test_update_team_names_sets_matchup_for_zero_score(self):
+        """Test that update_team_names sets gender matchup correctly for 0-0."""
+        await self.game_controller.update_team_names()
+
+        label = self.display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = self.display_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
+
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+
+    @pytest.mark.asyncio
+    async def test_button_press_updates_gender_matchup(self):
+        """Test that pressing score button updates gender matchup display."""
+        await self.game_controller.update_team_names()
+
+        label = self.display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = self.display_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
+
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+
+        await self.game_controller.handle_left_score_button()
+
+        assert label.text == "MMP"
+        assert counter_label.text == "1"
+
+    @pytest.mark.asyncio
+    async def test_gender_matchup_cycles_through_button_presses(self):
+        """Test that gender matchup cycles correctly through multiple button presses."""
+        await self.game_controller.update_team_names()
+
+        label = self.display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = self.display_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
+
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+
+        await self.game_controller.handle_left_score_button()
+        assert label.text == "MMP"
+        assert counter_label.text == "1"
+
+        await self.game_controller.handle_right_score_button()
+        assert label.text == "MMP"
+        assert counter_label.text == "2"
+
+        await self.game_controller.handle_left_score_button()
+        assert label.text == "WMP"
+        assert counter_label.text == "1"
+
+        await self.game_controller.handle_right_score_button()
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+
+        await self.game_controller.handle_left_score_button()
+        assert label.text == "MMP"
+        assert counter_label.text == "1"
+
+    @pytest.mark.asyncio
+    async def test_network_update_recalculates_gender_matchup(self):
+        """Test that gender matchup is recalculated after network update."""
+        self.fake_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 2)
+        self.fake_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 1)
+
+        await self.game_controller.update_from_network()
+
+        label = self.display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = self.display_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
+
+        assert self.score_manager.left_score == 2
+        assert self.score_manager.right_score == 1
+        assert label.text == "WMP"
+        assert counter_label.text == "1"
+
+
 class TestGameControllerOnlineMode:
     """Test GameController with successful network operations."""
 
@@ -180,15 +339,44 @@ class TestGameControllerOnlineMode:
         self.fake_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "HOME")
         await self.game_controller.update_team_names()
 
+        # Get label references
+        matchup_label = self.display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = self.display_manager.text_elements["gender_matchup_counter"][
+            "label"
+        ]
+
+        # Verify initial state (0-0, sum=0) → WMP2
+        assert matchup_label.text == "WMP"
+        assert counter_label.text == "2"
+
         # Simulate a game with button presses
         await self.game_controller.handle_left_score_button()  # AWAY: 1, HOME: 0
-        await self.game_controller.handle_right_score_button()  # AWAY: 1, HOME: 1
-        await self.game_controller.handle_left_score_button()  # AWAY: 2, HOME: 1
-        await self.game_controller.handle_left_score_button()  # AWAY: 3, HOME: 1
+        assert self.score_manager.left_score == 1
+        assert self.score_manager.right_score == 0
+        # sum=1 → MMP1
+        assert matchup_label.text == "MMP"
+        assert counter_label.text == "1"
 
-        # Verify final state
+        await self.game_controller.handle_right_score_button()  # AWAY: 1, HOME: 1
+        assert self.score_manager.left_score == 1
+        assert self.score_manager.right_score == 1
+        # sum=2 → MMP2
+        assert matchup_label.text == "MMP"
+        assert counter_label.text == "2"
+
+        await self.game_controller.handle_left_score_button()  # AWAY: 2, HOME: 1
+        assert self.score_manager.left_score == 2
+        assert self.score_manager.right_score == 1
+        # sum=3 → WMP1
+        assert matchup_label.text == "WMP"
+        assert counter_label.text == "1"
+
+        await self.game_controller.handle_left_score_button()  # AWAY: 3, HOME: 1
         assert self.score_manager.left_score == 3
         assert self.score_manager.right_score == 1
+        # sum=4 → WMP2
+        assert matchup_label.text == "WMP"
+        assert counter_label.text == "2"
 
         # Wait for pending changes to sync before fetching network updates
         self.score_manager._last_sync_attempt = 0
@@ -201,6 +389,9 @@ class TestGameControllerOnlineMode:
         # Verify scores synchronized
         assert self.score_manager.left_score == 3
         assert self.score_manager.right_score == 2
+        # sum=5 → MMP1
+        assert matchup_label.text == "MMP"
+        assert counter_label.text == "1"
 
 
 class TestGameControllerOfflineMode:

@@ -30,8 +30,13 @@ for module_name in CIRCUITPYTHON_MODULES:
 # Set up specific mocks with fake implementations for modules that need behavior
 sys.modules["displayio"] = MagicMock(Group=FakeGroup)
 sys.modules["terminalio"] = MagicMock(FONT=FakeTerminalio.FONT)
-sys.modules["adafruit_display_text"] = MagicMock()
-sys.modules["adafruit_display_text.label"] = MagicMock(Label=FakeLabel)
+
+# Set up adafruit_display_text with proper label module
+label_module = MagicMock(Label=FakeLabel)
+adafruit_display_text = MagicMock()
+adafruit_display_text.label = label_module
+sys.modules["adafruit_display_text"] = adafruit_display_text
+sys.modules["adafruit_display_text.label"] = label_module
 
 # Configure pytest-asyncio
 pytest_plugins = ("pytest_asyncio",)
