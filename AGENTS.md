@@ -10,7 +10,7 @@ Guide for AI agents working on this codebase.
 # ✓ Correct
 uv run pytest
 uv run ruff check --fix .
-uv run pyrefly check .
+uv run ty check --error-on-warning .
 
 # ✗ Wrong
 python -m pytest
@@ -22,7 +22,7 @@ python -m ruff
 
 ```bash
 just test    # Run all tests
-just lint    # Run ruff and pyrefly
+just lint    # Run ruff and ty
 ```
 
 ## Project Structure
@@ -49,12 +49,12 @@ just test
 ## Linting and Formatting
 
 ```bash
-# Run both ruff and pyrefly
+# Run both ruff and ty
 just lint
 
 # Or manually
 uv run ruff check --fix .
-uv run pyrefly check .
+uv run ty check --error-on-warning .
 ```
 
 ## Testing Conventions

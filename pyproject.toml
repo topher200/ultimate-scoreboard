@@ -15,7 +15,7 @@ dev = [
     "pytest-asyncio>=0.25.2",
     "pytest-mock>=3.15.1",
     "ruff>=0.8.0",
-    "pyrefly>=0.40.0",
+    "ty>=0.0.1a25",
 ]
 
 [tool.pytest.ini_options]
@@ -31,9 +31,5 @@ addopts = [
     "--tb=short",
 ]
 
-[tool.pyrefly]
-search-path = ["./lib", "./stubs"]
-project-excludes = [
-    "**/*.tmp*",   # Excludes any temporary files
-    "**/.*.tmp*",  # Excludes hidden temporary files
-]
+[tool.ty.environment]
+extra-paths = ["./lib"]

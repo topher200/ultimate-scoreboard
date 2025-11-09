@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
-from protocols import MatrixPortalLike
+from adafruit_matrixportal.matrixportal import MatrixPortal
 
 
 class NetworkManager:
@@ -19,10 +19,10 @@ class NetworkManager:
     DEFAULT_LEFT_TEAM_NAME = "AWAY"
     DEFAULT_RIGHT_TEAM_NAME = "HOME"
 
-    def __init__(self, matrixportal: MatrixPortalLike):
+    def __init__(self, matrixportal: MatrixPortal):
         """Initialize NetworkManager with MatrixPortal.
 
-        :param matrixportal: MatrixPortal-like instance for network operations
+        :param matrixportal: MatrixPortal instance for network operations
         """
         self._matrixportal = matrixportal
 
