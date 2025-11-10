@@ -49,6 +49,10 @@ class NetworkManager:
         """Trigger the circuit breaker to open for 60 seconds."""
         self._circuit_breaker_open_until = time.monotonic() + 60
 
+    def reset_circuit_breaker(self) -> None:
+        """Reset the circuit breaker to allow immediate network operations."""
+        self._circuit_breaker_open_until = None
+
     async def _get_feed_value(self, feed_key: str) -> None | str:
         """Fetch the last value from an Adafruit IO feed.
 
