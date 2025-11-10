@@ -4,7 +4,7 @@ This allows both the real CircuitPython modules and mock CircuitPython modules
 to be used interchangeably in type-checked code.
 """
 
-from lib.compat import Any, Protocol
+from src.compat import Any, Protocol
 
 
 class MatrixPortalLike(Protocol):

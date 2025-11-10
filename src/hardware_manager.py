@@ -4,8 +4,8 @@ import asyncio
 
 import digitalio
 
-from lib.compat import Callable
-from lib.protocols import BoardLike, ButtonLike
+from src.compat import Callable
+from src.protocols import BoardLike, ButtonLike
 
 # Button name constants
 BUTTON_UP = "up"

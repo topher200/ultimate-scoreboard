@@ -3,9 +3,9 @@
 import asyncio
 import time
 
-from lib.display_manager import DisplayManager
-from lib.network_manager import NetworkManager
-from lib.score_manager import ScoreManager
+from src.display_manager import DisplayManager
+from src.network_manager import NetworkManager
+from src.score_manager import ScoreManager
 
 
 class GameController:

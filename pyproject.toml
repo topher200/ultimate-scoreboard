@@ -20,7 +20,7 @@ dev = [
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["lib"]
+pythonpath = ["src"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
@@ -32,7 +32,7 @@ addopts = [
 ]
 
 [tool.pyrefly]
-search-path = ["./lib", "./stubs"]
+search-path = ["./src", "./stubs"]
 project-excludes = [
     "**/*.tmp*",   # Excludes any temporary files
     "**/.*.tmp*",  # Excludes hidden temporary files

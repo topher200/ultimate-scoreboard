@@ -3,16 +3,16 @@ import asyncio
 import board
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
-from lib.display_manager import DisplayManager
-from lib.game_controller import GameController
-from lib.hardware_manager import (
+from src.display_manager import DisplayManager
+from src.game_controller import GameController
+from src.hardware_manager import (
     BUTTON_DOWN,
     BUTTON_UP,
     HardwareManager,
     create_buttons_from_board,
 )
-from lib.network_manager import NetworkManager
-from lib.score_manager import ScoreManager
+from src.network_manager import NetworkManager
+from src.score_manager import ScoreManager
 
 
 async def sync_pending_changes(score_manager: ScoreManager):
