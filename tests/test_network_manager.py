@@ -1,6 +1,7 @@
 """Tests for NetworkManager using fake implementations."""
 
-from unittest.mock import MagicMock
+import time
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -238,3 +239,137 @@ class TestNetworkManagerGender:
         """Test that setting invalid gender value raises ValueError."""
         with pytest.raises(ValueError, match="Invalid gender value"):
             await network_manager.set_first_point_gender("invalid")
+
+
+class TestNetworkManagerCircuitBreaker:
+    """Test circuit breaker functionality in NetworkManager."""
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_triggers_on_network_exception(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that circuit breaker triggers on network exception."""
+        fake_matrix_portal.get_io_feed = MagicMock(
+            side_effect=Exception("Network error")
+        )
+
+        result = await network_manager.get_left_team_score()
+
+        assert result == 0
+        assert network_manager._circuit_breaker_open_until is not None
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_skips_requests_when_open(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that requests are skipped when circuit breaker is open."""
+        mock_get_io_feed = MagicMock(
+            return_value={
+                "details": {
+                    "data": {
+                        "last": {
+                            "value": "5",
+                        }
+                    }
+                }
+            }
+        )
+        fake_matrix_portal.get_io_feed = mock_get_io_feed
+
+        network_manager._circuit_breaker_open_until = time.monotonic() + 60
+
+        result = await network_manager.get_left_team_score()
+
+        assert result == 0
+        assert mock_get_io_feed.call_count == 0
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_resets_after_timeout(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that circuit breaker resets after 60 seconds."""
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
+        fake_matrix_portal.get_io_feed = MagicMock(
+            side_effect=Exception("Network error")
+        )
+
+        await network_manager.get_left_team_score()
+
+        assert network_manager._circuit_breaker_open_until is not None
+        original_open_until = network_manager._circuit_breaker_open_until
+
+        with patch("src.network_manager.time.monotonic") as mock_time:
+            mock_time.return_value = original_open_until + 1
+            mock_get_io_feed = MagicMock(
+                return_value={
+                    "details": {
+                        "data": {
+                            "last": {
+                                "value": "5",
+                            }
+                        }
+                    }
+                }
+            )
+            fake_matrix_portal.get_io_feed = mock_get_io_feed
+
+            result = await network_manager.get_left_team_score()
+
+            assert result == 5
+            assert mock_get_io_feed.call_count == 1
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_applies_to_set_feed_value(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that circuit breaker applies to set_feed_value."""
+        fake_matrix_portal.push_to_io = MagicMock(
+            side_effect=Exception("Network error")
+        )
+
+        with pytest.raises(Exception, match="Network error"):
+            await network_manager.set_left_team_score(5)
+
+        assert network_manager._circuit_breaker_open_until is not None
+
+        fake_matrix_portal.push_to_io = MagicMock()
+        await network_manager.set_left_team_score(10)
+
+        assert fake_matrix_portal.push_to_io.call_count == 0
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_not_triggered_by_keyerror(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that KeyError does not trigger circuit breaker."""
+        fake_matrix_portal.get_io_feed = MagicMock(side_effect=KeyError("Missing key"))
+
+        result = await network_manager.get_left_team_score()
+
+        assert result == 0
+        assert network_manager._circuit_breaker_open_until is None
+
+    @pytest.mark.asyncio
+    async def test_circuit_breaker_not_triggered_by_typeerror(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that TypeError does not trigger circuit breaker."""
+        fake_matrix_portal.get_io_feed = MagicMock(side_effect=TypeError("Type error"))
+
+        result = await network_manager.get_left_team_score()
+
+        assert result == 0
+        assert network_manager._circuit_breaker_open_until is None
+
+    @pytest.mark.asyncio
+    async def test_show_connecting_not_called_when_circuit_breaker_open(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that show_connecting is not called when circuit breaker is open."""
+        mock_show_connecting = MagicMock()
+        network_manager.display_manager.show_connecting = mock_show_connecting
+        network_manager._circuit_breaker_open_until = time.monotonic() + 60
+
+        await network_manager.get_left_team_score()
+
+        assert mock_show_connecting.call_count == 0
