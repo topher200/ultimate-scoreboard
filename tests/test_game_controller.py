@@ -314,6 +314,7 @@ class TestGameControllerKeepsScore:
         """Test button press increments from existing score."""
         # Set initial score in network
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 10)
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 0)
         await game_controller.update_from_network()
 
         # Press button
@@ -532,6 +533,7 @@ class TestGameControllerSyncsScores:
         assert not score_manager.has_pending_changes()
 
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 0)
         await game_controller.update_from_network()
         assert score_manager.left_score == 5
 

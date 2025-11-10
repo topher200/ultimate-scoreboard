@@ -54,8 +54,14 @@ class ScoreManager(SyncManager):
                 return False
 
         score_left = await self._network_manager.get_left_team_score()
+        if score_left is None:
+            print("No left score from network")
+            return False
         await asyncio.sleep(0)
         score_right = await self._network_manager.get_right_team_score()
+        if score_right is None:
+            print("No right score from network")
+            return False
         await asyncio.sleep(0)
 
         if self._has_pending_sync:
@@ -72,7 +78,15 @@ class ScoreManager(SyncManager):
         self._last_synced_right = score_right
 
         left_changed = self.left_score != previous_left_score
+        if left_changed:
+            print(
+                f"Left score from network: {previous_left_score} -> {self.left_score}"
+            )
         right_changed = self.right_score != previous_right_score
+        if right_changed:
+            print(
+                f"Right score from network: {previous_right_score} -> {self.right_score}"
+            )
         return left_changed or right_changed
 
     def increment_left_score(self) -> None:
