@@ -9,7 +9,7 @@ import pytest
 from fakes import FakeButton, FakeGroup, FakeLabel, FakeMatrixPortal, FakeTerminalio
 from lib.display_manager import DisplayManager
 from lib.game_controller import GameController
-from lib.hardware_manager import HardwareManager
+from lib.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
 from lib.network_manager import NetworkManager
 from lib.score_manager import ScoreManager
 
@@ -89,8 +89,8 @@ def game_controller(score_manager, display_manager, network_manager):
 def fake_buttons():
     """Create fake button dict for hardware tests."""
     return {
-        "up": FakeButton(),
-        "down": FakeButton(),
+        BUTTON_UP: FakeButton(),
+        BUTTON_DOWN: FakeButton(),
     }
 
 

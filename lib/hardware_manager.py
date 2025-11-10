@@ -1,5 +1,39 @@
 """Manages hardware interactions like button presses."""
 
+import asyncio
+from collections.abc import Callable
+
+import digitalio
+
+from lib.protocols import BoardLike, ButtonLike
+
+# Button name constants
+BUTTON_UP = "up"
+BUTTON_DOWN = "down"
+
+# Polling rate for button monitoring loop
+BUTTON_POLLING_RATE = 0.1
+
+
+def create_buttons_from_board(board: BoardLike) -> dict[str, ButtonLike]:
+    """Create configured button objects from board configuration.
+
+    :param board: Board module (or BoardLike object) containing button pin definitions
+    :return: Dictionary mapping button names to configured button objects
+    """
+    button_up = digitalio.DigitalInOut(board.BUTTON_UP)
+    button_up.direction = digitalio.Direction.INPUT
+    button_up.pull = digitalio.Pull.UP
+
+    button_down = digitalio.DigitalInOut(board.BUTTON_DOWN)
+    button_down.direction = digitalio.Direction.INPUT
+    button_down.pull = digitalio.Pull.UP
+
+    return {
+        BUTTON_UP: button_up,
+        BUTTON_DOWN: button_down,
+    }
+
 
 class HardwareManager:
     """Manages button state detection with debouncing.
@@ -7,11 +41,11 @@ class HardwareManager:
     Buttons are active-low: button.value is False when pressed, True when released.
     """
 
-    def __init__(self, buttons: dict):
+    def __init__(self, buttons: dict[str, ButtonLike]):
         """Initialize HardwareManager with button configuration.
 
         :param buttons: Dictionary mapping button names to button objects
-                       e.g., {"up": button_up_obj, "down": button_down_obj}
+                       e.g., {BUTTON_UP: button_up_obj, BUTTON_DOWN: button_down_obj}
         """
         self._buttons = buttons
         # Track if button was pressed in previous update (for edge detection)
@@ -54,3 +88,20 @@ class HardwareManager:
             self._button_press_event[button_name] = False
             return True
         return False
+
+    async def monitor_buttons(self, callbacks: dict[str, Callable]) -> None:
+        """Monitor button presses and call registered callbacks.
+
+        Runs an infinite loop checking for button presses and calling the
+        appropriate async callback function when a button is pressed.
+
+        :param callbacks: Dictionary mapping button names to async callback functions
+        """
+        while True:
+            self.update()
+
+            for button_name, callback in callbacks.items():
+                if self.is_button_pressed(button_name):
+                    await callback()
+
+            await asyncio.sleep(BUTTON_POLLING_RATE)

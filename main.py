@@ -1,30 +1,18 @@
 import asyncio
 
 import board
-import digitalio
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
 from lib.display_manager import DisplayManager
 from lib.game_controller import GameController
-from lib.hardware_manager import HardwareManager
+from lib.hardware_manager import (
+    BUTTON_DOWN,
+    BUTTON_UP,
+    HardwareManager,
+    create_buttons_from_board,
+)
 from lib.network_manager import NetworkManager
 from lib.score_manager import ScoreManager
-
-
-async def monitor_buttons(
-    hardware_manager: HardwareManager, game_controller: GameController
-):
-    """Monitor button presses and handle score updates."""
-    while True:
-        hardware_manager.update()
-
-        if hardware_manager.is_button_pressed("up"):
-            await game_controller.handle_left_score_button()
-
-        if hardware_manager.is_button_pressed("down"):
-            await game_controller.handle_right_score_button()
-
-        await asyncio.sleep(0.1)
 
 
 async def sync_pending_changes(score_manager: ScoreManager):
@@ -51,20 +39,12 @@ async def main():
         debug=False,
     )
 
-    # Set up buttons
-    button_up = digitalio.DigitalInOut(board.BUTTON_UP)
-    button_up.direction = digitalio.Direction.INPUT
-    button_up.pull = digitalio.Pull.UP
-
-    button_down = digitalio.DigitalInOut(board.BUTTON_DOWN)
-    button_down.direction = digitalio.Direction.INPUT
-    button_down.pull = digitalio.Pull.UP
-
     # Initialize managers
     text_manager = DisplayManager(matrixportal)
     network_manager = NetworkManager(matrixportal)
     score_manager = ScoreManager(network_manager)
-    hardware_manager = HardwareManager({"up": button_up, "down": button_down})
+    buttons = create_buttons_from_board(board)
+    hardware_manager = HardwareManager(buttons=buttons)
     game_controller = GameController(score_manager, text_manager, network_manager)
 
     # Initial setup
@@ -76,7 +56,12 @@ async def main():
 
     # Run all tasks concurrently
     await asyncio.gather(
-        monitor_buttons(hardware_manager, game_controller),
+        hardware_manager.monitor_buttons(
+            {
+                BUTTON_UP: game_controller.handle_left_score_button,
+                BUTTON_DOWN: game_controller.handle_right_score_button,
+            }
+        ),
         sync_pending_changes(score_manager),
         fetch_network_updates(game_controller),
     )
