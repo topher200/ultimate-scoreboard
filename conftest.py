@@ -22,12 +22,11 @@ from src.score_manager import ScoreManager
 
 # Mock CircuitPython-specific modules that don't exist in regular Python
 # These must be mocked before any imports try to use them
-CIRCUITPYTHON_MODULES = [
+_BASIC_MOCK_MODULES = [
     "board",
     "busio",
     "digitalio",
     "framebufferio",
-    "keypad",
     "rgbmatrix",
     "adafruit_matrixportal",
     "adafruit_matrixportal.matrixportal",
@@ -37,17 +36,17 @@ CIRCUITPYTHON_MODULES = [
 ]
 
 # Create basic mock modules
-for module_name in CIRCUITPYTHON_MODULES:
+for module_name in _BASIC_MOCK_MODULES:
     sys.modules[module_name] = MagicMock()
 
-# Set up specific mocks with fake implementations for modules that need behavior
+# Set up specific mocks with fake implementations
 sys.modules["displayio"] = MagicMock(Group=FakeGroup)
 sys.modules["keypad"] = MagicMock(Keys=FakeKeys)
 sys.modules["terminalio"] = MagicMock(FONT=FakeTerminalio.FONT)
+
+# Set up adafruit_display_text module hierarchy
 label_module = MagicMock(Label=FakeLabel)
-adafruit_display_text = MagicMock()
-adafruit_display_text.label = label_module
-sys.modules["adafruit_display_text"] = adafruit_display_text
+sys.modules["adafruit_display_text"] = MagicMock(label=label_module)
 sys.modules["adafruit_display_text.label"] = label_module
 
 # Configure pytest-asyncio
