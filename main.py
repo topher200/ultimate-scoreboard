@@ -66,6 +66,7 @@ async def main():
 
     # Initial setup
     await game_controller.update_from_network()
+    await game_controller.update_team_names_and_gender()
 
     # Run all tasks concurrently
     await asyncio.gather(

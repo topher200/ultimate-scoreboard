@@ -120,7 +120,7 @@ class GameController:
 
         self._update_gender_matchup_display()
 
-    async def update_team_names(self) -> None:
+    async def update_team_names_and_gender(self) -> None:
         """Update team names and gender matchup from network.
 
         Fetches team names and gender feed from the network and updates the display.
@@ -128,24 +128,23 @@ class GameController:
         team_left_team = NetworkManager.DEFAULT_LEFT_TEAM_NAME
         team_right_team = NetworkManager.DEFAULT_RIGHT_TEAM_NAME
 
+        await asyncio.sleep(0)
         team_name = await self._network_manager.get_left_team_name()
         if team_name is not None:
             print(f"Team {team_left_team} is now Team {team_name}")
             team_left_team = team_name
 
         await asyncio.sleep(0)
-
         team_name = await self._network_manager.get_right_team_name()
         if team_name is not None:
             print(f"Team {team_right_team} is now Team {team_name}")
             team_right_team = team_name
 
-        await asyncio.sleep(0)
-
-        await self._gender_manager.update_gender_from_network()
-
         self._display_manager.set_text("left_team", team_left_team)
         self._display_manager.set_text("right_team", team_right_team)
+
+        await asyncio.sleep(0)
+        await self._gender_manager.update_gender_from_network()
         self._update_gender_matchup_display()
 
     def get_next_update_delay(self) -> float:
@@ -194,8 +193,7 @@ class GameController:
         self._update_gender_matchup_display()
 
         if score_changed:
-            await self.update_team_names()
-            await self._gender_manager.update_gender_from_network()
+            await self.update_team_names_and_gender()
 
         self._update_retry_delay = self.MIN_UPDATE_DELAY
         return True
