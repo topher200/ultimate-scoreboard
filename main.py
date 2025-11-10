@@ -17,31 +17,25 @@ from src.network_patches import apply_network_patches
 from src.score_manager import ScoreManager
 
 
-async def sync_pending_changes(
-    score_manager: ScoreManager, gender_manager: GenderManager
+async def sync_and_fetch_updates(
+    score_manager: ScoreManager,
+    gender_manager: GenderManager,
+    game_controller: GameController,
 ):
-    """Periodically attempt to sync pending changes.
+    """Periodically sync pending changes and fetch network updates.
 
-    Syncs both scores and gender when they have pending changes.
+    First syncs any pending score and gender changes, then fetches updates
+    from the network. Uses game_controller timing for the update cycle.
     """
     while True:
         if score_manager.has_pending_changes():
             await score_manager.try_sync_scores()
+        await asyncio.sleep(0)
 
         if gender_manager.has_pending_changes():
             await gender_manager.try_sync_gender()
+        await asyncio.sleep(0)
 
-        # Use minimum delay between managers
-        delay = min(
-            score_manager.get_next_retry_delay(),
-            gender_manager.get_next_retry_delay(),
-        )
-        await asyncio.sleep(delay)
-
-
-async def fetch_network_updates(game_controller: GameController):
-    """Periodically fetch updates from the network with exponential backoff."""
-    while True:
         await game_controller.update_from_network()
         await asyncio.sleep(game_controller.get_next_update_delay())
 
@@ -54,6 +48,7 @@ async def initial_network_fetch(game_controller: GameController):
     """
     try:
         await game_controller.update_from_network()
+        await asyncio.sleep(0)
         await game_controller.update_team_names_and_gender()
     except Exception as e:
         print(f"Initial network fetch failed: {e}")
@@ -99,8 +94,7 @@ async def main():
                 BUTTON_DOWN: game_controller.handle_left_score_button,
             }
         ),
-        sync_pending_changes(score_manager, gender_manager),
-        fetch_network_updates(game_controller),
+        sync_and_fetch_updates(score_manager, gender_manager, game_controller),
         initial_network_fetch(game_controller),
     )
 
