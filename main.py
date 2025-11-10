@@ -58,8 +58,8 @@ async def main():
     await asyncio.gather(
         hardware_manager.monitor_buttons(
             {
-                BUTTON_UP: game_controller.handle_left_score_button,
-                BUTTON_DOWN: game_controller.handle_right_score_button,
+                BUTTON_UP: game_controller.handle_right_score_button,
+                BUTTON_DOWN: game_controller.handle_left_score_button,
             }
         ),
         sync_pending_changes(score_manager),
