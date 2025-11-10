@@ -220,7 +220,7 @@ class TestGameControllerKeepsScore:
         assert score_manager.right_score == 2
 
         # Force final sync to push all pending changes
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         await score_manager.try_sync_scores()
 
         # Verify network has latest values
@@ -371,7 +371,7 @@ class TestGameControllerKeepsScore:
         assert counter_label.text == "2"
 
         # Wait for pending changes to sync before fetching network updates
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         await score_manager.try_sync_scores()
 
         # Simulate another device updating scores via network
@@ -443,7 +443,7 @@ class TestGameControllerSyncsScores:
         assert score_manager.left_score == 2
         assert score_manager.has_pending_changes()
 
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert not score_manager.has_pending_changes()
@@ -468,7 +468,7 @@ class TestGameControllerSyncsScores:
             "set_right_team_score",
             side_effect=Exception("Network error"),
         ):
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
 
         assert score_manager.get_next_retry_delay() == 2.0
@@ -478,7 +478,7 @@ class TestGameControllerSyncsScores:
             "set_right_team_score",
             side_effect=Exception("Network error"),
         ):
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
 
         assert score_manager.get_next_retry_delay() == 4.0
@@ -514,7 +514,7 @@ class TestGameControllerSyncsScores:
         assert score_manager.right_score == 2
         assert score_manager.has_pending_changes()
 
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert not score_manager.has_pending_changes()
@@ -560,13 +560,13 @@ class TestGameControllerSyncsScores:
             "set_left_team_score",
             side_effect=Exception("Offline"),
         ):
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
 
         backoff_delay = score_manager.get_next_retry_delay()
         assert backoff_delay == 2.0
 
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert not score_manager.has_pending_changes()
@@ -607,7 +607,7 @@ class TestGameControllerSyncsScores:
 
         assert score_manager.left_score == 2
 
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert (
@@ -719,7 +719,7 @@ class TestGenderFeedSupport:
         )
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 1)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 2)
-        game_controller._last_update_attempt = 0
+        game_controller.reset_update_timing()
         await game_controller.update_from_network()
 
         # With MMP start, sum=3 should now be MMP1
@@ -739,7 +739,7 @@ class TestGenderFeedSupport:
         assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
 
         # Sync should push to network
-        gender_manager._last_sync_attempt = 0
+        gender_manager.reset_sync_timing()
         success = await gender_manager.try_sync_gender()
         assert success
         assert not gender_manager.has_pending_changes()
@@ -773,7 +773,7 @@ class TestGenderFeedSupport:
             assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
 
         # After successful sync, network value should be used
-        gender_manager._last_sync_attempt = 0
+        gender_manager.reset_sync_timing()
         success = await gender_manager.try_sync_gender()
         assert success
         # Set feed to WMP again after sync (sync overwrote it with MMP)

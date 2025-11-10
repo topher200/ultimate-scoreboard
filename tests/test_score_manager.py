@@ -208,27 +208,27 @@ class TestScoreManagerPendingSync:
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 2.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 4.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 8.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 16.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 32.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 60.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 60.0
 
@@ -245,12 +245,12 @@ class TestScoreManagerPendingSync:
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 2.0
 
-            score_manager._last_sync_attempt = 0
+            score_manager.reset_sync_timing()
             await score_manager.try_sync_scores()
             assert score_manager.get_next_retry_delay() == 4.0
 
         score_manager.increment_right_score()
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert score_manager.get_next_retry_delay() == 1.0
@@ -277,7 +277,7 @@ class TestScoreManagerPendingSync:
             assert not changed
             assert score_manager.left_score == 2
 
-        score_manager._last_sync_attempt = 0
+        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert not score_manager.has_pending_changes()

@@ -41,6 +41,13 @@ class SyncManager(ABC):
         """
         return self._sync_retry_delay
 
+    def reset_sync_timing(self) -> None:
+        """Reset sync timing to allow immediate sync attempts.
+
+        Primarily intended for testing purposes to bypass timing restrictions.
+        """
+        self._last_sync_attempt = 0.0
+
     def _mark_pending(self) -> None:
         """Mark that there are pending changes to sync."""
         self._has_pending_sync = True

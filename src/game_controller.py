@@ -155,6 +155,13 @@ class GameController:
         """
         return self._update_retry_delay
 
+    def reset_update_timing(self) -> None:
+        """Reset update timing to allow immediate update attempts.
+
+        Primarily intended for testing purposes to bypass timing restrictions.
+        """
+        self._last_update_attempt = 0.0
+
     async def update_from_network(self) -> bool:
         """Update scores and team information from network with exponential backoff.
 
