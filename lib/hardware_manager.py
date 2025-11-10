@@ -1,10 +1,10 @@
 """Manages hardware interactions like button presses."""
 
 import asyncio
-from collections.abc import Callable
 
 import digitalio
 
+from lib.compat import Callable
 from lib.protocols import BoardLike, ButtonLike
 
 # Button name constants
