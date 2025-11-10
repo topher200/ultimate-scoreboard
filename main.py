@@ -9,7 +9,7 @@ from src.hardware_manager import (
     BUTTON_DOWN,
     BUTTON_UP,
     HardwareManager,
-    create_buttons_from_board,
+    create_keys_from_board,
 )
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
@@ -43,8 +43,8 @@ async def main():
     text_manager = DisplayManager(matrixportal)
     network_manager = NetworkManager(matrixportal)
     score_manager = ScoreManager(network_manager)
-    buttons = create_buttons_from_board(board)
-    hardware_manager = HardwareManager(buttons=buttons)
+    keys = create_keys_from_board(board)
+    hardware_manager = HardwareManager(keys=keys)
     game_controller = GameController(score_manager, text_manager, network_manager)
 
     # Initial setup

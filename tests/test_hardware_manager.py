@@ -1,8 +1,13 @@
-"""Tests for HardwareManager using fake button implementations."""
+"""Tests for HardwareManager using fake keypad implementation."""
 
 import pytest
 
-from src.hardware_manager import BUTTON_DOWN, BUTTON_UP
+from src.hardware_manager import (
+    BUTTON_DOWN,
+    BUTTON_UP,
+    KEY_NUMBER_BUTTON_DOWN,
+    KEY_NUMBER_BUTTON_UP,
+)
 
 
 class TestHardwareManager:
@@ -18,40 +23,39 @@ class TestHardwareManager:
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
         assert not hardware_manager.is_button_pressed(BUTTON_DOWN)
 
-    def test_button_press_detected(self, hardware_manager, fake_buttons):
+    def test_button_press_detected(self, hardware_manager, fake_keys):
         """Test that a button press is detected."""
-        # Buttons start released (value=True)
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
 
-        # Press the button (active-low, so value=False)
-        fake_buttons[BUTTON_UP].press()
+        # Simulate button press
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
         hardware_manager.update()
 
         # Should detect the press
         assert hardware_manager.is_button_pressed(BUTTON_UP)
 
-    def test_button_press_only_detected_once(self, hardware_manager, fake_buttons):
-        """Test that a button press is only detected once until released."""
+    def test_button_press_only_detected_once(self, hardware_manager, fake_keys):
+        """Test that a button press is only detected once until next press."""
         # Press the button
-        fake_buttons[BUTTON_UP].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
         hardware_manager.update()
 
         # First check should detect the press
         assert hardware_manager.is_button_pressed(BUTTON_UP)
 
-        # Second check without releasing should not detect press
+        # Second check without new press should not detect press
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
 
-        # Third check still held down
+        # Third check still no new press
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
 
-    def test_button_press_release_press_cycle(self, hardware_manager, fake_buttons):
+    def test_button_press_release_press_cycle(self, hardware_manager, fake_keys):
         """Test a full press, release, press cycle."""
         # First press
-        fake_buttons[BUTTON_UP].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
         hardware_manager.update()
         assert hardware_manager.is_button_pressed(BUTTON_UP)
 
@@ -59,33 +63,33 @@ class TestHardwareManager:
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
 
-        # Release the button
-        fake_buttons[BUTTON_UP].release()
+        # Release the button (should be ignored, we only care about presses)
+        fake_keys.release_key(KEY_NUMBER_BUTTON_UP)
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
 
         # Press again
-        fake_buttons[BUTTON_UP].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
         hardware_manager.update()
         assert hardware_manager.is_button_pressed(BUTTON_UP)
 
-    def test_multiple_buttons_independently(self, hardware_manager, fake_buttons):
+    def test_multiple_buttons_independently(self, hardware_manager, fake_keys):
         """Test that multiple buttons work independently."""
         # Press up button
-        fake_buttons[BUTTON_UP].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
         hardware_manager.update()
         assert hardware_manager.is_button_pressed(BUTTON_UP)
         assert not hardware_manager.is_button_pressed(BUTTON_DOWN)
 
-        # Press down button while up is still pressed
-        fake_buttons[BUTTON_DOWN].press()
+        # Press down button while up was already detected
+        fake_keys.press_key(KEY_NUMBER_BUTTON_DOWN)
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)  # Already detected
         assert hardware_manager.is_button_pressed(BUTTON_DOWN)  # New press
 
-        # Release both
-        fake_buttons[BUTTON_UP].release()
-        fake_buttons[BUTTON_DOWN].release()
+        # Release both (should be ignored)
+        fake_keys.release_key(KEY_NUMBER_BUTTON_UP)
+        fake_keys.release_key(KEY_NUMBER_BUTTON_DOWN)
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
         assert not hardware_manager.is_button_pressed(BUTTON_DOWN)
@@ -96,24 +100,10 @@ class TestHardwareManager:
         with pytest.raises(KeyError, match="Unknown button name: nonexistent"):
             hardware_manager.is_button_pressed("nonexistent")
 
-    def test_button_active_low_logic(self, hardware_manager, fake_buttons):
-        """Test that button active-low logic works correctly."""
-        # Released state (value=True) should not be detected as pressed
-        assert fake_buttons[BUTTON_UP].value is True
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_UP)
-
-        # Pressed state (value=False) should be detected
-        fake_buttons[BUTTON_UP].value = False
-        hardware_manager.update()
-        assert hardware_manager.is_button_pressed(BUTTON_UP)
-
-    def test_debouncing_prevents_multiple_detections(
-        self, hardware_manager, fake_buttons
-    ):
+    def test_debouncing_prevents_multiple_detections(self, hardware_manager, fake_keys):
         """Test that debouncing prevents detecting the same press multiple times."""
         # Simulate button press
-        fake_buttons[BUTTON_UP].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
 
         # First update detects the press
         hardware_manager.update()
@@ -124,18 +114,18 @@ class TestHardwareManager:
             hardware_manager.update()
             assert not hardware_manager.is_button_pressed(BUTTON_UP)
 
-        # Only after release and press again should it be detected
-        fake_buttons[BUTTON_UP].release()
+        # Only after new press should it be detected again
+        fake_keys.release_key(KEY_NUMBER_BUTTON_UP)  # Release (ignored)
         hardware_manager.update()
-        fake_buttons[BUTTON_UP].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)  # Press again
         hardware_manager.update()
         assert hardware_manager.is_button_pressed(BUTTON_UP)
 
-    def test_simultaneous_button_presses(self, hardware_manager, fake_buttons):
+    def test_simultaneous_button_presses(self, hardware_manager, fake_keys):
         """Test handling of simultaneous button presses."""
         # Press both buttons at the same time
-        fake_buttons[BUTTON_UP].press()
-        fake_buttons[BUTTON_DOWN].press()
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
+        fake_keys.press_key(KEY_NUMBER_BUTTON_DOWN)
 
         hardware_manager.update()
 
@@ -143,7 +133,21 @@ class TestHardwareManager:
         assert hardware_manager.is_button_pressed(BUTTON_UP)
         assert hardware_manager.is_button_pressed(BUTTON_DOWN)
 
-        # Next update should not detect either
+        # Next update should not detect either (already consumed)
         hardware_manager.update()
         assert not hardware_manager.is_button_pressed(BUTTON_UP)
         assert not hardware_manager.is_button_pressed(BUTTON_DOWN)
+
+    def test_release_events_are_ignored(self, hardware_manager, fake_keys):
+        """Test that release events are ignored, only presses are processed."""
+        # Press and release
+        fake_keys.press_key(KEY_NUMBER_BUTTON_UP)
+        fake_keys.release_key(KEY_NUMBER_BUTTON_UP)
+        hardware_manager.update()
+
+        # Should only detect the press, not the release
+        assert hardware_manager.is_button_pressed(BUTTON_UP)
+
+        # Next update should not detect anything
+        hardware_manager.update()
+        assert not hardware_manager.is_button_pressed(BUTTON_UP)

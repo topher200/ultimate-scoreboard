@@ -2,6 +2,7 @@
 
 from .fake_button import FakeButton
 from .fake_displayio import FakeGroup
+from .fake_keypad import FakeKeys
 from .fake_label import FakeLabel
 from .fake_matrixportal import FakeDisplay, FakeMatrixPortal
 
@@ -15,4 +16,5 @@ __all__ = [
     "FakeLabel",
     "FakeTerminalio",
     "FakeButton",
+    "FakeKeys",
 ]
