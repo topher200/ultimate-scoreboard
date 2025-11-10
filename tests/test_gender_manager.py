@@ -149,27 +149,27 @@ class TestGenderManager:
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 2.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 4.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 8.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 16.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 32.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 60.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 60.0
 
@@ -188,12 +188,12 @@ class TestGenderManager:
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 2.0
 
-            gender_manager._last_sync_attempt = 0
+            gender_manager.reset_sync_timing()
             await gender_manager.try_sync_gender()
             assert gender_manager.get_next_retry_delay() == 4.0
 
         gender_manager.toggle_first_point_gender()
-        gender_manager._last_sync_attempt = 0
+        gender_manager.reset_sync_timing()
         success = await gender_manager.try_sync_gender()
         assert success
         assert gender_manager.get_next_retry_delay() == 1.0
@@ -218,7 +218,7 @@ class TestGenderManager:
             assert not changed
             assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
 
-        gender_manager._last_sync_attempt = 0
+        gender_manager.reset_sync_timing()
         success = await gender_manager.try_sync_gender()
         assert success
         assert not gender_manager.has_pending_changes()
