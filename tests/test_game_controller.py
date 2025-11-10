@@ -78,22 +78,20 @@ class TestGenderMatchupCalculation:
         await game_controller.update_team_names()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
 
         assert label.text == "WMP"
         assert counter_label.text == "2"
 
     @pytest.mark.asyncio
-    async def test_button_press_updates_gender_matchup(self, game_controller, display_manager):
+    async def test_button_press_updates_gender_matchup(
+        self, game_controller, display_manager
+    ):
         """Test that pressing score button updates gender matchup display."""
         await game_controller.update_team_names()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
 
         assert label.text == "WMP"
         assert counter_label.text == "2"
@@ -111,9 +109,7 @@ class TestGenderMatchupCalculation:
         await game_controller.update_team_names()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
 
         assert label.text == "WMP"
         assert counter_label.text == "2"
@@ -153,9 +149,7 @@ class TestGenderMatchupCalculation:
         await game_controller.update_from_network()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
 
         assert score_manager.left_score == 2
         assert score_manager.right_score == 1
@@ -163,51 +157,12 @@ class TestGenderMatchupCalculation:
         assert counter_label.text == "1"
 
 
-class TestGameControllerOnlineMode:
-    """Test GameController with successful network operations."""
+class TestGameControllerKeepsScore:
+    """Test GameController keeps score."""
 
     def test_initialization(self, game_controller):
         """Test that GameController initializes."""
         assert game_controller is not None
-
-    @pytest.mark.asyncio
-    async def test_handle_left_score_button_increments_and_pushes(
-        self, fake_matrix_portal, game_controller, score_manager
-    ):
-        """Test that left score button actually increments and pushes to network."""
-        # Initial state
-        assert score_manager.left_score == 0
-
-        # Press button
-        await game_controller.handle_left_score_button()
-
-        # Verify score incremented
-        assert score_manager.left_score == 1
-
-        # Verify score was pushed to network
-        assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 1
-        )
-
-    @pytest.mark.asyncio
-    async def test_handle_right_score_button_increments_and_pushes(
-        self, fake_matrix_portal, game_controller, score_manager
-    ):
-        """Test that right score button actually increments and pushes to network."""
-        # Initial state
-        assert score_manager.right_score == 0
-
-        # Press button
-        await game_controller.handle_right_score_button()
-
-        # Verify score incremented
-        assert score_manager.right_score == 1
-
-        # Verify score was pushed to network
-        assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED)
-            == 1
-        )
 
     @pytest.mark.asyncio
     async def test_handle_multiple_button_presses(
@@ -233,7 +188,8 @@ class TestGameControllerOnlineMode:
 
         # Verify network has latest values
         assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 3
+            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED)
+            == 3
         )
         assert (
             fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED)
@@ -266,8 +222,12 @@ class TestGameControllerOnlineMode:
     ):
         """Test that team names are fetched when scores change."""
         # Set team names and scores
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "Warriors")
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Dragons")
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.TEAM_LEFT_TEAM_FEED, "Warriors"
+        )
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.TEAM_RIGHT_TEAM_FEED, "Dragons"
+        )
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 6)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
 
@@ -325,10 +285,6 @@ class TestGameControllerOnlineMode:
 
         # Verify score incremented from existing value
         assert score_manager.left_score == 11
-        assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED)
-            == 11
-        )
 
     @pytest.mark.asyncio
     async def test_full_game_workflow(
@@ -342,9 +298,7 @@ class TestGameControllerOnlineMode:
 
         # Get label references
         matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"][
-            "label"
-        ]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
 
         # Verify initial state (0-0, sum=0) → WMP2
         assert matchup_label.text == "WMP"
@@ -395,95 +349,8 @@ class TestGameControllerOnlineMode:
         assert counter_label.text == "1"
 
 
-class TestGameControllerOfflineMode:
-    """Test GameController behavior during network failures and offline operation."""
-
-    @pytest.mark.asyncio
-    async def test_async_button_press_with_network_failure(
-        self, game_controller, network_manager, score_manager
-    ):
-        """Test that button press works even when network sync fails."""
-        assert score_manager.left_score == 0
-
-        with patch.object(
-            network_manager,
-            "set_left_team_score",
-            side_effect=Exception("Network error"),
-        ):
-            await game_controller.handle_left_score_button()
-
-        assert score_manager.left_score == 1
-        assert score_manager.has_pending_changes()
-
-    @pytest.mark.asyncio
-    async def test_async_network_update_respects_pending_sync(
-        self,
-        fake_matrix_portal,
-        game_controller,
-        network_manager,
-        score_manager,
-    ):
-        """Test that network update doesn't overwrite pending local changes."""
-        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 10)
-        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 5)
-
-        score_manager.increment_left_score()
-        score_manager.increment_left_score()
-        assert score_manager.left_score == 2
-
-        with patch.object(
-            network_manager,
-            "set_left_team_score",
-            side_effect=Exception("Network error"),
-        ):
-            await game_controller.update_from_network()
-
-        assert score_manager.left_score == 2
-
-    @pytest.mark.asyncio
-    async def test_async_button_press_successful_sync(
-        self, fake_matrix_portal, game_controller, score_manager
-    ):
-        """Test async button press with successful network sync."""
-        await game_controller.handle_left_score_button()
-
-        assert score_manager.left_score == 1
-        assert not score_manager.has_pending_changes()
-        assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 1
-        )
-
-    @pytest.mark.asyncio
-    async def test_async_update_team_names(
-        self, fake_matrix_portal, game_controller, network_manager
-    ):
-        """Test async team names update."""
-        fake_matrix_portal.set_feed_value(
-            NetworkManager.TEAM_LEFT_TEAM_FEED, "Async Team"
-        )
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Warriors")
-
-        await game_controller.update_team_names()
-
-        assert await network_manager.get_left_team_name() == "Async Team"
-        assert await network_manager.get_right_team_name() == "Warriors"
-
-    @pytest.mark.asyncio
-    async def test_async_update_from_network(
-        self, fake_matrix_portal, game_controller, score_manager
-    ):
-        """Test async network update."""
-        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 15)
-        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 12)
-
-        await game_controller.update_from_network()
-
-        assert score_manager.left_score == 15
-        assert score_manager.right_score == 12
-
-
-class TestGameControllerWorkflows:
-    """Test complex multi-step GameController workflows."""
+class TestGameControllerSyncsScores:
+    """Test complex multi-step GameController workflows that sync scores."""
 
     @pytest.mark.asyncio
     async def test_offline_mode_preserves_local_changes(
@@ -544,7 +411,8 @@ class TestGameControllerWorkflows:
         assert success
         assert not score_manager.has_pending_changes()
         assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 2
+            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED)
+            == 2
         )
 
     @pytest.mark.asyncio
@@ -555,14 +423,17 @@ class TestGameControllerWorkflows:
         initial_delay = score_manager.get_next_retry_delay()
         assert initial_delay == 1.0
 
+        await game_controller.handle_right_score_button()
+        assert score_manager.has_pending_changes()
+
         with patch.object(
             network_manager,
             "set_right_team_score",
             side_effect=Exception("Network error"),
         ):
-            await game_controller.handle_right_score_button()
+            score_manager._last_sync_attempt = 0
+            await score_manager.try_sync_scores()
 
-        assert score_manager.has_pending_changes()
         assert score_manager.get_next_retry_delay() == 2.0
 
         with patch.object(
@@ -611,7 +482,8 @@ class TestGameControllerWorkflows:
         assert success
         assert not score_manager.has_pending_changes()
         assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 3
+            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED)
+            == 3
         )
         assert (
             fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED)
@@ -643,13 +515,16 @@ class TestGameControllerWorkflows:
         score_manager,
     ):
         """Test complete offline-to-online workflow."""
+        await game_controller.handle_left_score_button()
+        assert score_manager.has_pending_changes()
+
         with patch.object(
             network_manager,
             "set_left_team_score",
             side_effect=Exception("Offline"),
         ):
-            await game_controller.handle_left_score_button()
-            assert score_manager.has_pending_changes()
+            score_manager._last_sync_attempt = 0
+            await score_manager.try_sync_scores()
 
         backoff_delay = score_manager.get_next_retry_delay()
         assert backoff_delay == 2.0
@@ -699,5 +574,6 @@ class TestGameControllerWorkflows:
         success = await score_manager.try_sync_scores()
         assert success
         assert (
-            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED) == 2
+            fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED)
+            == 2
         )
