@@ -1,74 +1,45 @@
 import asyncio
-import time
 
 from src.network_manager import NetworkManager
+from src.sync_manager import SyncManager
 
 
-class ScoreManager:
+class ScoreManager(SyncManager):
     """Manages score state with async network sync and exponential backoff."""
-
-    MIN_RETRY_DELAY = 1.0
-    MAX_RETRY_DELAY = 60.0
 
     def __init__(self, network_manager: NetworkManager):
         """Initialize ScoreManager with NetworkManager.
 
         :param network_manager: NetworkManager instance for fetching data
         """
+        super().__init__()
         self._network_manager = network_manager
         self.left_score: int = 0
         self.right_score: int = 0
-        self._has_pending_sync = False
         self._last_synced_left = 0
         self._last_synced_right = 0
-        self._sync_retry_delay = self.MIN_RETRY_DELAY
-        self._last_sync_attempt = 0.0
 
-    def has_pending_changes(self) -> bool:
-        """Check if there are pending local changes to sync.
+    async def _perform_sync(self) -> None:
+        """Perform sync of scores to network.
 
-        :return: True if changes need to be synced
+        Syncs left and right scores if they have changed.
         """
-        return self._has_pending_sync
+        if self.left_score != self._last_synced_left:
+            await self._network_manager.set_left_team_score(self.left_score)
+            self._last_synced_left = self.left_score
 
-    def get_next_retry_delay(self) -> float:
-        """Get the delay before next sync retry attempt.
+        await asyncio.sleep(0)
 
-        :return: Delay in seconds
-        """
-        return self._sync_retry_delay
+        if self.right_score != self._last_synced_right:
+            await self._network_manager.set_right_team_score(self.right_score)
+            self._last_synced_right = self.right_score
 
     async def try_sync_scores(self) -> bool:
         """Attempt to sync local scores to network with exponential backoff.
 
         :return: True if sync was successful, False otherwise
         """
-        current_time = time.monotonic()
-        if current_time - self._last_sync_attempt < self._sync_retry_delay:
-            return False
-
-        self._last_sync_attempt = current_time
-
-        try:
-            if self.left_score != self._last_synced_left:
-                await self._network_manager.set_left_team_score(self.left_score)
-                self._last_synced_left = self.left_score
-
-            await asyncio.sleep(0)
-
-            if self.right_score != self._last_synced_right:
-                await self._network_manager.set_right_team_score(self.right_score)
-                self._last_synced_right = self.right_score
-
-            self._has_pending_sync = False
-            self._sync_retry_delay = self.MIN_RETRY_DELAY
-            return True
-        except Exception as e:
-            print(f"Sync failed: {e}")
-            self._sync_retry_delay = min(
-                self._sync_retry_delay * 2, self.MAX_RETRY_DELAY
-            )
-            return False
+        return await self._try_sync_with_backoff()
 
     async def update_scores(self):
         """Fetch latest scores from Adafruit IO and update internal state.
@@ -102,9 +73,9 @@ class ScoreManager:
     def increment_left_score(self) -> None:
         """Increment left team score by 1 and mark for network sync."""
         self.left_score += 1
-        self._has_pending_sync = True
+        self._mark_pending()
 
     def increment_right_score(self) -> None:
         """Increment right team score by 1 and mark for network sync."""
         self.right_score += 1
-        self._has_pending_sync = True
+        self._mark_pending()

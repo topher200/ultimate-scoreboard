@@ -4,69 +4,106 @@ from unittest.mock import patch
 
 import pytest
 
+from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 
 
 class TestGenderMatchupCalculation:
-    """Test gender matchup calculation based on score sum."""
+    """Test gender matchup calculation based on score sum and starting gender."""
 
-    def test_calculate_gender_matchup_sum_0(self, game_controller):
-        """Test gender matchup for score sum 0 (0-0) returns WMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(0)
+    def test_calculate_gender_matchup_sum_0_wmp(self, game_controller):
+        """Test gender matchup for score sum 0 (0-0) with WMP start returns WMP2."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            0, GenderManager.GENDER_WMP
+        )
         assert matchup == "WMP"
         assert count == 2
 
-    def test_calculate_gender_matchup_sum_1(self, game_controller):
-        """Test gender matchup for score sum 1 (1-0 or 0-1) returns MMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(1)
+    def test_calculate_gender_matchup_sum_1_wmp(self, game_controller):
+        """Test gender matchup for score sum 1 (1-0 or 0-1) with WMP start returns MMP1."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            1, GenderManager.GENDER_WMP
+        )
         assert matchup == "MMP"
         assert count == 1
 
-    def test_calculate_gender_matchup_sum_2(self, game_controller):
-        """Test gender matchup for score sum 2 returns MMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(2)
-        assert matchup == "MMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_3(self, game_controller):
-        """Test gender matchup for score sum 3 returns WMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(3)
-        assert matchup == "WMP"
-        assert count == 1
-
-    def test_calculate_gender_matchup_sum_4_cycle_repeats(self, game_controller):
-        """Test gender matchup for score sum 4 returns WMP2 (cycle repeats)."""
-        matchup, count = game_controller._calculate_gender_matchup(4)
-        assert matchup == "WMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_5(self, game_controller):
-        """Test gender matchup for score sum 5 returns MMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(5)
-        assert matchup == "MMP"
-        assert count == 1
-
-    def test_calculate_gender_matchup_sum_6(self, game_controller):
-        """Test gender matchup for score sum 6 returns MMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(6)
+    def test_calculate_gender_matchup_sum_2_wmp(self, game_controller):
+        """Test gender matchup for score sum 2 with WMP start returns MMP2."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            2, GenderManager.GENDER_WMP
+        )
         assert matchup == "MMP"
         assert count == 2
 
-    def test_calculate_gender_matchup_sum_7(self, game_controller):
-        """Test gender matchup for score sum 7 returns WMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(7)
+    def test_calculate_gender_matchup_sum_3_wmp(self, game_controller):
+        """Test gender matchup for score sum 3 with WMP start returns WMP1."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            3, GenderManager.GENDER_WMP
+        )
         assert matchup == "WMP"
         assert count == 1
 
-    def test_calculate_gender_matchup_large_sum(self, game_controller):
-        """Test gender matchup calculation for large score sums."""
+    def test_calculate_gender_matchup_sum_4_cycle_repeats_wmp(self, game_controller):
+        """Test gender matchup for score sum 4 with WMP start returns WMP2 (cycle repeats)."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            4, GenderManager.GENDER_WMP
+        )
+        assert matchup == "WMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_0_mmp(self, game_controller):
+        """Test gender matchup for score sum 0 (0-0) with MMP start returns MMP2."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            0, GenderManager.GENDER_MMP
+        )
+        assert matchup == "MMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_1_mmp(self, game_controller):
+        """Test gender matchup for score sum 1 with MMP start returns WMP1."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            1, GenderManager.GENDER_MMP
+        )
+        assert matchup == "WMP"
+        assert count == 1
+
+    def test_calculate_gender_matchup_sum_2_mmp(self, game_controller):
+        """Test gender matchup for score sum 2 with MMP start returns WMP2."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            2, GenderManager.GENDER_MMP
+        )
+        assert matchup == "WMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_sum_3_mmp(self, game_controller):
+        """Test gender matchup for score sum 3 with MMP start returns MMP1."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            3, GenderManager.GENDER_MMP
+        )
+        assert matchup == "MMP"
+        assert count == 1
+
+    def test_calculate_gender_matchup_sum_4_cycle_repeats_mmp(self, game_controller):
+        """Test gender matchup for score sum 4 with MMP start returns MMP2 (cycle repeats)."""
+        matchup, count = game_controller._calculate_gender_matchup(
+            4, GenderManager.GENDER_MMP
+        )
+        assert matchup == "MMP"
+        assert count == 2
+
+    def test_calculate_gender_matchup_large_sum_wmp(self, game_controller):
+        """Test gender matchup calculation for large score sums with WMP start."""
         # Test sum 20 (20 % 4 == 0)
-        matchup, count = game_controller._calculate_gender_matchup(20)
+        matchup, count = game_controller._calculate_gender_matchup(
+            20, GenderManager.GENDER_WMP
+        )
         assert matchup == "WMP"
         assert count == 2
 
         # Test sum 21 (21 % 4 == 1)
-        matchup, count = game_controller._calculate_gender_matchup(21)
+        matchup, count = game_controller._calculate_gender_matchup(
+            21, GenderManager.GENDER_WMP
+        )
         assert matchup == "MMP"
         assert count == 1
 
@@ -577,3 +614,173 @@ class TestGameControllerSyncsScores:
             fake_matrix_portal.get_pushed_value(NetworkManager.SCORES_LEFT_TEAM_FEED)
             == 2
         )
+
+
+class TestGenderFeedSupport:
+    """Test gender feed support and local toggle functionality."""
+
+    @pytest.mark.asyncio
+    async def test_toggle_gender_button_changes_starting_gender(
+        self, game_controller, display_manager, gender_manager
+    ):
+        """Test that toggle gender button changes starting gender and recalculates matchup."""
+        # Initial state: WMP2 (default)
+        await game_controller.update_team_names()
+        label = display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_WMP
+
+        # Toggle to MMP
+        await game_controller.handle_toggle_gender_button()
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
+        assert label.text == "MMP"
+        assert counter_label.text == "2"
+
+        # Toggle back to WMP
+        await game_controller.handle_toggle_gender_button()
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_WMP
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+
+    @pytest.mark.asyncio
+    async def test_toggle_gender_recalculates_matchup_for_current_score(
+        self, game_controller, display_manager, gender_manager
+    ):
+        """Test that toggle gender recalculates matchup for current score sum."""
+        # Set score to 1-0 (sum=1)
+        await game_controller.handle_left_score_button()
+        label = display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        # With WMP start, sum=1 should be MMP1
+        assert label.text == "MMP"
+        assert counter_label.text == "1"
+
+        # Toggle to MMP start
+        await game_controller.handle_toggle_gender_button()
+        # With MMP start, sum=1 should be WMP1
+        assert label.text == "WMP"
+        assert counter_label.text == "1"
+
+    @pytest.mark.asyncio
+    async def test_feed_based_gender_determination(
+        self, game_controller, display_manager, fake_matrix_portal, gender_manager
+    ):
+        """Test that gender feed value determines starting gender."""
+        # Set feed to 'mmp'
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_MMP
+        )
+        await game_controller.update_team_names()
+
+        label = display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
+        assert label.text == "MMP"
+        assert counter_label.text == "2"
+
+        # Set feed to 'wmp'
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_WMP
+        )
+        await game_controller.update_team_names()
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_WMP
+        assert label.text == "WMP"
+        assert counter_label.text == "2"
+
+    @pytest.mark.asyncio
+    async def test_feed_gender_change_during_game_recalculates(
+        self,
+        game_controller,
+        display_manager,
+        fake_matrix_portal,
+        score_manager,
+        gender_manager,
+    ):
+        """Test that feed gender change during game immediately recalculates matchup."""
+        # Set initial score
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 2)
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 1)
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_WMP
+        )
+        await game_controller.update_from_network()
+
+        label = display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        # With WMP start, sum=3 should be WMP1
+        assert label.text == "WMP"
+        assert counter_label.text == "1"
+
+        # Change feed to 'mmp', and swap the scores so we refetch gender
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_MMP
+        )
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 1)
+        fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 2)
+        game_controller._last_update_attempt = 0
+        await game_controller.update_from_network()
+
+        # With MMP start, sum=3 should now be MMP1
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
+        assert label.text == "MMP"
+        assert counter_label.text == "1"
+
+    @pytest.mark.asyncio
+    async def test_local_gender_toggle_queued_for_sync(
+        self, game_controller, gender_manager, fake_matrix_portal
+    ):
+        """Test that local gender toggle is queued for network sync."""
+        assert not gender_manager.has_pending_changes()
+
+        await game_controller.handle_toggle_gender_button()
+        assert gender_manager.has_pending_changes()
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
+
+        # Sync should push to network
+        gender_manager._last_sync_attempt = 0
+        success = await gender_manager.try_sync_gender()
+        assert success
+        assert not gender_manager.has_pending_changes()
+        assert (
+            fake_matrix_portal.get_pushed_value(NetworkManager.FIRST_POINT_GENDER_FEED)
+            == GenderManager.GENDER_MMP
+        )
+
+    @pytest.mark.asyncio
+    async def test_local_gender_takes_precedence_until_sync(
+        self, game_controller, gender_manager, fake_matrix_portal
+    ):
+        """Test that local gender value is trusted until successful sync."""
+        # Toggle locally
+        await game_controller.handle_toggle_gender_button()
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
+
+        # Set different value in network
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_WMP
+        )
+
+        # Update from network should skip due to pending changes
+        with patch.object(
+            gender_manager._network_manager,
+            "set_first_point_gender",
+            side_effect=Exception("Offline"),
+        ):
+            changed = await gender_manager.update_gender_from_network()
+            assert not changed
+            assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
+
+        # After successful sync, network value should be used
+        gender_manager._last_sync_attempt = 0
+        success = await gender_manager.try_sync_gender()
+        assert success
+        # Set feed to WMP again after sync (sync overwrote it with MMP)
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_WMP
+        )
+        # Now update from network should fetch the network value
+        changed = await gender_manager.update_gender_from_network()
+        assert changed
+        assert gender_manager.get_first_point_gender() == GenderManager.GENDER_WMP

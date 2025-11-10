@@ -16,6 +16,7 @@ from fakes import (
 )
 from src.display_manager import DisplayManager
 from src.game_controller import GameController
+from src.gender_manager import GenderManager
 from src.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
@@ -86,9 +87,17 @@ def score_manager(network_manager):
 
 
 @pytest.fixture
-def game_controller(score_manager, display_manager, network_manager):
+def gender_manager(network_manager):
+    """Create GenderManager instance with network manager."""
+    return GenderManager(network_manager)
+
+
+@pytest.fixture
+def game_controller(score_manager, display_manager, network_manager, gender_manager):
     """Create GameController instance with all managers."""
-    return GameController(score_manager, display_manager, network_manager)
+    return GameController(
+        score_manager, display_manager, network_manager, gender_manager
+    )
 
 
 @pytest.fixture

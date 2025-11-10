@@ -47,4 +47,17 @@ else:
     Any = _Any
     Protocol = _Protocol
 
-__all__ = ["Callable", "Any", "Protocol", "TYPE_CHECKING"]
+# Export ABC and abstractmethod (available in standard Python, stubs in CircuitPython)
+try:
+    from abc import ABC, abstractmethod
+except ImportError:
+    # CircuitPython compatibility: create stub classes when abc is unavailable
+    class ABC:
+        """Stub ABC class for CircuitPython compatibility."""
+
+    def abstractmethod(func):
+        """Stub abstractmethod decorator for CircuitPython compatibility."""
+        return func
+
+
+__all__ = ["Callable", "Any", "Protocol", "TYPE_CHECKING", "ABC", "abstractmethod"]

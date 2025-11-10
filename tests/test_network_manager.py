@@ -4,6 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 
 
@@ -20,7 +21,10 @@ class TestNetworkManager:
         assert NetworkManager.SCORES_RIGHT_TEAM_FEED
         assert NetworkManager.TEAM_LEFT_TEAM_FEED
         assert NetworkManager.TEAM_RIGHT_TEAM_FEED
+        assert NetworkManager.FIRST_POINT_GENDER_FEED
 
+
+class TestNetworkManagerScores:
     @pytest.mark.asyncio
     async def test_get_left_team_score_with_valid_data(
         self, network_manager, fake_matrix_portal
@@ -127,3 +131,110 @@ class TestNetworkManager:
         assert mock_show_connecting.call_count == 2
         mock_show_connecting.assert_any_call(True)
         mock_show_connecting.assert_any_call(False)
+
+
+class TestNetworkManagerGender:
+    @pytest.mark.asyncio
+    async def test_get_first_point_gender_with_mmp(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test getting first point gender with 'mmp' value."""
+        fake_matrix_portal.set_feed_value(NetworkManager.FIRST_POINT_GENDER_FEED, "mmp")
+
+        result = await network_manager.get_first_point_gender()
+
+        assert result == GenderManager.GENDER_MMP
+
+    @pytest.mark.asyncio
+    async def test_get_first_point_gender_with_wmp(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test getting first point gender with 'wmp' value."""
+        fake_matrix_portal.set_feed_value(NetworkManager.FIRST_POINT_GENDER_FEED, "wmp")
+
+        result = await network_manager.get_first_point_gender()
+
+        assert result == GenderManager.GENDER_WMP
+
+    @pytest.mark.asyncio
+    async def test_get_first_point_gender_case_insensitive(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that gender feed value is case-insensitive."""
+        fake_matrix_portal.set_feed_value(NetworkManager.FIRST_POINT_GENDER_FEED, "MMP")
+
+        result = await network_manager.get_first_point_gender()
+
+        assert result == GenderManager.GENDER_MMP
+
+        fake_matrix_portal.set_feed_value(NetworkManager.FIRST_POINT_GENDER_FEED, "WMP")
+
+        result = await network_manager.get_first_point_gender()
+
+        assert result == GenderManager.GENDER_WMP
+
+    @pytest.mark.asyncio
+    async def test_get_first_point_gender_defaults_to_wmp(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that get_first_point_gender defaults to 'wmp' when feed unavailable."""
+        fake_matrix_portal.set_feed_value(NetworkManager.FIRST_POINT_GENDER_FEED, None)
+
+        result = await network_manager.get_first_point_gender()
+
+        assert result == GenderManager.GENDER_WMP
+
+    @pytest.mark.asyncio
+    async def test_get_first_point_gender_invalid_value_defaults(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that invalid gender value defaults to 'wmp'."""
+        fake_matrix_portal.set_feed_value(
+            NetworkManager.FIRST_POINT_GENDER_FEED, "invalid"
+        )
+
+        result = await network_manager.get_first_point_gender()
+
+        assert result == GenderManager.GENDER_WMP
+
+    @pytest.mark.asyncio
+    async def test_set_first_point_gender_with_mmp(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test setting first point gender to 'mmp'."""
+        await network_manager.set_first_point_gender(GenderManager.GENDER_MMP)
+
+        assert (
+            fake_matrix_portal.get_pushed_value(NetworkManager.FIRST_POINT_GENDER_FEED)
+            == GenderManager.GENDER_MMP
+        )
+
+    @pytest.mark.asyncio
+    async def test_set_first_point_gender_with_wmp(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test setting first point gender to 'wmp'."""
+        await network_manager.set_first_point_gender(GenderManager.GENDER_WMP)
+
+        assert (
+            fake_matrix_portal.get_pushed_value(NetworkManager.FIRST_POINT_GENDER_FEED)
+            == GenderManager.GENDER_WMP
+        )
+
+    @pytest.mark.asyncio
+    async def test_set_first_point_gender_case_insensitive(
+        self, network_manager, fake_matrix_portal
+    ):
+        """Test that set_first_point_gender normalizes to lowercase."""
+        await network_manager.set_first_point_gender("MMP")
+
+        assert (
+            fake_matrix_portal.get_pushed_value(NetworkManager.FIRST_POINT_GENDER_FEED)
+            == GenderManager.GENDER_MMP
+        )
+
+    @pytest.mark.asyncio
+    async def test_set_first_point_gender_invalid_value_raises(self, network_manager):
+        """Test that setting invalid gender value raises ValueError."""
+        with pytest.raises(ValueError, match="Invalid gender value"):
+            await network_manager.set_first_point_gender("invalid")
