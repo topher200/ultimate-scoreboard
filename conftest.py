@@ -6,7 +6,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fakes import FakeButton, FakeGroup, FakeLabel, FakeMatrixPortal, FakeTerminalio
+from fakes import (
+    FakeButton,
+    FakeGroup,
+    FakeKeys,
+    FakeLabel,
+    FakeMatrixPortal,
+    FakeTerminalio,
+)
 from src.display_manager import DisplayManager
 from src.game_controller import GameController
 from src.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
@@ -20,6 +27,7 @@ CIRCUITPYTHON_MODULES = [
     "busio",
     "digitalio",
     "framebufferio",
+    "keypad",
     "rgbmatrix",
     "adafruit_matrixportal",
     "adafruit_matrixportal.matrixportal",
@@ -34,9 +42,8 @@ for module_name in CIRCUITPYTHON_MODULES:
 
 # Set up specific mocks with fake implementations for modules that need behavior
 sys.modules["displayio"] = MagicMock(Group=FakeGroup)
+sys.modules["keypad"] = MagicMock(Keys=FakeKeys)
 sys.modules["terminalio"] = MagicMock(FONT=FakeTerminalio.FONT)
-
-# Set up adafruit_display_text with proper label module
 label_module = MagicMock(Label=FakeLabel)
 adafruit_display_text = MagicMock()
 adafruit_display_text.label = label_module
@@ -86,15 +93,21 @@ def game_controller(score_manager, display_manager, network_manager):
 
 
 @pytest.fixture
-def fake_buttons():
-    """Create fake button dict for hardware tests."""
-    return {
-        BUTTON_UP: FakeButton(),
-        BUTTON_DOWN: FakeButton(),
-    }
+def fake_keys():
+    """Create fake Keys object for hardware tests."""
+    # Create a mock board-like object with pin attributes
+    mock_board = MagicMock()
+    mock_board.BUTTON_UP = MagicMock()
+    mock_board.BUTTON_DOWN = MagicMock()
+
+    return FakeKeys(
+        (mock_board.BUTTON_UP, mock_board.BUTTON_DOWN),
+        value_when_pressed=False,
+        pull=True,
+    )
 
 
 @pytest.fixture
-def hardware_manager(fake_buttons):
-    """Create HardwareManager instance with fake buttons."""
-    return HardwareManager(fake_buttons)
+def hardware_manager(fake_keys):
+    """Create HardwareManager instance with fake keys."""
+    return HardwareManager(fake_keys)
