@@ -18,26 +18,30 @@ class TestScoreManager:
         assert score_manager.right_score == 0
 
     @pytest.mark.asyncio
-    async def test_update_scores_with_initial_values(self, score_manager, fake_matrix_portal):
+    async def test_update_scores_with_initial_values(
+        self, score_manager, fake_matrix_portal
+    ):
         """Test updating scores with initial values."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
 
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert score_manager.left_score == 5
         assert score_manager.right_score == 3
         assert changed
 
     @pytest.mark.asyncio
-    async def test_update_scores_detects_left_score_change(self, score_manager, fake_matrix_portal):
-        """Test that update_scores returns True when left score changes."""
+    async def test_update_scores_detects_left_score_change(
+        self, score_manager, fake_matrix_portal
+    ):
+        """Test that update_scores_from_network returns True when left score changes."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
-        await score_manager.update_scores()
+        await score_manager.update_scores_from_network()
 
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 6)
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert score_manager.left_score == 6
         assert score_manager.right_score == 3
@@ -47,13 +51,13 @@ class TestScoreManager:
     async def test_update_scores_detects_right_score_change(
         self, score_manager, fake_matrix_portal
     ):
-        """Test that update_scores returns True when right score changes."""
+        """Test that update_scores_from_network returns True when right score changes."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
-        await score_manager.update_scores()
+        await score_manager.update_scores_from_network()
 
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 4)
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert score_manager.left_score == 5
         assert score_manager.right_score == 4
@@ -63,14 +67,14 @@ class TestScoreManager:
     async def test_update_scores_detects_both_scores_change(
         self, score_manager, fake_matrix_portal
     ):
-        """Test that update_scores returns True when both scores change."""
+        """Test that update_scores_from_network returns True when both scores change."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
-        await score_manager.update_scores()
+        await score_manager.update_scores_from_network()
 
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 6)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 4)
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert score_manager.left_score == 6
         assert score_manager.right_score == 4
@@ -80,45 +84,49 @@ class TestScoreManager:
     async def test_update_scores_no_change_when_scores_same(
         self, score_manager, fake_matrix_portal
     ):
-        """Test that update_scores returns False when scores don't change."""
+        """Test that update_scores_from_network returns False when scores don't change."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
-        await score_manager.update_scores()
+        await score_manager.update_scores_from_network()
 
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert score_manager.left_score == 5
         assert score_manager.right_score == 3
         assert not changed
 
     @pytest.mark.asyncio
-    async def test_update_scores_with_string_values(self, score_manager, fake_matrix_portal):
-        """Test that update_scores handles string score values."""
+    async def test_update_scores_with_string_values(
+        self, score_manager, fake_matrix_portal
+    ):
+        """Test that update_scores_from_network handles string score values."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, "10")
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, "7")
 
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert score_manager.left_score == 10
         assert score_manager.right_score == 7
         assert changed
 
     @pytest.mark.asyncio
-    async def test_update_scores_multiple_updates(self, score_manager, fake_matrix_portal):
+    async def test_update_scores_multiple_updates(
+        self, score_manager, fake_matrix_portal
+    ):
         """Test multiple score updates in sequence."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 0)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 0)
-        await score_manager.update_scores()
+        await score_manager.update_scores_from_network()
 
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 1)
-        changed1 = await score_manager.update_scores()
+        changed1 = await score_manager.update_scores_from_network()
         assert changed1
 
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 1)
-        changed2 = await score_manager.update_scores()
+        changed2 = await score_manager.update_scores_from_network()
         assert changed2
 
-        changed3 = await score_manager.update_scores()
+        changed3 = await score_manager.update_scores_from_network()
         assert not changed3
 
 
@@ -161,7 +169,7 @@ class TestScoreManagerPendingSync:
     async def test_update_scores_skips_network_when_pending_sync(
         self, score_manager, fake_matrix_portal, network_manager
     ):
-        """Test that update_scores skips network fetch when there are pending changes."""
+        """Test update_scores_from_network skips network fetch when there are pending changes."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 10)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 5)
 
@@ -174,7 +182,7 @@ class TestScoreManagerPendingSync:
             "set_left_team_score",
             side_effect=Exception("Network error"),
         ):
-            changed = await score_manager.update_scores()
+            changed = await score_manager.update_scores_from_network()
             assert not changed
             assert score_manager.left_score == 1
 
@@ -182,12 +190,12 @@ class TestScoreManagerPendingSync:
     async def test_update_scores_fetches_when_no_pending_sync(
         self, score_manager, fake_matrix_portal
     ):
-        """Test that update_scores fetches from network when no pending changes."""
+        """Test that update_scores_from_network fetches from network when no pending changes."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 7)
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_RIGHT_TEAM_FEED, 3)
 
         assert not score_manager.has_pending_changes()
-        changed = await score_manager.update_scores()
+        changed = await score_manager.update_scores_from_network()
 
         assert changed
         assert score_manager.left_score == 7
@@ -233,7 +241,9 @@ class TestScoreManagerPendingSync:
             assert score_manager.get_next_retry_delay() == 60.0
 
     @pytest.mark.asyncio
-    async def test_backoff_resets_after_successful_sync(self, score_manager, network_manager):
+    async def test_backoff_resets_after_successful_sync(
+        self, score_manager, network_manager
+    ):
         """Test that backoff delay resets after a successful sync."""
         score_manager.increment_left_score()
 
@@ -273,7 +283,7 @@ class TestScoreManagerPendingSync:
             "set_left_team_score",
             side_effect=Exception("Network error"),
         ):
-            changed = await score_manager.update_scores()
+            changed = await score_manager.update_scores_from_network()
             assert not changed
             assert score_manager.left_score == 2
 
@@ -297,7 +307,9 @@ class TestScoreManagerPendingSync:
             mock_right.assert_not_called()
 
     @pytest.mark.asyncio
-    async def test_retry_delay_prevents_immediate_retry(self, score_manager, network_manager):
+    async def test_retry_delay_prevents_immediate_retry(
+        self, score_manager, network_manager
+    ):
         """Test that retry delay prevents sync attempts before delay expires."""
         score_manager.increment_left_score()
 

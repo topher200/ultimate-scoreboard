@@ -176,7 +176,7 @@ class GameController:
         self._last_update_attempt = current_time
 
         try:
-            score_changed = await self._score_manager.update_scores()
+            score_changed = await self._score_manager.update_scores_from_network()
         except Exception as e:
             print(f"Network update failed: {e}")
             self._update_retry_delay = min(
