@@ -6,7 +6,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from fakes import FakeGroup, FakeLabel, FakeTerminalio
+from fakes import FakeButton, FakeGroup, FakeLabel, FakeMatrixPortal, FakeTerminalio
+from lib.display_manager import DisplayManager
+from lib.game_controller import GameController
+from lib.hardware_manager import HardwareManager
+from lib.network_manager import NetworkManager
+from lib.score_manager import ScoreManager
 
 # Mock CircuitPython-specific modules that don't exist in regular Python
 # These must be mocked before any imports try to use them
@@ -48,3 +53,48 @@ def event_loop():
     loop = asyncio.new_event_loop()
     yield loop
     loop.close()
+
+
+@pytest.fixture
+def fake_matrix_portal():
+    """Create FakeMatrixPortal instance for testing."""
+    return FakeMatrixPortal()
+
+
+@pytest.fixture
+def network_manager(fake_matrix_portal):
+    """Create NetworkManager instance with fake hardware."""
+    return NetworkManager(fake_matrix_portal)
+
+
+@pytest.fixture
+def display_manager(fake_matrix_portal):
+    """Create DisplayManager instance with fake hardware."""
+    return DisplayManager(fake_matrix_portal)
+
+
+@pytest.fixture
+def score_manager(network_manager):
+    """Create ScoreManager instance with network manager."""
+    return ScoreManager(network_manager)
+
+
+@pytest.fixture
+def game_controller(score_manager, display_manager, network_manager):
+    """Create GameController instance with all managers."""
+    return GameController(score_manager, display_manager, network_manager)
+
+
+@pytest.fixture
+def fake_buttons():
+    """Create fake button dict for hardware tests."""
+    return {
+        "up": FakeButton(),
+        "down": FakeButton(),
+    }
+
+
+@pytest.fixture
+def hardware_manager(fake_buttons):
+    """Create HardwareManager instance with fake buttons."""
+    return HardwareManager(fake_buttons)
