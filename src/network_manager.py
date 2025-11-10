@@ -9,6 +9,7 @@ from src.protocols import MatrixPortalLike
 
 if TYPE_CHECKING:
     from src.display_manager import DisplayManager
+    from src.gender_manager import GenderManager
 
 
 class NetworkManager:
@@ -19,6 +20,7 @@ class NetworkManager:
     SCORES_RIGHT_TEAM_FEED = "scores-group.right-team-score-feed"
     TEAM_LEFT_TEAM_FEED = "scores-group.left-team-name"
     TEAM_RIGHT_TEAM_FEED = "scores-group.right-team-name"
+    FIRST_POINT_GENDER_FEED = "scores-group.first-point-gender"
 
     DEFAULT_LEFT_TEAM_NAME = "AWAY"
     DEFAULT_RIGHT_TEAM_NAME = "HOME"
@@ -51,11 +53,11 @@ class NetworkManager:
         finally:
             self.display_manager.show_connecting(False)
 
-    async def _set_feed_value(self, feed_key: str, value: str) -> None:
+    async def _set_feed_value(self, feed_key: str, value: str | int) -> None:
         """Set the value of an Adafruit IO feed.
 
         :param feed_key: The feed key to set
-        :param value: The value to set
+        :param value: The value to set (string or int)
         """
         await asyncio.sleep(0)
         self.display_manager.show_connecting(True)
@@ -97,3 +99,35 @@ class NetworkManager:
         :param score: The score value to set
         """
         await self._set_feed_value(self.SCORES_RIGHT_TEAM_FEED, score)
+
+    async def get_first_point_gender(self) -> str:
+        """Get the first point gender from Adafruit IO feed.
+
+        Returns uppercase gender constant (WMP or MMP).
+        Accepts case-insensitive input from network (mmp/wmp/MMP/WMP).
+
+        :return: Gender constant (GenderManager.GENDER_WMP or GenderManager.GENDER_MMP)
+        """
+        from src.gender_manager import GenderManager
+
+        if value := await self._get_feed_value(self.FIRST_POINT_GENDER_FEED):
+            normalized = value.upper()
+            if normalized in {GenderManager.GENDER_MMP, GenderManager.GENDER_WMP}:
+                return normalized
+        return GenderManager.DEFAULT_GENDER
+
+    async def set_first_point_gender(self, value: str) -> None:
+        """Set the first point gender on Adafruit IO.
+
+        Accepts gender constant (WMP or MMP) and stores as uppercase string.
+
+        :param value: The gender value to set (GenderManager.GENDER_WMP or GenderManager.GENDER_MMP)
+        """
+        from src.gender_manager import GenderManager
+
+        if value not in {GenderManager.GENDER_MMP, GenderManager.GENDER_WMP}:
+            raise ValueError(
+                f"Invalid gender value: {value}. "
+                f"Must be '{GenderManager.GENDER_WMP}' or '{GenderManager.GENDER_MMP}'"
+            )
+        await self._set_feed_value(self.FIRST_POINT_GENDER_FEED, value)
