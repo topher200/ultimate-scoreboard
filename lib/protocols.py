@@ -4,37 +4,7 @@ This allows both the real CircuitPython modules and mock CircuitPython modules
 to be used interchangeably in type-checked code.
 """
 
-try:
-    from typing import TYPE_CHECKING, Any, Protocol
-except ImportError:
-    TYPE_CHECKING = False
-
-    # CircuitPython compatibility: create stub classes when typing is unavailable
-    class Protocol:
-        """Stub Protocol class for CircuitPython compatibility."""
-
-    # Any needs to be a class (not instance) that can be used in type annotations
-    # and supports union operations
-    class Any:
-        """Stub Any class for CircuitPython compatibility."""
-
-        def __or__(self, other):
-            return UnionStub(self, other)
-
-        def __ror__(self, other):
-            return UnionStub(other, self)
-
-    class UnionStub:
-        """Stub for union types like Any | None."""
-
-        def __init__(self, left, right):
-            self.left = left
-            self.right = right
-
-
-# When typing is available, use real types for type checkers
-if TYPE_CHECKING:
-    from typing import Any, Protocol
+from lib.compat import Any, Protocol
 
 
 class MatrixPortalLike(Protocol):
