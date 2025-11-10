@@ -23,6 +23,7 @@ python -m ruff
 ```bash
 just test    # Run all tests
 just lint    # Run ruff and pyrefly
+just ci      # Run lint and test
 ```
 
 ## Project Structure
@@ -63,3 +64,6 @@ uv run pyrefly check .
 - Fake implementations in `fakes/` directory provide testable versions of hardware components
 - Tests can run without actual CircuitPython hardware
 
+## Agent Conventions
+
+- ALWAYS verify all changes with `just ci` before returning to the user
