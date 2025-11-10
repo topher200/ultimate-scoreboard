@@ -2,7 +2,7 @@
 
 import pytest
 
-from lib.hardware_manager import BUTTON_DOWN, BUTTON_UP
+from src.hardware_manager import BUTTON_DOWN, BUTTON_UP
 
 
 class TestHardwareManager:

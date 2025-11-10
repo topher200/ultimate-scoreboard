@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from fakes import FakeButton, FakeGroup, FakeLabel, FakeMatrixPortal, FakeTerminalio
-from lib.display_manager import DisplayManager
-from lib.game_controller import GameController
-from lib.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
-from lib.network_manager import NetworkManager
-from lib.score_manager import ScoreManager
+from src.display_manager import DisplayManager
+from src.game_controller import GameController
+from src.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
+from src.network_manager import NetworkManager
+from src.score_manager import ScoreManager
 
 # Mock CircuitPython-specific modules that don't exist in regular Python
 # These must be mocked before any imports try to use them

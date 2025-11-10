@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from lib.network_manager import NetworkManager
+from src.network_manager import NetworkManager
 
 
 class TestScoreManager:
