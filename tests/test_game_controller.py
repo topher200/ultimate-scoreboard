@@ -112,7 +112,7 @@ class TestGenderMatchupCalculation:
         self, game_controller, display_manager
     ):
         """Test that update_team_names sets gender matchup correctly for 0-0."""
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
         counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
@@ -125,7 +125,7 @@ class TestGenderMatchupCalculation:
         self, game_controller, display_manager
     ):
         """Test that pressing score button updates gender matchup display."""
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
         counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
@@ -143,7 +143,7 @@ class TestGenderMatchupCalculation:
         self, game_controller, display_manager
     ):
         """Test that gender matchup cycles correctly through multiple button presses."""
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
         counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
@@ -288,7 +288,7 @@ class TestGameControllerKeepsScore:
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Tigers")
 
         # Update team names
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         # Verify team names were fetched
         assert await network_manager.get_left_team_name() == "Phoenix"
@@ -302,7 +302,7 @@ class TestGameControllerKeepsScore:
         # Don't set any team names in network (they'll be None)
 
         # Update team names
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         # Verify defaults are used
         assert await network_manager.get_left_team_name() == "AWAY"
@@ -331,7 +331,7 @@ class TestGameControllerKeepsScore:
         # Initialize with team names
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "AWAY")
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "HOME")
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         # Get label references
         matchup_label = display_manager.text_elements["gender_matchup"]["label"]
@@ -625,7 +625,7 @@ class TestGenderFeedSupport:
     ):
         """Test that toggle gender button changes starting gender and recalculates matchup."""
         # Initial state: WMP2 (default)
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
         label = display_manager.text_elements["gender_matchup"]["label"]
         counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
         assert label.text == "WMP"
@@ -672,7 +672,7 @@ class TestGenderFeedSupport:
         fake_matrix_portal.set_feed_value(
             NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_MMP
         )
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
 
         label = display_manager.text_elements["gender_matchup"]["label"]
         counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
@@ -684,7 +684,7 @@ class TestGenderFeedSupport:
         fake_matrix_portal.set_feed_value(
             NetworkManager.FIRST_POINT_GENDER_FEED, GenderManager.GENDER_WMP
         )
-        await game_controller.update_team_names()
+        await game_controller.update_team_names_and_gender()
         assert gender_manager.get_first_point_gender() == GenderManager.GENDER_WMP
         assert label.text == "WMP"
         assert counter_label.text == "2"
