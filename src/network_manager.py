@@ -11,10 +11,10 @@ class NetworkManager:
     """Manages fetching data from Adafruit IO feeds."""
 
     # Feed key constants
-    SCORES_LEFT_TEAM_FEED = "scores-group.red-team-score-feed"
-    SCORES_RIGHT_TEAM_FEED = "scores-group.blue-team-score-feed"
-    TEAM_LEFT_TEAM_FEED = "scores-group.red-team-name"
-    TEAM_RIGHT_TEAM_FEED = "scores-group.blue-team-name"
+    SCORES_LEFT_TEAM_FEED = "scores-group.left-team-score-feed"
+    SCORES_RIGHT_TEAM_FEED = "scores-group.right-team-score-feed"
+    TEAM_LEFT_TEAM_FEED = "scores-group.left-team-name"
+    TEAM_RIGHT_TEAM_FEED = "scores-group.right-team-name"
 
     DEFAULT_LEFT_TEAM_NAME = "AWAY"
     DEFAULT_RIGHT_TEAM_NAME = "HOME"
