@@ -41,18 +41,16 @@ async def main():
 
     # Initialize managers
     text_manager = DisplayManager(matrixportal)
-    network_manager = NetworkManager(matrixportal)
+    network_manager = NetworkManager(matrixportal, text_manager)
     score_manager = ScoreManager(network_manager)
     keys = create_keys_from_board(board)
     hardware_manager = HardwareManager(keys=keys)
     game_controller = GameController(score_manager, text_manager, network_manager)
 
     # Initial setup
-    text_manager.show_connecting(True)
     await game_controller.update_team_names()
     await asyncio.sleep(0)
     await game_controller.update_from_network()
-    text_manager.show_connecting(False)
 
     # Run all tasks concurrently
     await asyncio.gather(
