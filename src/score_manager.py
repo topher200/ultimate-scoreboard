@@ -41,7 +41,7 @@ class ScoreManager(SyncManager):
         """
         return await self._try_sync_with_backoff()
 
-    async def update_scores(self):
+    async def update_scores_from_network(self):
         """Fetch latest scores from Adafruit IO and update internal state.
 
         Will skip network fetch if there are pending local changes to sync.
@@ -54,9 +54,6 @@ class ScoreManager(SyncManager):
                 return False
 
         score_left = await self._network_manager.get_left_team_score()
-
-        await asyncio.sleep(0)
-
         score_right = await self._network_manager.get_right_team_score()
 
         previous_left_score = self.left_score
