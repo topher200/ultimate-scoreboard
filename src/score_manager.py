@@ -54,7 +54,15 @@ class ScoreManager(SyncManager):
                 return False
 
         score_left = await self._network_manager.get_left_team_score()
+        await asyncio.sleep(0)
         score_right = await self._network_manager.get_right_team_score()
+        await asyncio.sleep(0)
+
+        if self._has_pending_sync:
+            print(
+                "Received a local update while pulling the network update, skipping network update"
+            )
+            return False
 
         previous_left_score = self.left_score
         previous_right_score = self.right_score
