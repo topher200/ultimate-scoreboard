@@ -48,8 +48,6 @@ async def main():
     game_controller = GameController(score_manager, text_manager, network_manager)
 
     # Initial setup
-    await game_controller.update_team_names()
-    await asyncio.sleep(0)
     await game_controller.update_from_network()
 
     # Run all tasks concurrently
