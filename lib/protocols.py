@@ -1,4 +1,8 @@
-"""Protocol definitions for type checking interfaces."""
+"""Protocol definitions for type checking interfaces.
+
+This allows both the real CircuitPython modules and mock CircuitPython modules
+to be used interchangeably in type-checked code.
+"""
 
 try:
     from typing import TYPE_CHECKING, Any, Protocol
@@ -34,11 +38,7 @@ if TYPE_CHECKING:
 
 
 class MatrixPortalLike(Protocol):
-    """Protocol defining the MatrixPortal interface used in this project.
-
-    This allows both the real MatrixPortal and FakeMatrixPortal to be used
-    interchangeably in type-checked code.
-    """
+    """Protocol defining the MatrixPortal interface used in this project."""
 
     @property
     def display(self) -> Any:
@@ -69,3 +69,28 @@ class MatrixPortalLike(Protocol):
         :param precision: Optional precision for numeric values
         """
         ...
+
+
+class ButtonLike(Protocol):
+    """Protocol defining the button interface used in this project."""
+
+    @property
+    def value(self) -> bool:
+        """Get the button state.
+
+        :return: True if button is released, False if pressed (active-low)
+        """
+        ...
+
+
+class BoardLike(Protocol):
+    """Protocol defining the board module interface used in this project."""
+
+    BUTTON_UP: Any
+    """Pin definition for the up button."""
+
+    BUTTON_DOWN: Any
+    """Pin definition for the down button."""
+
+    NEOPIXEL: Any
+    """Pin definition for the NeoPixel status LED."""
