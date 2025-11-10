@@ -51,6 +51,19 @@ class NetworkManager:
         finally:
             self.display_manager.show_connecting(False)
 
+    async def _set_feed_value(self, feed_key: str, value: str) -> None:
+        """Set the value of an Adafruit IO feed.
+
+        :param feed_key: The feed key to set
+        :param value: The value to set
+        """
+        await asyncio.sleep(0)
+        self.display_manager.show_connecting(True)
+        try:
+            self._matrixportal.push_to_io(feed_key, value)
+        finally:
+            self.display_manager.show_connecting(False)
+
     async def get_left_team_score(self) -> int:
         if value := await self._get_feed_value(self.SCORES_LEFT_TEAM_FEED):
             return int(value)
@@ -76,13 +89,11 @@ class NetworkManager:
 
         :param score: The score value to set
         """
-        await asyncio.sleep(0)
-        self._matrixportal.push_to_io(self.SCORES_LEFT_TEAM_FEED, score)
+        await self._set_feed_value(self.SCORES_LEFT_TEAM_FEED, score)
 
     async def set_right_team_score(self, score: int) -> None:
         """Set the right team score on Adafruit IO.
 
         :param score: The score value to set
         """
-        await asyncio.sleep(0)
-        self._matrixportal.push_to_io(self.SCORES_RIGHT_TEAM_FEED, score)
+        await self._set_feed_value(self.SCORES_RIGHT_TEAM_FEED, score)

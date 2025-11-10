@@ -148,13 +148,10 @@ class GameController:
         self._last_update_attempt = current_time
 
         try:
-            self._display_manager.show_connecting(True)
-
             if await self._score_manager.update_scores():
                 await asyncio.sleep(0)
                 await self.update_team_names()
         except Exception as e:
-            self._display_manager.show_connecting(False)
             print(f"Network update failed: {e}")
             self._update_retry_delay = min(
                 self._update_retry_delay * 2, self.MAX_UPDATE_DELAY
@@ -167,6 +164,5 @@ class GameController:
             self._display_manager.set_text(
                 "right_team_score", self._score_manager.right_score
             )
-            self._display_manager.show_connecting(False)
             self._update_retry_delay = self.MIN_UPDATE_DELAY
             return True
