@@ -105,7 +105,7 @@ class TestNetworkManager:
         """Test that show_connecting is called with True before fetch and False after."""
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, 5)
         mock_show_connecting = MagicMock()
-        network_manager.text_manager.show_connecting = mock_show_connecting
+        network_manager.display_manager.show_connecting = mock_show_connecting
 
         await network_manager.get_left_team_score()
 
@@ -119,7 +119,7 @@ class TestNetworkManager:
     ):
         """Test that show_connecting(False) is called even when an exception occurs."""
         mock_show_connecting = MagicMock()
-        network_manager.text_manager.show_connecting = mock_show_connecting
+        network_manager.display_manager.show_connecting = mock_show_connecting
         fake_matrix_portal.set_feed_value(NetworkManager.SCORES_LEFT_TEAM_FEED, None)
 
         await network_manager.get_left_team_score()

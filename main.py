@@ -40,12 +40,12 @@ async def main():
     )
 
     # Initialize managers
-    text_manager = DisplayManager(matrixportal)
-    network_manager = NetworkManager(matrixportal, text_manager)
+    display_manager = DisplayManager(matrixportal)
+    network_manager = NetworkManager(matrixportal, display_manager)
     score_manager = ScoreManager(network_manager)
     keys = create_keys_from_board(board)
     hardware_manager = HardwareManager(keys=keys)
-    game_controller = GameController(score_manager, text_manager, network_manager)
+    game_controller = GameController(score_manager, display_manager, network_manager)
 
     # Initial setup
     await game_controller.update_from_network()
