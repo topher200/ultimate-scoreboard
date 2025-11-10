@@ -83,14 +83,14 @@ class TestNetworkManagerScores:
 
         result = await network_manager.get_left_team_score()
 
-        assert result == 0
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_get_right_team_score_with_missing_feed(self, network_manager):
         """Test getting right team score for a feed that doesn't exist."""
         result = await network_manager.get_right_team_score()
 
-        assert result == 0
+        assert result is None
 
     @pytest.mark.asyncio
     async def test_get_left_team_score_with_string_number(
@@ -255,7 +255,7 @@ class TestNetworkManagerCircuitBreaker:
 
         result = await network_manager.get_left_team_score()
 
-        assert result == 0
+        assert result is None
         assert network_manager._circuit_breaker_open_until is not None
 
     @pytest.mark.asyncio
@@ -280,7 +280,7 @@ class TestNetworkManagerCircuitBreaker:
 
         result = await network_manager.get_left_team_score()
 
-        assert result == 0
+        assert result is None
         assert mock_get_io_feed.call_count == 0
 
     @pytest.mark.asyncio
@@ -346,7 +346,7 @@ class TestNetworkManagerCircuitBreaker:
 
         result = await network_manager.get_left_team_score()
 
-        assert result == 0
+        assert result is None
         assert network_manager._circuit_breaker_open_until is None
 
     @pytest.mark.asyncio
@@ -358,7 +358,7 @@ class TestNetworkManagerCircuitBreaker:
 
         result = await network_manager.get_left_team_score()
 
-        assert result == 0
+        assert result is None
         assert network_manager._circuit_breaker_open_until is None
 
     @pytest.mark.asyncio

@@ -97,15 +97,17 @@ class NetworkManager:
         finally:
             self.display_manager.show_connecting(False)
 
-    async def get_left_team_score(self) -> int:
-        if value := await self._get_feed_value(self.SCORES_LEFT_TEAM_FEED):
+    async def get_left_team_score(self) -> int | None:
+        value = await self._get_feed_value(self.SCORES_LEFT_TEAM_FEED)
+        if value is not None:
             return int(value)
-        return 0
+        return None
 
-    async def get_right_team_score(self) -> int:
-        if value := await self._get_feed_value(self.SCORES_RIGHT_TEAM_FEED):
+    async def get_right_team_score(self) -> int | None:
+        value = await self._get_feed_value(self.SCORES_RIGHT_TEAM_FEED)
+        if value is not None:
             return int(value)
-        return 0
+        return None
 
     async def get_left_team_name(self) -> str:
         if value := await self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
