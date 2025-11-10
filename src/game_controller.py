@@ -99,6 +99,10 @@ class GameController:
 
         self._update_gender_matchup_display()
 
+        # Unrelated, hardware-hack: we're using this button as a shortcut to
+        # reset the network circuit breaker.
+        self._network_manager.reset_circuit_breaker()
+
     async def handle_right_score_button(self) -> None:
         """Handle right team score button press.
 
