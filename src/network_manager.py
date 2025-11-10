@@ -4,7 +4,11 @@ from __future__ import annotations
 
 import asyncio
 
+from src.compat import TYPE_CHECKING
 from src.protocols import MatrixPortalLike
+
+if TYPE_CHECKING:
+    from src.display_manager import DisplayManager
 
 
 class NetworkManager:
@@ -19,12 +23,14 @@ class NetworkManager:
     DEFAULT_LEFT_TEAM_NAME = "AWAY"
     DEFAULT_RIGHT_TEAM_NAME = "HOME"
 
-    def __init__(self, matrixportal: MatrixPortalLike):
+    def __init__(self, matrixportal: MatrixPortalLike, text_manager: DisplayManager):
         """Initialize NetworkManager with MatrixPortal.
 
         :param matrixportal: MatrixPortal-like instance for network operations
+        :param text_manager: DisplayManager instance for showing connection status
         """
         self._matrixportal = matrixportal
+        self.text_manager = text_manager
 
     async def _get_feed_value(self, feed_key: str) -> None | str:
         """Fetch the last value from an Adafruit IO feed.
@@ -33,6 +39,7 @@ class NetworkManager:
         :return: The last value from the feed, or None if not available
         """
         await asyncio.sleep(0)
+        self.text_manager.show_connecting(True)
         try:
             feed = self._matrixportal.get_io_feed(feed_key, detailed=True)
             value = feed["details"]["data"]["last"]
@@ -41,6 +48,8 @@ class NetworkManager:
             return None
         except (KeyError, TypeError):
             return None
+        finally:
+            self.text_manager.show_connecting(False)
 
     async def get_left_team_score(self) -> int:
         if value := await self._get_feed_value(self.SCORES_LEFT_TEAM_FEED):

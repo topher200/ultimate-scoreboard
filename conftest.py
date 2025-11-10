@@ -68,9 +68,9 @@ def fake_matrix_portal():
 
 
 @pytest.fixture
-def network_manager(fake_matrix_portal):
+def network_manager(fake_matrix_portal, display_manager):
     """Create NetworkManager instance with fake hardware."""
-    return NetworkManager(fake_matrix_portal)
+    return NetworkManager(fake_matrix_portal, display_manager)
 
 
 @pytest.fixture
