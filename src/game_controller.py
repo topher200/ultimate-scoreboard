@@ -64,8 +64,6 @@ class GameController:
         Increments the left team score and updates the display.
         """
         print("UP button pressed! Incrementing left score...")
-        self._display_manager.show_connecting(True)
-
         self._score_manager.increment_left_score()
         self._display_manager.set_text(
             "left_team_score", self._score_manager.left_score
@@ -79,17 +77,12 @@ class GameController:
             "gender_matchup_counter", str(gender_matchup_count)
         )
 
-        await self._score_manager.try_sync_scores()
-        self._display_manager.show_connecting(False)
-
     async def handle_right_score_button(self) -> None:
         """Handle right team score button press.
 
         Increments the right team score and updates the display.
         """
         print("DOWN button pressed! Incrementing right score...")
-        self._display_manager.show_connecting(True)
-
         self._score_manager.increment_right_score()
         self._display_manager.set_text(
             "right_team_score", self._score_manager.right_score
@@ -102,9 +95,6 @@ class GameController:
         self._display_manager.set_text(
             "gender_matchup_counter", str(gender_matchup_count)
         )
-
-        await self._score_manager.try_sync_scores()
-        self._display_manager.show_connecting(False)
 
     async def update_team_names(self) -> None:
         """Update team names and gender matchup from network.
