@@ -1,7 +1,6 @@
 """Coordinates game actions and state changes."""
 
 import asyncio
-import time
 
 from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
@@ -14,10 +13,6 @@ class GameController:
 
     Handles business logic for button presses, network updates, and display coordination.
     """
-
-    # Network update delay; how often to check for score updates from the internet
-    MIN_UPDATE_DELAY = 5.0
-    MAX_UPDATE_DELAY = 60.0
 
     def __init__(
         self,
@@ -37,8 +32,6 @@ class GameController:
         self._display_manager = display_manager
         self._network_manager = network_manager
         self._gender_manager = gender_manager
-        self._update_retry_delay = self.MIN_UPDATE_DELAY
-        self._last_update_attempt = 0.0
 
     def _calculate_gender_matchup(
         self, score_sum: int, starting_gender: str
@@ -147,41 +140,18 @@ class GameController:
         await self._gender_manager.update_gender_from_network()
         self._update_gender_matchup_display()
 
-    def get_next_update_delay(self) -> float:
-        """Get the delay before next network update attempt.
-
-        :return: Delay in seconds
-        """
-        return self._update_retry_delay
-
-    def reset_update_timing(self) -> None:
-        """Reset update timing to allow immediate update attempts.
-
-        Primarily intended for testing purposes to bypass timing restrictions.
-        """
-        self._last_update_attempt = 0.0
-
     async def update_from_network(self) -> bool:
-        """Update scores and team information from network with exponential backoff.
+        """Update scores and team information from network.
 
         Fetches latest scores from Adafruit IO and updates display.
         Also updates team names if scores have changed.
 
         :return: True if update was successful, False otherwise
         """
-        current_time = time.monotonic()
-        if current_time - self._last_update_attempt < self._update_retry_delay:
-            return False
-
-        self._last_update_attempt = current_time
-
         try:
             score_changed = await self._score_manager.update_scores_from_network()
         except Exception as e:
             print(f"Network update failed: {e}")
-            self._update_retry_delay = min(
-                self._update_retry_delay * 2, self.MAX_UPDATE_DELAY
-            )
             return False
 
         self._display_manager.set_text(
@@ -195,5 +165,4 @@ class GameController:
         if score_changed:
             await self.update_team_names_and_gender()
 
-        self._update_retry_delay = self.MIN_UPDATE_DELAY
         return True

@@ -5,7 +5,7 @@ from src.sync_manager import SyncManager
 
 
 class ScoreManager(SyncManager):
-    """Manages score state with async network sync and exponential backoff."""
+    """Manages score state with async network sync."""
 
     def __init__(self, network_manager: NetworkManager):
         """Initialize ScoreManager with NetworkManager.
@@ -35,7 +35,7 @@ class ScoreManager(SyncManager):
             self._last_synced_right = self.right_score
 
     async def try_sync_scores(self) -> bool:
-        """Attempt to sync local scores to network with exponential backoff.
+        """Attempt to sync local scores to network.
 
         :return: True if sync was successful, False otherwise
         """
