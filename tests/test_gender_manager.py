@@ -1,6 +1,5 @@
 """Tests for GenderManager using fake implementations."""
 
-import time
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -135,70 +134,6 @@ class TestGenderManager:
         assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
 
     @pytest.mark.asyncio
-    async def test_exponential_backoff_timing(self, gender_manager, network_manager):
-        """Test that retry delay follows exponential backoff pattern."""
-        gender_manager.toggle_first_point_gender()
-
-        assert gender_manager.get_next_retry_delay() == 1.0
-
-        with patch.object(
-            network_manager,
-            "set_first_point_gender",
-            side_effect=Exception("Network error"),
-        ):
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 2.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 4.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 8.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 16.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 32.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 60.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 60.0
-
-    @pytest.mark.asyncio
-    async def test_backoff_resets_after_successful_sync(
-        self, gender_manager, network_manager
-    ):
-        """Test that backoff delay resets after a successful sync."""
-        gender_manager.toggle_first_point_gender()
-
-        with patch.object(
-            network_manager,
-            "set_first_point_gender",
-            side_effect=Exception("Network error"),
-        ):
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 2.0
-
-            gender_manager.reset_sync_timing()
-            await gender_manager.try_sync_gender()
-            assert gender_manager.get_next_retry_delay() == 4.0
-
-        gender_manager.toggle_first_point_gender()
-        gender_manager.reset_sync_timing()
-        success = await gender_manager.try_sync_gender()
-        assert success
-        assert gender_manager.get_next_retry_delay() == 1.0
-
-    @pytest.mark.asyncio
     async def test_concurrent_local_and_network_updates(
         self, gender_manager, fake_matrix_portal, network_manager
     ):
@@ -218,27 +153,6 @@ class TestGenderManager:
             assert not changed
             assert gender_manager.get_first_point_gender() == GenderManager.GENDER_MMP
 
-        gender_manager.reset_sync_timing()
         success = await gender_manager.try_sync_gender()
         assert success
         assert not gender_manager.has_pending_changes()
-
-    @pytest.mark.asyncio
-    async def test_retry_delay_prevents_immediate_retry(
-        self, gender_manager, network_manager
-    ):
-        """Test that retry delay prevents sync attempts before delay expires."""
-        gender_manager.toggle_first_point_gender()
-
-        with patch.object(
-            network_manager,
-            "set_first_point_gender",
-            side_effect=Exception("Network error"),
-        ):
-            result1 = await gender_manager.try_sync_gender()
-            assert not result1
-
-            result2 = await gender_manager.try_sync_gender()
-            assert not result2
-
-            assert gender_manager.has_pending_changes()

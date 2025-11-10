@@ -1,6 +1,5 @@
 """Tests for ScoreManager using fake implementations."""
 
-import time
 from unittest.mock import AsyncMock, patch
 
 import pytest
@@ -131,7 +130,7 @@ class TestScoreManager:
 
 
 class TestScoreManagerPendingSync:
-    """Test ScoreManager pending sync flag and exponential backoff retry logic."""
+    """Test ScoreManager pending sync flag and retry logic."""
 
     def test_increment_sets_pending_sync_flag(self, score_manager):
         """Test that incrementing score sets the pending sync flag."""
@@ -202,70 +201,6 @@ class TestScoreManagerPendingSync:
         assert score_manager.right_score == 3
 
     @pytest.mark.asyncio
-    async def test_exponential_backoff_timing(self, score_manager, network_manager):
-        """Test that retry delay follows exponential backoff pattern."""
-        score_manager.increment_left_score()
-
-        assert score_manager.get_next_retry_delay() == 1.0
-
-        with patch.object(
-            network_manager,
-            "set_left_team_score",
-            side_effect=Exception("Network error"),
-        ):
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 2.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 4.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 8.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 16.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 32.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 60.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 60.0
-
-    @pytest.mark.asyncio
-    async def test_backoff_resets_after_successful_sync(
-        self, score_manager, network_manager
-    ):
-        """Test that backoff delay resets after a successful sync."""
-        score_manager.increment_left_score()
-
-        with patch.object(
-            network_manager,
-            "set_left_team_score",
-            side_effect=Exception("Network error"),
-        ):
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 2.0
-
-            score_manager.reset_sync_timing()
-            await score_manager.try_sync_scores()
-            assert score_manager.get_next_retry_delay() == 4.0
-
-        score_manager.increment_right_score()
-        score_manager.reset_sync_timing()
-        success = await score_manager.try_sync_scores()
-        assert success
-        assert score_manager.get_next_retry_delay() == 1.0
-
-    @pytest.mark.asyncio
     async def test_concurrent_local_and_network_updates(
         self, score_manager, fake_matrix_portal, network_manager
     ):
@@ -287,7 +222,6 @@ class TestScoreManagerPendingSync:
             assert not changed
             assert score_manager.left_score == 2
 
-        score_manager.reset_sync_timing()
         success = await score_manager.try_sync_scores()
         assert success
         assert not score_manager.has_pending_changes()
@@ -305,23 +239,3 @@ class TestScoreManagerPendingSync:
 
             mock_left.assert_called_once_with(1)
             mock_right.assert_not_called()
-
-    @pytest.mark.asyncio
-    async def test_retry_delay_prevents_immediate_retry(
-        self, score_manager, network_manager
-    ):
-        """Test that retry delay prevents sync attempts before delay expires."""
-        score_manager.increment_left_score()
-
-        with patch.object(
-            network_manager,
-            "set_left_team_score",
-            side_effect=Exception("Network error"),
-        ):
-            result1 = await score_manager.try_sync_scores()
-            assert not result1
-
-            result2 = await score_manager.try_sync_scores()
-            assert not result2
-
-            assert score_manager.has_pending_changes()

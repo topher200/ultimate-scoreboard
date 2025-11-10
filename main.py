@@ -16,6 +16,8 @@ from src.network_manager import NetworkManager
 from src.network_patches import apply_network_patches
 from src.score_manager import ScoreManager
 
+NETWORK_UPDATE_DELAY = 5.0
+
 
 async def sync_and_fetch_updates(
     score_manager: ScoreManager,
@@ -25,7 +27,7 @@ async def sync_and_fetch_updates(
     """Periodically sync pending changes and fetch network updates.
 
     First syncs any pending score and gender changes, then fetches updates
-    from the network. Uses game_controller timing for the update cycle.
+    from the network.
     """
     while True:
         if score_manager.has_pending_changes():
@@ -37,7 +39,7 @@ async def sync_and_fetch_updates(
         await asyncio.sleep(0)
 
         await game_controller.update_from_network()
-        await asyncio.sleep(game_controller.get_next_update_delay())
+        await asyncio.sleep(NETWORK_UPDATE_DELAY)
 
 
 async def initial_network_fetch(game_controller: GameController):

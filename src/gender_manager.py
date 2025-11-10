@@ -3,7 +3,7 @@ from src.sync_manager import SyncManager
 
 
 class GenderManager(SyncManager):
-    """Manages first point gender state with async network sync and exponential backoff."""
+    """Manages first point gender state with async network sync."""
 
     # Gender constants
     GENDER_WMP = "WMP"
@@ -47,7 +47,7 @@ class GenderManager(SyncManager):
             self._network_first_point_gender = self._local_first_point_gender
 
     async def try_sync_gender(self) -> bool:
-        """Attempt to sync local gender to network with exponential backoff.
+        """Attempt to sync local gender to network.
 
         :return: True if sync was successful, False otherwise
         """
