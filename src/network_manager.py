@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 
 from src.compat import TYPE_CHECKING
 from src.protocols import MatrixPortalLike
@@ -33,6 +34,20 @@ class NetworkManager:
         """
         self._matrixportal = matrixportal
         self.display_manager = display_manager
+        self._circuit_breaker_open_until: float | None = None
+
+    def _is_circuit_breaker_open(self) -> bool:
+        """Check if the circuit breaker is currently open.
+
+        :return: True if circuit breaker is open, False otherwise
+        """
+        if self._circuit_breaker_open_until is None:
+            return False
+        return time.monotonic() < self._circuit_breaker_open_until
+
+    def _trigger_circuit_breaker(self) -> None:
+        """Trigger the circuit breaker to open for 60 seconds."""
+        self._circuit_breaker_open_until = time.monotonic() + 60
 
     async def _get_feed_value(self, feed_key: str) -> None | str:
         """Fetch the last value from an Adafruit IO feed.
@@ -40,6 +55,9 @@ class NetworkManager:
         :param feed_key: The feed key to fetch from
         :return: The last value from the feed, or None if not available
         """
+        if self._is_circuit_breaker_open():
+            return None
+
         await asyncio.sleep(0)
         self.display_manager.show_connecting(True)
         try:
@@ -50,6 +68,9 @@ class NetworkManager:
             return None
         except (KeyError, TypeError):
             return None
+        except Exception:
+            self._trigger_circuit_breaker()
+            return None
         finally:
             self.display_manager.show_connecting(False)
 
@@ -59,10 +80,16 @@ class NetworkManager:
         :param feed_key: The feed key to set
         :param value: The value to set (string or int)
         """
+        if self._is_circuit_breaker_open():
+            return
+
         await asyncio.sleep(0)
         self.display_manager.show_connecting(True)
         try:
             self._matrixportal.push_to_io(feed_key, value)
+        except Exception:
+            self._trigger_circuit_breaker()
+            raise
         finally:
             self.display_manager.show_connecting(False)
 
