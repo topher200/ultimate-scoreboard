@@ -10,3 +10,5 @@ from typing import Any
 NEOPIXEL: Any
 BUTTON_UP: Any
 BUTTON_DOWN: Any
+A1: Any
+A3: Any

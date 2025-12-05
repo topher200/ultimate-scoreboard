@@ -107,9 +107,11 @@ def fake_keys():
     mock_board = MagicMock()
     mock_board.BUTTON_UP = MagicMock()
     mock_board.BUTTON_DOWN = MagicMock()
+    mock_board.A1 = MagicMock()
+    mock_board.A3 = MagicMock()
 
     return FakeKeys(
-        (mock_board.BUTTON_UP, mock_board.BUTTON_DOWN),
+        (mock_board.BUTTON_UP, mock_board.BUTTON_DOWN, mock_board.A1, mock_board.A3),
         value_when_pressed=False,
         pull=True,
     )

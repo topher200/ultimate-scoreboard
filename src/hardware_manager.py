@@ -10,11 +10,16 @@ from src.protocols import BoardLike, KeysLike
 # Button name constants
 BUTTON_UP = "up"
 BUTTON_DOWN = "down"
+BUTTON_LEFT = "left"
+BUTTON_RIGHT = "right"
 
 # Key number constants (from keypad events)
-# Pin order: (board.BUTTON_UP, board.BUTTON_DOWN) means UP=0, DOWN=1
+# Pin order: (board.BUTTON_UP, board.BUTTON_DOWN, board.A1, board.A3)
+# means UP=0, DOWN=1, LEFT=2, RIGHT=3
 KEY_NUMBER_BUTTON_UP = 0
 KEY_NUMBER_BUTTON_DOWN = 1
+KEY_NUMBER_BUTTON_LEFT = 2
+KEY_NUMBER_BUTTON_RIGHT = 3
 
 # Polling rate for button monitoring loop
 BUTTON_POLLING_RATE = 0.1
@@ -23,6 +28,8 @@ BUTTON_POLLING_RATE = 0.1
 KEY_NUMBER_TO_BUTTON = {
     KEY_NUMBER_BUTTON_UP: BUTTON_UP,
     KEY_NUMBER_BUTTON_DOWN: BUTTON_DOWN,
+    KEY_NUMBER_BUTTON_LEFT: BUTTON_LEFT,
+    KEY_NUMBER_BUTTON_RIGHT: BUTTON_RIGHT,
 }
 
 
@@ -33,7 +40,7 @@ def create_keys_from_board(board: BoardLike) -> KeysLike:
     :return: Configured keypad.Keys object
     """
     return keypad.Keys(
-        (board.BUTTON_UP, board.BUTTON_DOWN),
+        (board.BUTTON_UP, board.BUTTON_DOWN, board.A1, board.A3),
         value_when_pressed=False,  # Active-low (button connects to ground)
         pull=True,  # Enable internal pull-ups
     )
@@ -55,6 +62,8 @@ class HardwareManager:
         self._button_press_event = {
             BUTTON_UP: False,
             BUTTON_DOWN: False,
+            BUTTON_LEFT: False,
+            BUTTON_RIGHT: False,
         }
 
     def update(self) -> None:

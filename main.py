@@ -8,6 +8,8 @@ from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.hardware_manager import (
     BUTTON_DOWN,
+    BUTTON_LEFT,
+    BUTTON_RIGHT,
     BUTTON_UP,
     HardwareManager,
     create_keys_from_board,
@@ -94,6 +96,8 @@ async def main():
             {
                 BUTTON_UP: game_controller.handle_toggle_gender_button,
                 BUTTON_DOWN: game_controller.handle_left_score_button,
+                BUTTON_LEFT: game_controller.handle_left_score_button,
+                BUTTON_RIGHT: game_controller.handle_right_score_button,
             }
         ),
         sync_and_fetch_updates(score_manager, gender_manager, game_controller),
