@@ -81,15 +81,15 @@ def display_manager(fake_matrix_portal):
 
 
 @pytest.fixture
-def score_manager(network_manager):
-    """Create ScoreManager instance with network manager."""
-    return ScoreManager(network_manager)
+def score_manager():
+    """Create ScoreManager instance."""
+    return ScoreManager()
 
 
 @pytest.fixture
-def gender_manager(network_manager):
-    """Create GenderManager instance with network manager."""
-    return GenderManager(network_manager)
+def gender_manager():
+    """Create GenderManager instance."""
+    return GenderManager()
 
 
 @pytest.fixture

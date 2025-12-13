@@ -19,20 +19,6 @@ from src.network_patches import apply_network_patches
 from src.score_manager import ScoreManager
 
 
-async def initial_network_fetch(game_controller: GameController):
-    """One-time attempt to fetch initial values from network.
-
-    Wraps network calls in try/except to handle network unavailability gracefully.
-    Runs once and exits, allowing the system to start with defaults.
-    """
-    try:
-        await game_controller.update_from_network()
-        await asyncio.sleep(0)
-        await game_controller.update_team_names_and_gender()
-    except Exception as e:
-        print(f"Initial network fetch failed: {e}")
-
-
 async def main():
     """Main application entry point with asyncio tasks."""
     # Initialize hardware
@@ -44,8 +30,8 @@ async def main():
     # Initialize managers
     display_manager = DisplayManager(matrixportal)
     network_manager = NetworkManager(matrixportal, display_manager)
-    score_manager = ScoreManager(network_manager)
-    gender_manager = GenderManager(network_manager)
+    score_manager = ScoreManager()
+    gender_manager = GenderManager()
     keys = create_keys_from_board(board)
     hardware_manager = HardwareManager(keys=keys)
     game_controller = GameController(
@@ -54,20 +40,18 @@ async def main():
 
     # Initial setup
     try:
-        await game_controller.update_team_names_and_gender()
+        await game_controller.update_team_names()
     except Exception as e:
         # If network fails during initialization, set defaults manually
         print(f"Network unavailable during initialization: {e}")
-        display_manager.set_text("left_team", NetworkManager.DEFAULT_LEFT_TEAM_NAME)
-        display_manager.set_text("right_team", NetworkManager.DEFAULT_RIGHT_TEAM_NAME)
-    # Always set scores and gender matchup
-    display_manager.set_text("left_team_score", score_manager.left_score)
-    display_manager.set_text("right_team_score", score_manager.right_score)
-    game_controller._update_gender_matchup_display()
+        game_controller.set_team_names(
+            NetworkManager.DEFAULT_LEFT_TEAM_NAME,
+            NetworkManager.DEFAULT_RIGHT_TEAM_NAME,
+        )
+    game_controller.initialize_scores()
 
     # Run all tasks concurrently
     await asyncio.gather(
-        initial_network_fetch(game_controller),
         hardware_manager.monitor_buttons(
             {
                 BUTTON_UP: game_controller.handle_toggle_gender_button,
