@@ -17,11 +17,8 @@ class NetworkManager:
     """Manages fetching data from Adafruit IO feeds."""
 
     # Feed key constants
-    SCORES_LEFT_TEAM_FEED = "scores-group.left-team-score-feed"
-    SCORES_RIGHT_TEAM_FEED = "scores-group.right-team-score-feed"
     TEAM_LEFT_TEAM_FEED = "scores-group.left-team-name"
     TEAM_RIGHT_TEAM_FEED = "scores-group.right-team-name"
-    FIRST_POINT_GENDER_FEED = "scores-group.first-point-gender"
 
     DEFAULT_LEFT_TEAM_NAME = "AWAY"
     DEFAULT_RIGHT_TEAM_NAME = "HOME"
@@ -97,18 +94,6 @@ class NetworkManager:
         finally:
             self.display_manager.show_connecting(False)
 
-    async def get_left_team_score(self) -> int | None:
-        value = await self._get_feed_value(self.SCORES_LEFT_TEAM_FEED)
-        if value is not None:
-            return int(value)
-        return None
-
-    async def get_right_team_score(self) -> int | None:
-        value = await self._get_feed_value(self.SCORES_RIGHT_TEAM_FEED)
-        if value is not None:
-            return int(value)
-        return None
-
     async def get_left_team_name(self) -> str:
         if value := await self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
             return value
@@ -118,49 +103,3 @@ class NetworkManager:
         if value := await self._get_feed_value(self.TEAM_RIGHT_TEAM_FEED):
             return value
         return self.DEFAULT_RIGHT_TEAM_NAME
-
-    async def set_left_team_score(self, score: int) -> None:
-        """Set the left team score on Adafruit IO.
-
-        :param score: The score value to set
-        """
-        await self._set_feed_value(self.SCORES_LEFT_TEAM_FEED, score)
-
-    async def set_right_team_score(self, score: int) -> None:
-        """Set the right team score on Adafruit IO.
-
-        :param score: The score value to set
-        """
-        await self._set_feed_value(self.SCORES_RIGHT_TEAM_FEED, score)
-
-    async def get_first_point_gender(self) -> str:
-        """Get the first point gender from Adafruit IO feed.
-
-        Returns uppercase gender constant (WMP or MMP).
-        Accepts case-insensitive input from network (mmp/wmp/MMP/WMP).
-
-        :return: Gender constant (GenderManager.GENDER_WMP or GenderManager.GENDER_MMP)
-        """
-        from src.gender_manager import GenderManager
-
-        if value := await self._get_feed_value(self.FIRST_POINT_GENDER_FEED):
-            normalized = value.upper()
-            if normalized in {GenderManager.GENDER_MMP, GenderManager.GENDER_WMP}:
-                return normalized
-        return GenderManager.DEFAULT_GENDER
-
-    async def set_first_point_gender(self, value: str) -> None:
-        """Set the first point gender on Adafruit IO.
-
-        Accepts gender constant (WMP or MMP) and stores as uppercase string.
-
-        :param value: The gender value to set (GenderManager.GENDER_WMP or GenderManager.GENDER_MMP)
-        """
-        from src.gender_manager import GenderManager
-
-        if value not in {GenderManager.GENDER_MMP, GenderManager.GENDER_WMP}:
-            raise ValueError(
-                f"Invalid gender value: {value}. "
-                f"Must be '{GenderManager.GENDER_WMP}' or '{GenderManager.GENDER_MMP}'"
-            )
-        await self._set_feed_value(self.FIRST_POINT_GENDER_FEED, value)

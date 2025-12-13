@@ -11,7 +11,7 @@ from src.score_manager import ScoreManager
 class GameController:
     """Coordinates game actions between managers.
 
-    Handles business logic for button presses, network updates, and display coordination.
+    Handles business logic for button presses and display coordination.
     """
 
     def __init__(
@@ -32,6 +32,94 @@ class GameController:
         self._display_manager = display_manager
         self._network_manager = network_manager
         self._gender_manager = gender_manager
+
+    def initialize_scores(self) -> None:
+        """Initialize score display from current score manager state.
+
+        Updates both score displays and the gender matchup display.
+        """
+        self._display_manager.set_text(
+            "left_team_score", self._score_manager.left_score
+        )
+        self._display_manager.set_text(
+            "right_team_score", self._score_manager.right_score
+        )
+        self._update_gender_matchup_display()
+
+    async def handle_left_score_button(self) -> None:
+        """Handle left team score button press.
+
+        Increments the left team score and updates the display.
+        """
+        print("UP button pressed! Incrementing left score...")
+        self._score_manager.increment_left_score()
+        self._display_manager.set_text(
+            "left_team_score", self._score_manager.left_score
+        )
+        print(f"Left score updated: {self._score_manager.left_score}")
+
+        self._update_gender_matchup_display()
+
+    async def handle_right_score_button(self) -> None:
+        """Handle right team score button press.
+
+        Increments the right team score and updates the display.
+        """
+        print("DOWN button pressed! Incrementing right score...")
+        self._score_manager.increment_right_score()
+        self._display_manager.set_text(
+            "right_team_score", self._score_manager.right_score
+        )
+        print(f"Right score updated: {self._score_manager.right_score}")
+
+        self._update_gender_matchup_display()
+
+    async def handle_toggle_gender_button(self) -> None:
+        """Handle toggle gender button press.
+
+        Toggles the starting gender between MMP and WMP and recalculates matchup.
+        """
+        print("UP button pressed! Toggling starting gender...")
+        self._gender_manager.toggle_first_point_gender()
+        starting_gender = self._gender_manager.get_first_point_gender()
+        print(f"Starting gender updated: {starting_gender}")
+
+        self._update_gender_matchup_display()
+
+        # Unrelated, hardware-hack: we're using this button as a shortcut to
+        # re-check team names
+        await self.update_team_names()
+
+    def set_team_names(self, left_team: str, right_team: str) -> None:
+        """Set team names on the display.
+
+        :param left_team: Name for the left team
+        :param right_team: Name for the right team
+        """
+        self._display_manager.set_text("left_team", left_team)
+        self._display_manager.set_text("right_team", right_team)
+
+    async def update_team_names(self) -> None:
+        """Update team names from network.
+
+        Fetches team names from the network and updates the display.
+        """
+        team_left_team = NetworkManager.DEFAULT_LEFT_TEAM_NAME
+        team_right_team = NetworkManager.DEFAULT_RIGHT_TEAM_NAME
+
+        await asyncio.sleep(0)
+        team_name = await self._network_manager.get_left_team_name()
+        if team_name is not None:
+            print(f"Team {team_left_team} is now Team {team_name}")
+            team_left_team = team_name
+
+        await asyncio.sleep(0)
+        team_name = await self._network_manager.get_right_team_name()
+        if team_name is not None:
+            print(f"Team {team_right_team} is now Team {team_name}")
+            team_right_team = team_name
+
+        self.set_team_names(team_left_team, team_right_team)
 
     def _calculate_gender_matchup(
         self, score_sum: int, starting_gender: str
@@ -72,101 +160,3 @@ class GameController:
         self._display_manager.set_text(
             "gender_matchup_counter", str(gender_matchup_count)
         )
-
-    async def handle_left_score_button(self) -> None:
-        """Handle left team score button press.
-
-        Increments the left team score and updates the display.
-        """
-        print("UP button pressed! Incrementing left score...")
-        self._score_manager.increment_left_score()
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        print(f"Left score updated: {self._score_manager.left_score}")
-
-        self._update_gender_matchup_display()
-
-    async def handle_toggle_gender_button(self) -> None:
-        """Handle toggle gender button press.
-
-        Toggles the starting gender between MMP and WMP and recalculates matchup.
-        """
-        print("UP button pressed! Toggling starting gender...")
-        self._gender_manager.toggle_first_point_gender()
-        starting_gender = self._gender_manager.get_first_point_gender()
-        print(f"Starting gender updated: {starting_gender}")
-
-        self._update_gender_matchup_display()
-
-        # Unrelated, hardware-hack: we're using this button as a shortcut to
-        # reset the network circuit breaker.
-        self._network_manager.reset_circuit_breaker()
-
-    async def handle_right_score_button(self) -> None:
-        """Handle right team score button press.
-
-        Increments the right team score and updates the display.
-        """
-        print("DOWN button pressed! Incrementing right score...")
-        self._score_manager.increment_right_score()
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
-        )
-        print(f"Right score updated: {self._score_manager.right_score}")
-
-        self._update_gender_matchup_display()
-
-    async def update_team_names_and_gender(self) -> None:
-        """Update team names and gender matchup from network.
-
-        Fetches team names and gender feed from the network and updates the display.
-        """
-        team_left_team = NetworkManager.DEFAULT_LEFT_TEAM_NAME
-        team_right_team = NetworkManager.DEFAULT_RIGHT_TEAM_NAME
-
-        await asyncio.sleep(0)
-        team_name = await self._network_manager.get_left_team_name()
-        if team_name is not None:
-            print(f"Team {team_left_team} is now Team {team_name}")
-            team_left_team = team_name
-
-        await asyncio.sleep(0)
-        team_name = await self._network_manager.get_right_team_name()
-        if team_name is not None:
-            print(f"Team {team_right_team} is now Team {team_name}")
-            team_right_team = team_name
-
-        self._display_manager.set_text("left_team", team_left_team)
-        self._display_manager.set_text("right_team", team_right_team)
-
-        await asyncio.sleep(0)
-        await self._gender_manager.update_gender_from_network()
-        self._update_gender_matchup_display()
-
-    async def update_from_network(self) -> bool:
-        """Update scores and team information from network.
-
-        Fetches latest scores from Adafruit IO and updates display.
-        Also updates team names if scores have changed.
-
-        :return: True if update was successful, False otherwise
-        """
-        try:
-            score_changed = await self._score_manager.update_scores_from_network()
-        except Exception as e:
-            print(f"Network update failed: {e}")
-            return False
-
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
-        )
-        self._update_gender_matchup_display()
-
-        if score_changed:
-            await self.update_team_names_and_gender()
-
-        return True
