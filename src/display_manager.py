@@ -4,8 +4,8 @@ from adafruit_display_text import label
 
 # Color constants
 LEFT_TEAM_COLOR = 0xAA0000  # AWAY team color (red)
-RIGHT_TEAM_COLOR = 0x0000AA  # HOME team color (blue)
-MMP_GENDER_MATCHUP_COLOR = 0x00AA00  # green
+RIGHT_TEAM_COLOR = 0x00AA00  # HOME team color (green)
+MMP_GENDER_MATCHUP_COLOR = 0xFFA500  # orange
 WMP_GENDER_MATCHUP_COLOR = 0xFFA500  # orange
 
 # Font and scaling constants
