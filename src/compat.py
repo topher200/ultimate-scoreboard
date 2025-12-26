@@ -8,6 +8,7 @@ try:
     from collections.abc import Callable as _Callable
     from typing import TYPE_CHECKING
     from typing import Any as _Any
+    from typing import NamedTuple as _NamedTuple
     from typing import Protocol as _Protocol
 except ImportError:
     TYPE_CHECKING = False
@@ -18,6 +19,14 @@ except ImportError:
 
     class _Protocol:
         """Stub Protocol class for CircuitPython compatibility."""
+
+    # NamedTuple stub for CircuitPython compatibility
+    class _NamedTuple:
+        """Stub NamedTuple base class for CircuitPython compatibility."""
+
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
 
     # Any needs to be a class (not instance) that can be used in type annotations
     # and supports union operations
@@ -42,10 +51,11 @@ except ImportError:
 if TYPE_CHECKING:
     from abc import ABC, abstractmethod
     from collections.abc import Callable
-    from typing import Any, Protocol
+    from typing import Any, NamedTuple, Protocol
 else:
     Callable = _Callable
     Any = _Any
+    NamedTuple = _NamedTuple
     Protocol = _Protocol
 
 # Export ABC and abstractmethod (available in standard Python, stubs in CircuitPython)
@@ -64,4 +74,12 @@ if not TYPE_CHECKING:
             return func
 
 
-__all__ = ["Callable", "Any", "Protocol", "TYPE_CHECKING", "ABC", "abstractmethod"]
+__all__ = [
+    "Callable",
+    "Any",
+    "NamedTuple",
+    "Protocol",
+    "TYPE_CHECKING",
+    "ABC",
+    "abstractmethod",
+]

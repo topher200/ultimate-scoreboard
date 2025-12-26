@@ -40,3 +40,10 @@ watchman-remove:
 # Install packages on CircuitPython board
 install-packages-on-circuitpy:
     uv run circup install -r requirements.txt
+
+# Run the local simulator with visual display
+simulator:
+    uv sync --group simulator
+    uv run python local_main.py
+
+alias sim := simulator
