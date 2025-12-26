@@ -113,5 +113,57 @@ class TestDisplayManager:
 
     def test_all_labels_in_group(self, display_manager):
         """Test that all labels are appended to the main group."""
-        expected_label_count = 7  # 7 text elements
+        from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+        # 7 text elements + timing indicator dots
+        expected_label_count = 7 + TIMING_INDICATOR_MAX_DOTS_TO_SHOW
         assert len(display_manager.main_group) == expected_label_count
+
+    def test_timing_indicator_dots_created(self, display_manager):
+        """Test that timing indicator dots are created."""
+        from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+
+        assert len(display_manager.timing_indicator_dots) == TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+        for dot in display_manager.timing_indicator_dots:
+            assert dot is not None
+
+    def test_update_timing_indicator_shows_dots(self, display_manager):
+        """Test that update_timing_indicator shows correct number of dots."""
+        from src.display_manager import TIMING_INDICATOR_DOT_CHAR, TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+
+        display_manager.update_timing_indicator(2)
+        for i, dot in enumerate(display_manager.timing_indicator_dots):
+            if i >= (TIMING_INDICATOR_MAX_DOTS_TO_SHOW - 2):
+                assert dot.text == TIMING_INDICATOR_DOT_CHAR
+            else:
+                assert dot.text == " "
+
+    def test_update_timing_indicator_hides_all(self, display_manager):
+        """Test that update_timing_indicator hides all dots when count is 0."""
+        from src.display_manager import TIMING_INDICATOR_DOT_CHAR
+
+        display_manager.update_timing_indicator(3)
+        display_manager.update_timing_indicator(0)
+        for dot in display_manager.timing_indicator_dots:
+            assert dot.text == " "
+
+    def test_update_timing_indicator_shows_all(self, display_manager):
+        """Test that update_timing_indicator shows all dots when count is max."""
+        from src.display_manager import TIMING_INDICATOR_DOT_CHAR, TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+
+        display_manager.update_timing_indicator(TIMING_INDICATOR_MAX_DOTS_TO_SHOW)
+        for dot in display_manager.timing_indicator_dots:
+            assert dot.text == TIMING_INDICATOR_DOT_CHAR
+
+    def test_update_timing_indicator_clamps_to_max(self, display_manager):
+        """Test that update_timing_indicator clamps count to max."""
+        from src.display_manager import TIMING_INDICATOR_DOT_CHAR, TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+
+        display_manager.update_timing_indicator(TIMING_INDICATOR_MAX_DOTS_TO_SHOW + 10)
+        for dot in display_manager.timing_indicator_dots:
+            assert dot.text == TIMING_INDICATOR_DOT_CHAR
+
+    def test_update_timing_indicator_clamps_to_zero(self, display_manager):
+        """Test that update_timing_indicator clamps negative count to 0."""
+        display_manager.update_timing_indicator(-5)
+        for dot in display_manager.timing_indicator_dots:
+            assert dot.text == " "

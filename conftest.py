@@ -14,12 +14,17 @@ from fakes import (
     FakeMatrixPortal,
     FakeTerminalio,
 )
-from src.display_manager import DisplayManager
+from src.display_manager import (
+    TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+    TIMING_INDICATOR_REMOVAL_INTERVAL,
+    DisplayManager,
+)
 from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
+from src.timing_indicator import TimingIndicatorManager
 
 # Mock CircuitPython-specific modules that don't exist in regular Python
 # These must be mocked before any imports try to use them
@@ -93,10 +98,25 @@ def gender_manager():
 
 
 @pytest.fixture
-def game_controller(score_manager, display_manager, network_manager, gender_manager):
+def timing_indicator_manager():
+    """Create TimingIndicatorManager instance."""
+    return TimingIndicatorManager(
+        max_dots=TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+        removal_interval=TIMING_INDICATOR_REMOVAL_INTERVAL,
+    )
+
+
+@pytest.fixture
+def game_controller(
+    score_manager, display_manager, network_manager, gender_manager, timing_indicator_manager
+):
     """Create GameController instance with all managers."""
     return GameController(
-        score_manager, display_manager, network_manager, gender_manager
+        score_manager,
+        display_manager,
+        network_manager,
+        gender_manager,
+        timing_indicator_manager,
     )
 
 
