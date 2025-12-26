@@ -30,6 +30,23 @@ To set up your development environment:
 uv sync
 ```
 
+Or if you prefer to use [micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html) for environment management:
+
+1. Create the environment:
+```bash
+micromamba create -f environment.yml
+```
+
+2. Activate the environment:
+```bash
+micromamba activate ultimate-scoreboard
+```
+
+3. Install dependencies with uv:
+```bash
+uv sync
+```
+
 ## Just Command Runner
 
 This project uses [just](https://github.com/casey/just) for running common development tasks.
