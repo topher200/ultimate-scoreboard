@@ -9,6 +9,7 @@ default:
 lint:
     uv run ruff check --fix --quiet .
     uv run pyrefly check --summary=none .
+    uv run python scripts/check_circuitpython_imports.py
 
 alias fmt := lint
 
