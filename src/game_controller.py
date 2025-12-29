@@ -6,6 +6,7 @@ from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
+from src.timing_indicator import TimingIndicatorManager
 
 
 class GameController:
@@ -20,6 +21,7 @@ class GameController:
         display_manager: DisplayManager,
         network_manager: NetworkManager,
         gender_manager: GenderManager,
+        timing_indicator_manager: TimingIndicatorManager,
     ):
         """Initialize GameController with manager dependencies.
 
@@ -27,11 +29,13 @@ class GameController:
         :param network_manager: NetworkManager instance for all network calls
         :param score_manager: ScoreManager instance for managing scores
         :param gender_manager: GenderManager instance for keeping track of gender matchups
+        :param timing_indicator_manager: TimingIndicatorManager instance for on-screen timing dots
         """
         self._score_manager = score_manager
         self._display_manager = display_manager
         self._network_manager = network_manager
         self._gender_manager = gender_manager
+        self._timing_indicator_manager = timing_indicator_manager
 
     def initialize_scores(self) -> None:
         """Initialize score display from current score manager state.
@@ -58,6 +62,7 @@ class GameController:
         )
         print(f"Left score updated: {self._score_manager.left_score}")
 
+        self._refresh_timing_indicator()
         self._update_gender_matchup_display()
 
     async def handle_right_score_button(self) -> None:
@@ -72,6 +77,7 @@ class GameController:
         )
         print(f"Right score updated: {self._score_manager.right_score}")
 
+        self._refresh_timing_indicator()
         self._update_gender_matchup_display()
 
     async def handle_toggle_gender_button(self) -> None:
@@ -148,6 +154,13 @@ class GameController:
             return ("MMP", 2)
         else:  # position == 3
             return ("WMP", 1)
+
+    def _refresh_timing_indicator(self) -> None:
+        """Refresh the timing indicator by refilling dots and updating the display."""
+        self._timing_indicator_manager.refill_dots()
+        self._display_manager.update_timing_indicator(
+            self._timing_indicator_manager.get_dot_count()
+        )
 
     def _update_gender_matchup_display(self) -> None:
         """Update the gender matchup display based on current scores and starting gender."""

@@ -28,12 +28,20 @@ LEFT_JUSTIFY_ANCHOR_POINT = (0.0, 0.0)
 MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 
+# Timing indicator constants
+TIMING_INDICATOR_MAX_DOTS_WHEN_FULL = 12
+TIMING_INDICATOR_MAX_DOTS_TO_SHOW = 4
+TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 5
+TIMING_INDICATOR_DOT_CHAR = "."
+TIMING_INDICATOR_REMOVAL_INTERVAL = 2.0
+
 
 class DisplayManager:
     def __init__(self, matrixportal):
         self.matrixportal = matrixportal
         self.display = matrixportal.display
         self.text_elements = {}
+        self.timing_indicator_dots = []
         self.main_group = displayio.Group()
         self._setup_layout()
         self.display.root_group = self.main_group
@@ -118,12 +126,15 @@ class DisplayManager:
         self.main_group.append(gender_matchup_counter_label)
 
         # 'Connecting' indicator
-        connecting_label = label.Label(FONT_TYPE, text=" ")
+        connecting_label = label.Label(FONT_TYPE, text=" ", color=0xFFFF00)
         connecting_label.x = DISPLAY_WIDTH - 5  # number may not be accurate
         connecting_label.y = DISPLAY_HEIGHT - 5  # number may not be accurate
         self.text_elements["connecting"] = {"label": connecting_label}
         self.text_elements["connecting"] = {"label": connecting_label}
         self.main_group.append(connecting_label)
+
+        # Timing indicator dots
+        self._setup_timing_indicator()
 
     def _get_gender_matchup_color(self, gender_matchup):
         if "MMP" in gender_matchup:
@@ -147,3 +158,37 @@ class DisplayManager:
             self.set_text("connecting", ".")
         else:
             self.set_text("connecting", " ")
+
+    def _setup_timing_indicator(self):
+        """Initialize timing indicator dots along the bottom of the screen."""
+        available_width = DISPLAY_WIDTH - 2 * LEFT_BORDER_MARGIN_WIDTH
+        dot_spacing = available_width / TIMING_INDICATOR_MAX_DOTS_WHEN_FULL
+        start_x = LEFT_BORDER_MARGIN_WIDTH
+        first_dot_index = (
+            TIMING_INDICATOR_MAX_DOTS_WHEN_FULL - TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+        )
+
+        for i in range(TIMING_INDICATOR_MAX_DOTS_TO_SHOW):
+            x_pos = int(start_x + (first_dot_index + i) * dot_spacing)
+            dot_label = label.Label(
+                FONT_TYPE,
+                text=" ",
+                scale=1,
+                color=0xFFFFFF,  # White color for dots
+            )
+            dot_label.x = x_pos
+            dot_label.y = TIMING_INDICATOR_Y_POSITION
+            self.timing_indicator_dots.append(dot_label)
+            self.main_group.append(dot_label)
+
+    def update_timing_indicator(self, count: int) -> None:
+        """Update timing indicator to show specified number of dots.
+
+        :param count: Number of dots to display (0 to max_dots)
+        """
+        count = max(0, min(count, TIMING_INDICATOR_MAX_DOTS_TO_SHOW))
+        for i, dot_label in enumerate(self.timing_indicator_dots):
+            if i >= (TIMING_INDICATOR_MAX_DOTS_TO_SHOW - count):
+                dot_label.text = TIMING_INDICATOR_DOT_CHAR
+            else:
+                dot_label.text = " "
