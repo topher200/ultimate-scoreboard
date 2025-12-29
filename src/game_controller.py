@@ -5,7 +5,7 @@ import asyncio
 from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
-from src.score_manager import ScoreManager
+from src.score_manager import ScoreManager, Team
 from src.timing_indicator import TimingIndicatorManager
 
 
@@ -57,6 +57,7 @@ class GameController:
         """
         print("LEFT button pressed! Incrementing left score...")
         self._score_manager.increment_left_score()
+        self._score_manager.record_score_addition(Team.LEFT)
         self._display_manager.set_text(
             "left_team_score", self._score_manager.left_score
         )
@@ -72,12 +73,43 @@ class GameController:
         """
         print("RIGHT button pressed! Incrementing right score...")
         self._score_manager.increment_right_score()
+        self._score_manager.record_score_addition(Team.RIGHT)
         self._display_manager.set_text(
             "right_team_score", self._score_manager.right_score
         )
         print(f"Right score updated: {self._score_manager.right_score}")
 
         self._refresh_timing_indicator()
+        self._update_gender_matchup_display()
+
+    async def handle_undo_button(self) -> None:
+        """Handle undo button press.
+
+        Undoes the most recent score addition and updates the display.
+        """
+        print("DOWN button pressed! Undoing last score...")
+        team_to_undo = self._score_manager.undo_last_score()
+        if team_to_undo is None:
+            print("No score history to undo")
+            return
+
+        if team_to_undo == Team.LEFT:
+            self._score_manager.decrement_left_score()
+            self._display_manager.set_text(
+                "left_team_score", self._score_manager.left_score
+            )
+            print(f"Left score undone: {self._score_manager.left_score}")
+        else:  # team_to_undo == Team.RIGHT
+            self._score_manager.decrement_right_score()
+            self._display_manager.set_text(
+                "right_team_score", self._score_manager.right_score
+            )
+            print(f"Right score undone: {self._score_manager.right_score}")
+
+        self._timing_indicator_manager.clear_dots()
+        self._display_manager.update_timing_indicator(
+            self._timing_indicator_manager.get_dot_count()
+        )
         self._update_gender_matchup_display()
 
     async def handle_toggle_gender_button(self) -> None:

@@ -41,6 +41,10 @@ class TimingIndicatorManager:
         """
         return self._current_dot_count > 0
 
+    def clear_dots(self) -> None:
+        """Clear all dots (set count to 0)."""
+        self._current_dot_count = 0
+
     @property
     def removal_interval(self) -> float:
         """Get the removal interval in seconds."""
