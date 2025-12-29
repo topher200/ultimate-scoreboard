@@ -25,9 +25,9 @@ class GameController:
     ):
         """Initialize GameController with manager dependencies.
 
+        :param score_manager: ScoreManager instance for managing scores
         :param display_manager: DisplayManager instance for display updates
         :param network_manager: NetworkManager instance for all network calls
-        :param score_manager: ScoreManager instance for managing scores
         :param gender_manager: GenderManager instance for keeping track of gender matchups
         :param timing_indicator_manager: TimingIndicatorManager instance for on-screen timing dots
         """
@@ -55,7 +55,7 @@ class GameController:
 
         Increments the left team score and updates the display.
         """
-        print("UP button pressed! Incrementing left score...")
+        print("LEFT button pressed! Incrementing left score...")
         self._score_manager.increment_left_score()
         self._display_manager.set_text(
             "left_team_score", self._score_manager.left_score
@@ -70,7 +70,7 @@ class GameController:
 
         Increments the right team score and updates the display.
         """
-        print("DOWN button pressed! Incrementing right score...")
+        print("RIGHT button pressed! Incrementing right score...")
         self._score_manager.increment_right_score()
         self._display_manager.set_text(
             "right_team_score", self._score_manager.right_score

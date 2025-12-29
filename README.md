@@ -51,13 +51,17 @@ uv sync
 
 This project uses [just](https://github.com/casey/just) for running common development tasks.
 
-To install just, visit the [installation instructions](https://github.com/casey/just#installation).
+To install just, visit the [installation
+instructions](https://github.com/casey/just#installation). Example: `$ brew
+install just`
 
 Common commands:
 
 - `just` - List all available commands
 - `just lint` - Run linter and formatter to automatically fix issues
 - `just test` - Run all tests
+- `just ci` - Run linter and tests (CI check)
+- `just simulator` (or `just sim`) - Run the local visual display simulator
 - `just watchman-setup-circuitpy` - Set up file watching to sync to CircuitPython board
 - `just watchman-remove` - Remove the file watching trigger
 
@@ -90,6 +94,31 @@ components that allow testing without physical hardware:
 - **`fakes/fake_displayio.py`** - Fake `displayio.Group` class for managing display elements
 - **`fakes/fake_label.py`** - Fake `Label` class that mimics `adafruit_display_text.label.Label`
 - **`fakes/__init__.py`** - Package exports for easy importing
+
+## Local Development with Visual Simulator
+
+You can run the application locally on your laptop with a visual display simulator that shows what the LED matrix would display. This is useful for testing new features and behaviors without physical hardware.
+
+### Running the Simulator
+
+To run the application with the visual display simulator:
+
+```bash
+just simulator
+```
+
+Or using the shorter alias:
+
+```bash
+just sim
+```
+
+This command will automatically install simulator dependencies if needed and then start the simulator. It will:
+
+1. Open a Pygame window showing the 64x32 LED matrix display scaled up (1280x640 pixels)
+2. Run the full application with fake hardware
+3. Update the display in real-time as the application runs
+4. Allow you to test all features without physical hardware
 
 ## Development Commands
 
