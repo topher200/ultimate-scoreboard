@@ -94,7 +94,7 @@ def create_button_callbacks(game_controller: GameController) -> dict[str, Callab
     """
     return {
         BUTTON_UP: game_controller.handle_toggle_gender_button,
-        BUTTON_DOWN: game_controller.handle_left_score_button,
+        BUTTON_DOWN: game_controller.handle_undo_button,
         BUTTON_LEFT: game_controller.handle_left_score_button,
         BUTTON_RIGHT: game_controller.handle_right_score_button,
     }
