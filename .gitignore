@@ -9,3 +9,6 @@ __pycache__/
 
 # Cursor
 .cursor/debug.log
+
+# Claude
+.claude/settings.local.json
