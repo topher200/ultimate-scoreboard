@@ -52,21 +52,6 @@ class NetworkManager:
         finally:
             self.display_manager.show_connecting(False)
 
-    async def _set_feed_value(self, feed_key: str, value: str | int) -> None:
-        """Set the value of an Adafruit IO feed.
-
-        :param feed_key: The feed key to set
-        :param value: The value to set (string or int)
-        """
-        await asyncio.sleep(0)
-        self.display_manager.show_connecting(True)
-        try:
-            self._matrixportal.push_to_io(feed_key, value)
-        except Exception:
-            raise
-        finally:
-            self.display_manager.show_connecting(False)
-
     async def get_left_team_name(self) -> str:
         if value := await self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
             return value
