@@ -1,6 +1,6 @@
 """Manages score state."""
 
-from enum import Enum
+from src.compat import Enum
 
 
 class Team(Enum):
