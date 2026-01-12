@@ -130,7 +130,6 @@ class DisplayManager:
         connecting_label.x = DISPLAY_WIDTH - 5  # number may not be accurate
         connecting_label.y = DISPLAY_HEIGHT - 5  # number may not be accurate
         self.text_elements["connecting"] = {"label": connecting_label}
-        self.text_elements["connecting"] = {"label": connecting_label}
         self.main_group.append(connecting_label)
 
         # Timing indicator dots
