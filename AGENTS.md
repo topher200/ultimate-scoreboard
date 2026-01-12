@@ -67,3 +67,7 @@ uv run pyrefly check .
 ## Agent Conventions
 
 - ALWAYS verify all changes with `just ci` before returning to the user
+
+## Beads
+
+Reference `.beads/PRIME.md` for `bd` issue tracking.
