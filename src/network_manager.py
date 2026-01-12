@@ -9,7 +9,6 @@ from src.protocols import MatrixPortalLike
 
 if TYPE_CHECKING:
     from src.display_manager import DisplayManager
-    from src.gender_manager import GenderManager
 
 
 class NetworkManager:

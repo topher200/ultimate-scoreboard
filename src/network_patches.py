@@ -4,10 +4,7 @@ This module provides monkey-patches to reduce network retries and timeouts
 for faster failure when network is unavailable.
 """
 
-from src.compat import TYPE_CHECKING, Any
-
-if TYPE_CHECKING:
-    from src.protocols import MatrixPortalLike
+from src.compat import Any
 
 # Track which requests objects have been patched to avoid double-patching
 _patched_requests = set()
