@@ -1,11 +1,9 @@
 """Tests for NetworkManager using fake implementations."""
 
-import time
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
-from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 
 

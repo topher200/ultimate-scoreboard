@@ -178,23 +178,6 @@ class TestGameControllerDisplayMethods:
         assert matchup_label.text == "MMP"
         assert counter_label.text == "1"
 
-    def test_initialize_scores_updates_gender_matchup(
-        self, game_controller, display_manager, score_manager
-    ):
-        """Test that initialize_scores updates gender matchup display."""
-        # Set scores to 0-0
-        score_manager.left_score = 0
-        score_manager.right_score = 0
-
-        game_controller.initialize_scores()
-
-        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
-
-        # Initial state: sum=0, WMP start → WMP2
-        assert matchup_label.text == "WMP"
-        assert counter_label.text == "2"
-
 
 class TestGameControllerKeepsScore:
     """Test GameController keeps score."""

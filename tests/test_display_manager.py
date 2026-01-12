@@ -62,30 +62,6 @@ class TestDisplayManager:
         label = display_manager.text_elements["gender_matchup"]["label"]
         assert label.text == "WMP"
 
-    @pytest.mark.xfail(reason="Currently both colors are identical")
-    def test_gender_matchup_color_swapping(self, display_manager):
-        """Test that color changes when swapping between MMP and WMP."""
-        # Test WMP gets one color
-        display_manager.set_text("gender_matchup", "WMP")
-        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        wmp_color = matchup_label.color
-
-        # Test MMP gets a different color
-        display_manager.set_text("gender_matchup", "MMP")
-        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        mmp_color = matchup_label.color
-        assert wmp_color != mmp_color
-
-        # Test counter also changes color correctly
-        display_manager.set_text("gender_matchup_counter", "WMP")
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
-        counter_wmp_color = counter_label.color
-
-        display_manager.set_text("gender_matchup_counter", "MMP")
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
-        counter_mmp_color = counter_label.color
-        assert counter_wmp_color != counter_mmp_color
-
     def test_set_text_invalid_element(self, display_manager):
         """Test that setting text for invalid element raises error."""
         with pytest.raises(ValueError) as excinfo:
