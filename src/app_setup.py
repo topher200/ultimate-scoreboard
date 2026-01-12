@@ -100,6 +100,19 @@ def create_button_callbacks(game_controller: GameController) -> dict[str, Callab
     }
 
 
+def create_simultaneous_callbacks(
+    game_controller: GameController,
+) -> dict[tuple[str, str], Callable]:
+    """Create simultaneous button press callback mapping for hardware manager.
+
+    :param game_controller: GameController instance
+    :return: Dictionary mapping button pairs (tuples) to callback functions
+    """
+    return {
+        (BUTTON_LEFT, BUTTON_RIGHT): game_controller.handle_undo_button,
+    }
+
+
 async def create_timing_indicator_task(
     timing_indicator_manager: TimingIndicatorManager, display_manager: DisplayManager
 ) -> None:

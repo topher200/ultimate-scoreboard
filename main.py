@@ -6,6 +6,7 @@ from adafruit_matrixportal.matrixportal import MatrixPortal
 from src.app_setup import (
     create_button_callbacks,
     create_managers,
+    create_simultaneous_callbacks,
     create_timing_indicator_task,
     initialize_application,
 )
@@ -33,7 +34,8 @@ async def main():
     # Run all tasks concurrently
     await asyncio.gather(
         managers.hardware_manager.monitor_buttons(
-            create_button_callbacks(managers.game_controller)
+            create_button_callbacks(managers.game_controller),
+            create_simultaneous_callbacks(managers.game_controller),
         ),
         create_timing_indicator_task(
             managers.timing_indicator_manager, managers.display_manager
