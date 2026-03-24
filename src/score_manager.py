@@ -1,6 +1,11 @@
 """Manages score state."""
 
-from src.compat import Enum
+from __future__ import annotations
+
+from src.compat import TYPE_CHECKING, Enum
+
+if TYPE_CHECKING:
+    from src.nvm_storage import NvmStorage
 
 
 class Team(Enum):
@@ -11,10 +16,17 @@ class Team(Enum):
 
 
 class ScoreManager:
-    def __init__(self):
-        """Initialize ScoreManager."""
-        self.left_score: int = 0
-        self.right_score: int = 0
+    def __init__(self, nvm_storage: NvmStorage | None = None):
+        """Initialize ScoreManager, restoring scores from NVM if available.
+
+        :param nvm_storage: Optional NvmStorage instance for persisting scores
+        """
+        self._nvm_storage = nvm_storage
+        if nvm_storage is not None:
+            self.left_score, self.right_score = nvm_storage.load_scores()
+        else:
+            self.left_score: int = 0
+            self.right_score: int = 0
         self._score_history: list[Team] = []
 
     def increment_left_score(self) -> None:
@@ -49,3 +61,8 @@ class ScoreManager:
         if not self._score_history:
             return None
         return self._score_history.pop()
+
+    def save(self) -> None:
+        """Persist current scores to NVM (no-op if no storage configured)."""
+        if self._nvm_storage is not None:
+            self._nvm_storage.save_scores(self.left_score, self.right_score)

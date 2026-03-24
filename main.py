@@ -1,6 +1,7 @@
 import asyncio
 
 import board
+import microcontroller
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
 from src.app_setup import (
@@ -13,6 +14,7 @@ from src.app_setup import (
 )
 from src.hardware_manager import create_keys_from_board
 from src.network_patches import apply_network_patches
+from src.nvm_storage import NvmStorage
 
 
 async def main():
@@ -26,8 +28,11 @@ async def main():
     # Create keys from board
     keys = create_keys_from_board(board)
 
+    # Initialize non-volatile storage for score persistence
+    nvm_storage = NvmStorage(microcontroller.nvm)
+
     # Initialize managers
-    managers = create_managers(matrixportal, keys)
+    managers = create_managers(matrixportal, keys, nvm_storage=nvm_storage)
 
     # Initialize application state
     await initialize_application(managers.game_controller, managers.network_manager)
