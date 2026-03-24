@@ -2,7 +2,7 @@
 
 import pytest
 
-from src.score_manager import ScoreManager
+from src.score_manager import ScoreManager, Team
 
 
 class TestScoreManager:
@@ -37,3 +37,21 @@ class TestScoreManager:
         score_manager.increment_right_score()
         assert score_manager.left_score == 2
         assert score_manager.right_score == 1
+
+    def test_reset_zeroes_scores(self):
+        """Test that reset sets scores to 0-0."""
+        score_manager = ScoreManager()
+        score_manager.increment_left_score()
+        score_manager.increment_left_score()
+        score_manager.increment_right_score()
+        score_manager.reset()
+        assert score_manager.left_score == 0
+        assert score_manager.right_score == 0
+
+    def test_reset_clears_history(self):
+        """Test that reset clears undo history."""
+        score_manager = ScoreManager()
+        score_manager.increment_left_score()
+        score_manager.record_score_addition(Team.LEFT)
+        score_manager.reset()
+        assert score_manager.undo_last_score() is None

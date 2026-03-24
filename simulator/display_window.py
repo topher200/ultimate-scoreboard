@@ -24,14 +24,10 @@ class DisplayWindow:
         self._clock: pygame.time.Clock | None = None
         self._keys = keys
         # Keyboard mapping: pygame key -> button key_number
-        # UP=0, DOWN=1, LEFT=2, RIGHT=3
+        # LEFT=2, RIGHT=3
         self._keyboard_map = {
-            pygame.K_UP: 0,  # UP button
-            pygame.K_DOWN: 1,  # DOWN button
             pygame.K_LEFT: 2,  # LEFT button
             pygame.K_RIGHT: 3,  # RIGHT button
-            pygame.K_w: 0,  # W key for UP
-            pygame.K_s: 1,  # S key for DOWN
             pygame.K_a: 2,  # A key for LEFT
             pygame.K_d: 3,  # D key for RIGHT
         }
@@ -76,12 +72,11 @@ class DisplayWindow:
         self._init_pygame()
         if self._keys:
             print("Keyboard controls enabled:")
-            print("  Arrow Keys or WASD: Simulate button presses")
-            print("  UP/W: Toggle gender matchup and refresh team names")
-            print("  LEFT/A: Increment left team score")
-            print("  RIGHT/D: Increment right team score")
-            print("  LEFT+RIGHT (hold ~1s): Toggle gender matchup")
-            print("  LEFT+RIGHT (short press): Undo last point")
+            print("  LEFT/A: +1 left score (on release)")
+            print("  RIGHT/D: +1 right score (on release)")
+            print("  Both held ~1s: Reset scores to 0-0")
+            print("  Hold LEFT, press RIGHT: Toggle gender matchup")
+            print("  Hold RIGHT, press LEFT: Undo last point")
             print("  Q or ESC: Quit")
 
     def update(self):

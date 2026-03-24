@@ -115,6 +115,25 @@ class GameController:
         )
         self._update_gender_matchup_display()
 
+    async def handle_reset_button(self) -> None:
+        """Handle reset button press.
+
+        Resets scores to 0-0, clears timing dots, and updates display.
+        """
+        print("RESET pressed! Resetting scores to 0-0...")
+        self._score_manager.reset()
+        self._display_manager.set_text(
+            "left_team_score", self._score_manager.left_score
+        )
+        self._display_manager.set_text(
+            "right_team_score", self._score_manager.right_score
+        )
+        self._timing_indicator_manager.clear_dots()
+        self._display_manager.update_timing_indicator(
+            self._timing_indicator_manager.get_dot_count()
+        )
+        self._update_gender_matchup_display()
+
     async def handle_toggle_gender_button(self) -> None:
         """Handle toggle gender button press.
 
@@ -127,8 +146,8 @@ class GameController:
 
         self._update_gender_matchup_display()
 
-        # Unrelated, hardware-hack: we're using this button as a shortcut to
-        # re-check team names
+        # Semi-hack: we're using this button as a shortcut to re-check team
+        # names
         await self.update_team_names()
 
     def set_team_names(self, left_team: str, right_team: str) -> None:

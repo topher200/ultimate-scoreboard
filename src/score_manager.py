@@ -68,6 +68,13 @@ class ScoreManager:
             return None
         return self._score_history.pop()
 
+    def reset(self) -> None:
+        """Reset scores to 0-0 and clear history."""
+        self.left_score = 0
+        self.right_score = 0
+        self._score_history = []
+        self.save()
+
     def save(self) -> None:
         """Persist current scores and undo history to NVM (no-op if no storage configured)."""
         if self._nvm_storage is not None:

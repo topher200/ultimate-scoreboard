@@ -9,16 +9,12 @@ from src.compat import Callable
 from src.protocols import BoardLike, KeysLike
 
 # Button name constants
-BUTTON_UP = "up"
-BUTTON_DOWN = "down"
 BUTTON_LEFT = "left"
 BUTTON_RIGHT = "right"
 
 # Key number constants (from keypad events)
 # Pin order: (board.BUTTON_UP, board.BUTTON_DOWN, board.A1, board.A3)
 # means UP=0, DOWN=1, LEFT=2, RIGHT=3
-KEY_NUMBER_BUTTON_UP = 0
-KEY_NUMBER_BUTTON_DOWN = 1
 KEY_NUMBER_BUTTON_LEFT = 2
 KEY_NUMBER_BUTTON_RIGHT = 3
 
@@ -30,11 +26,15 @@ SIMULTANEOUS_HOLD_THRESHOLD = 1.0
 
 # Map key_number (from keypad events) to button names
 KEY_NUMBER_TO_BUTTON = {
-    KEY_NUMBER_BUTTON_UP: BUTTON_UP,
-    KEY_NUMBER_BUTTON_DOWN: BUTTON_DOWN,
     KEY_NUMBER_BUTTON_LEFT: BUTTON_LEFT,
     KEY_NUMBER_BUTTON_RIGHT: BUTTON_RIGHT,
 }
+
+# State machine states
+_STATE_IDLE = "idle"
+_STATE_SINGLE_HELD = "single_held"
+_STATE_BOTH_HELD = "both_held"
+_STATE_WAIT_RELEASE = "wait_release"
 
 
 def create_keys_from_board(board: BoardLike) -> KeysLike:
@@ -48,23 +48,6 @@ def create_keys_from_board(board: BoardLike) -> KeysLike:
         value_when_pressed=False,  # Active-low (button connects to ground)
         pull=True,  # Enable internal pull-ups
     )
-
-
-class _HoldState:
-    """Tracks state during a simultaneous hold detection."""
-
-    def __init__(
-        self,
-        pair: tuple[str, str],
-        short_cb: Callable,
-        long_cb: Callable,
-        press_time: float,
-    ):
-        self.pair = pair
-        self.short_cb = short_cb
-        self.long_cb = long_cb
-        self.press_time = press_time
-        self.long_fired = False
 
 
 class HardwareManager:
@@ -83,15 +66,16 @@ class HardwareManager:
         self._get_time = get_time
         # Track pending press events by button name
         self._button_press_event = {
-            BUTTON_UP: False,
-            BUTTON_DOWN: False,
             BUTTON_LEFT: False,
             BUTTON_RIGHT: False,
         }
         # Track pending release events by button name
         self._button_release_event = {
-            BUTTON_UP: False,
-            BUTTON_DOWN: False,
+            BUTTON_LEFT: False,
+            BUTTON_RIGHT: False,
+        }
+        # Track physical button state (True = currently held down)
+        self._button_is_down = {
             BUTTON_LEFT: False,
             BUTTON_RIGHT: False,
         }
@@ -100,7 +84,7 @@ class HardwareManager:
         """Update internal button state by processing keypad events.
 
         Call this method once per main loop iteration to process events
-        from the keypad event queue. Only processes key press events (ignores releases).
+        from the keypad event queue.
         """
         # Process all available events from the queue
         while True:
@@ -113,8 +97,10 @@ class HardwareManager:
             if button_name is not None:
                 if event.pressed:
                     self._button_press_event[button_name] = True
+                    self._button_is_down[button_name] = True
                 else:
                     self._button_release_event[button_name] = True
+                    self._button_is_down[button_name] = False
 
     def is_button_pressed(self, button_name: str) -> bool:
         """Check if a button was just pressed (edge detection).
@@ -129,32 +115,10 @@ class HardwareManager:
         if button_name not in self._button_press_event:
             raise KeyError(f"Unknown button name: {button_name}")
 
-        # Check if there's a pending press event
         if self._button_press_event[button_name]:
-            # Consume the event and return True
             self._button_press_event[button_name] = False
             return True
         return False
-
-    def are_buttons_pressed_simultaneously(self, button1: str, button2: str) -> bool:
-        """Check if two buttons are both pressed simultaneously.
-
-        Checks if both buttons have pending press events without consuming them.
-        Must call update() before checking button states.
-
-        :param button1: Name of the first button to check
-        :param button2: Name of the second button to check
-        :return: True if both buttons have pending press events, False otherwise
-        :raises KeyError: If either button_name is not configured
-        """
-        if button1 not in self._button_press_event:
-            raise KeyError(f"Unknown button name: {button1}")
-        if button2 not in self._button_press_event:
-            raise KeyError(f"Unknown button name: {button2}")
-
-        return (
-            self._button_press_event[button1] and self._button_press_event[button2]
-        )
 
     def is_button_released(self, button_name: str) -> bool:
         """Check if a button was just released (edge detection).
@@ -188,10 +152,6 @@ class HardwareManager:
     def consume_button_events(self, *button_names: str) -> None:
         """Consume press events for one or more buttons.
 
-        Sets the pending press event flag to False for the specified buttons.
-        This is used to prevent individual button handlers from firing when
-        a simultaneous press is detected.
-
         :param button_names: One or more button names to consume events for
         :raises KeyError: If any button_name is not configured
         """
@@ -203,95 +163,121 @@ class HardwareManager:
     async def monitor_buttons(
         self,
         callbacks: dict[str, Callable],
-        simultaneous_callbacks: dict[tuple[str, str], Callable] | None = None,
-        long_simultaneous_callbacks: dict[tuple[str, str], Callable] | None = None,
+        hold_both_callback: Callable | None = None,
+        chord_callbacks: dict[tuple[str, str], Callable] | None = None,
     ) -> None:
         """Monitor button presses and call registered callbacks.
 
-        Runs an infinite loop processing keypad events and calling the
-        appropriate async callback function when a button is pressed.
-        Simultaneous button presses are checked first and take precedence
-        over individual button handlers.
+        Uses a state machine to distinguish between individual presses, chords
+        (hold one button then press the other), and simultaneous holds:
 
-        When long_simultaneous_callbacks is provided for a button pair, the system
-        distinguishes between short and long simultaneous presses:
-        - Short press (released before SIMULTANEOUS_HOLD_THRESHOLD): fires the
-          simultaneous_callbacks entry (e.g. undo)
-        - Long hold (held >= SIMULTANEOUS_HOLD_THRESHOLD): fires the
-          long_simultaneous_callbacks entry (e.g. toggle gender)
+        - Individual press: fires on release if no chord was detected
+        - Chord (hold A, press B): fires the chord_callbacks[(A, B)] entry
+        - Both held ~1s: fires hold_both_callback (e.g. reset)
 
-        :param callbacks: Dictionary mapping button names to async callback functions
-        :param simultaneous_callbacks: Optional dictionary mapping button pairs
-            (tuple of two button names) to async callback functions for simultaneous presses.
-        :param long_simultaneous_callbacks: Optional dictionary mapping button pairs
-            to async callback functions for long simultaneous holds.
+        :param callbacks: Dictionary mapping button names to async callback functions.
+            Individual callbacks fire on button release if no chord was detected.
+        :param hold_both_callback: Optional async callback for when both buttons
+            are held simultaneously for SIMULTANEOUS_HOLD_THRESHOLD seconds.
+        :param chord_callbacks: Optional dictionary mapping (held_button, pressed_button)
+            tuples to async callback functions. Fires when one button is held and
+            the other is pressed in a subsequent update cycle.
         """
-        if simultaneous_callbacks is None:
-            simultaneous_callbacks = {}
-        if long_simultaneous_callbacks is None:
-            long_simultaneous_callbacks = {}
+        if chord_callbacks is None:
+            chord_callbacks = {}
 
-        hold_state: _HoldState | None = None
+        state = _STATE_IDLE
+        held_button: str | None = None
+        chord_used = False  # True if a chord fired during this hold
+        press_time = 0.0
+        button_names = list(callbacks.keys())
 
         while True:
             self.update()
 
-            if hold_state is None:
-                # NORMAL MODE: check simultaneous presses
-                simultaneous_handled = False
-                for (button1, button2), callback in simultaneous_callbacks.items():
-                    if self.are_buttons_pressed_simultaneously(button1, button2):
-                        self.consume_button_events(button1, button2)
-                        long_cb = long_simultaneous_callbacks.get((button1, button2))
-                        if long_cb is not None:
-                            # Enter hold-detection mode
-                            hold_state = _HoldState(
-                                pair=(button1, button2),
-                                short_cb=callback,
-                                long_cb=long_cb,
-                                press_time=self._get_time(),
-                            )
-                        else:
-                            # No long callback — fire immediately (existing behavior)
-                            await callback()
-                        simultaneous_handled = True
+            if state == _STATE_IDLE:
+                # Check for new button presses
+                new_presses = [
+                    b for b in button_names if self._button_press_event.get(b, False)
+                ]
+
+                if len(new_presses) >= 2:
+                    # Both pressed in same update cycle → simultaneous hold
+                    for b in new_presses:
+                        self.consume_button_events(b)
+                    state = _STATE_BOTH_HELD
+                    press_time = self._get_time()
+                elif len(new_presses) == 1:
+                    held_button = new_presses[0]
+                    chord_used = False
+                    self.consume_button_events(held_button)
+                    state = _STATE_SINGLE_HELD
+                    press_time = self._get_time()
+
+            elif state == _STATE_SINGLE_HELD:
+                assert held_button is not None
+                # Check if the other button was pressed (chord)
+                other_pressed = None
+                for b in button_names:
+                    if b != held_button and self._button_press_event.get(b, False):
+                        other_pressed = b
                         break
 
-                if not simultaneous_handled:
-                    for button_name, callback in callbacks.items():
-                        if self.is_button_pressed(button_name):
-                            await callback()
+                if other_pressed is not None:
+                    self.consume_button_events(other_pressed)
+                    chord_cb = chord_callbacks.get((held_button, other_pressed))
+                    if chord_cb is not None:
+                        await chord_cb()
+                    chord_used = True
+                    # Keep held_button so WAIT_RELEASE can return to
+                    # SINGLE_HELD for repeated chords (e.g. hold RIGHT,
+                    # tap LEFT multiple times to undo)
+                    state = _STATE_WAIT_RELEASE
+                elif self._button_release_event.get(held_button, False):
+                    self.consume_release_events(held_button)
+                    if not chord_used:
+                        # Released without any chord → fire individual callback
+                        cb = callbacks.get(held_button)
+                        if cb is not None:
+                            await cb()
+                    state = _STATE_IDLE
+                    held_button = None
 
-            elif not hold_state.long_fired:
-                # HOLD-DETECTION MODE: waiting to see if short or long
-                b1, b2 = hold_state.pair
-                elapsed = self._get_time() - hold_state.press_time
-
-                released = (
-                    self.is_button_released(b1) or self.is_button_released(b2)
+            elif state == _STATE_BOTH_HELD:
+                elapsed = self._get_time() - press_time
+                any_released = any(
+                    self._button_release_event.get(b, False) for b in button_names
                 )
-                if released:
-                    self.consume_release_events(b1, b2)
-                    await hold_state.short_cb()
-                    hold_state = None
+
+                if any_released:
+                    # Aborted hold — no action
+                    for b in button_names:
+                        self.consume_release_events(b)
+                    state = _STATE_IDLE
                 elif elapsed >= SIMULTANEOUS_HOLD_THRESHOLD:
-                    await hold_state.long_cb()
-                    hold_state.long_fired = True
+                    if hold_both_callback is not None:
+                        await hold_both_callback()
+                    state = _STATE_WAIT_RELEASE
 
-            else:
-                # POST-LONG-FIRE MODE: wait for buttons to be released
-                b1, b2 = hold_state.pair
-                released = (
-                    self.is_button_released(b1) or self.is_button_released(b2)
+            elif state == _STATE_WAIT_RELEASE:
+                # Consume stray events
+                for b in button_names:
+                    self.consume_button_events(b)
+                    self.consume_release_events(b)
+
+                all_up = all(
+                    not self._button_is_down.get(b, False) for b in button_names
                 )
-                if released:
-                    self.consume_release_events(b1, b2)
-                    hold_state = None
-
-            # Consume stray press/release events during hold states
-            if hold_state is not None:
-                b1, b2 = hold_state.pair
-                self.consume_button_events(b1, b2)
-                self.consume_release_events(b1, b2)
+                if all_up:
+                    state = _STATE_IDLE
+                    held_button = None
+                elif (
+                    held_button is not None
+                    and self._button_is_down.get(held_button, False)
+                ):
+                    # The original held button is still down — return to
+                    # SINGLE_HELD so the user can tap the other button
+                    # again for repeated chords (e.g. multiple undos)
+                    state = _STATE_SINGLE_HELD
 
             await asyncio.sleep(BUTTON_POLLING_RATE)
