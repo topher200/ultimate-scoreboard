@@ -6,8 +6,7 @@
 - install firmware from https://circuitpython.org/board/adafruit_matrixportal_s3/
 - add `settings.toml` to the root of the board (see below)
 - `just install-packages-on-circuitpy`
-- `just watchman-setup-circuitpy`
-- touch a python file to trigger a sync to the board
+- `just deploy` to copy project files to the board
 - `just monitor` to see the serial output
 
 ### settings.toml
@@ -24,27 +23,14 @@ ADAFRUIT_AIO_KEY      = "aio_..."
 
 This project uses [uv](https://docs.astral.sh/uv/) for dependency management.
 
-To set up your development environment:
-
 ```bash
 uv sync
 ```
 
-Or if you prefer to use [micromamba](https://mamba.readthedocs.io/en/latest/user_guide/micromamba.html) for environment management:
+For auto-deploy on file changes, install [watchexec](https://watchexec.github.io/):
 
-1. Create the environment:
 ```bash
-micromamba create -f environment.yml
-```
-
-2. Activate the environment:
-```bash
-micromamba activate ultimate-scoreboard
-```
-
-3. Install dependencies with uv:
-```bash
-uv sync
+brew install watchexec
 ```
 
 ## Just Command Runner
@@ -62,8 +48,8 @@ Common commands:
 - `just test` - Run all tests
 - `just ci` - Run linter and tests (CI check)
 - `just simulator` (or `just sim`) - Run the local visual display simulator
-- `just watchman-setup-circuitpy` - Set up file watching to sync to CircuitPython board
-- `just watchman-remove` - Remove the file watching trigger
+- `just deploy` - Copy project files to CircuitPython board
+- `just watch-deploy` - Watch for changes and auto-deploy to board
 
 ## Running Tests
 
@@ -130,16 +116,16 @@ Run linter and formatter to automatically fix issues:
 just lint
 ```
 
-### Set watchman to send updates to CircuitPython board
+### Deploy to CircuitPython board
 
 ```bash
-just watchman-setup-circuitpy
+just deploy
 ```
 
-Remove the watchman trigger:
+Or watch for changes and auto-deploy:
 
 ```bash
-just watchman-remove
+just watch-deploy
 ```
 
 ## Resources
