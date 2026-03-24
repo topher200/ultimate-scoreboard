@@ -13,6 +13,8 @@ from src.hardware_manager import (
     KEY_NUMBER_BUTTON_LEFT,
     KEY_NUMBER_BUTTON_RIGHT,
     KEY_NUMBER_BUTTON_UP,
+    SIMULTANEOUS_HOLD_THRESHOLD,
+    HardwareManager,
 )
 
 
@@ -311,3 +313,192 @@ class TestHardwareManager:
         assert left_callback_called
         assert not right_callback_called
         assert not simultaneous_callback_called
+
+    @pytest.mark.asyncio
+    async def test_short_simultaneous_fires_undo(self, fake_keys):
+        """Test that short simultaneous press fires short callback, not long."""
+        short_called = False
+        long_called = False
+
+        async def short_cb():
+            nonlocal short_called
+            short_called = True
+
+        async def long_cb():
+            nonlocal long_called
+            long_called = True
+
+        callbacks = {BUTTON_LEFT: short_cb, BUTTON_RIGHT: short_cb}
+        simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): short_cb}
+        long_simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): long_cb}
+
+        mock_time = [0.0]
+        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
+
+        # Press both buttons simultaneously
+        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+
+        task = asyncio.create_task(
+            hw.monitor_buttons(
+                callbacks, simultaneous_callbacks, long_simultaneous_callbacks
+            )
+        )
+
+        # Let one iteration run (enters hold state)
+        await asyncio.sleep(0.15)
+
+        # Release before threshold
+        mock_time[0] = 0.5
+        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
+        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
+
+        await asyncio.sleep(0.15)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        assert short_called
+        assert not long_called
+
+    @pytest.mark.asyncio
+    async def test_long_simultaneous_fires_toggle(self, fake_keys):
+        """Test that long simultaneous hold fires long callback, not short."""
+        short_called = False
+        long_called = False
+
+        async def short_cb():
+            nonlocal short_called
+            short_called = True
+
+        async def long_cb():
+            nonlocal long_called
+            long_called = True
+
+        callbacks = {BUTTON_LEFT: short_cb, BUTTON_RIGHT: short_cb}
+        simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): short_cb}
+        long_simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): long_cb}
+
+        mock_time = [0.0]
+        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
+
+        # Press both buttons simultaneously
+        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+
+        task = asyncio.create_task(
+            hw.monitor_buttons(
+                callbacks, simultaneous_callbacks, long_simultaneous_callbacks
+            )
+        )
+
+        # Let one iteration run (enters hold state)
+        await asyncio.sleep(0.15)
+
+        # Advance past threshold without releasing
+        mock_time[0] = SIMULTANEOUS_HOLD_THRESHOLD + 0.1
+
+        await asyncio.sleep(0.15)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        assert long_called
+        assert not short_called
+
+    @pytest.mark.asyncio
+    async def test_no_individual_callbacks_during_hold(self, fake_keys):
+        """Test that individual callbacks don't fire while in hold state."""
+        left_called = False
+        right_called = False
+        short_called = False
+
+        async def left_cb():
+            nonlocal left_called
+            left_called = True
+
+        async def right_cb():
+            nonlocal right_called
+            right_called = True
+
+        async def short_cb():
+            nonlocal short_called
+            short_called = True
+
+        async def long_cb():
+            pass
+
+        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
+        simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): short_cb}
+        long_simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): long_cb}
+
+        mock_time = [0.0]
+        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
+
+        # Press both buttons simultaneously
+        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+
+        task = asyncio.create_task(
+            hw.monitor_buttons(
+                callbacks, simultaneous_callbacks, long_simultaneous_callbacks
+            )
+        )
+
+        # Let several iterations run while in hold state
+        await asyncio.sleep(0.35)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        # Individual callbacks should never have fired
+        assert not left_called
+        assert not right_called
+
+    @pytest.mark.asyncio
+    async def test_backward_compat_no_long_callbacks(
+        self, hardware_manager, fake_keys
+    ):
+        """Test that without long callbacks, simultaneous fires immediately."""
+        simultaneous_called = False
+
+        async def left_cb():
+            pass
+
+        async def right_cb():
+            pass
+
+        async def simultaneous_cb():
+            nonlocal simultaneous_called
+            simultaneous_called = True
+
+        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
+        simultaneous_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): simultaneous_cb}
+
+        # Press both buttons simultaneously
+        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+
+        task = asyncio.create_task(
+            hardware_manager.monitor_buttons(callbacks, simultaneous_callbacks)
+        )
+
+        await asyncio.sleep(0.15)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        # Should fire immediately without waiting for release
+        assert simultaneous_called

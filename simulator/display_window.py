@@ -77,9 +77,11 @@ class DisplayWindow:
         if self._keys:
             print("Keyboard controls enabled:")
             print("  Arrow Keys or WASD: Simulate button presses")
-            print("  UP/W: Toggle gender matchup")
+            print("  UP/W: Toggle gender matchup and refresh team names")
             print("  LEFT/A: Increment left team score")
             print("  RIGHT/D: Increment right team score")
+            print("  LEFT+RIGHT (hold ~1s): Toggle gender matchup")
+            print("  LEFT+RIGHT (short press): Undo last point")
             print("  Q or ESC: Quit")
 
     def update(self):
@@ -105,6 +107,10 @@ class DisplayWindow:
                 elif self._keys and event.key in self._keyboard_map:
                     key_number = self._keyboard_map[event.key]
                     self._keys.press_key(key_number)
+            elif event.type == pygame.KEYUP:
+                if self._keys and event.key in self._keyboard_map:
+                    key_number = self._keyboard_map[event.key]
+                    self._keys.release_key(key_number)
 
         self._render_display()
         clock = self._clock

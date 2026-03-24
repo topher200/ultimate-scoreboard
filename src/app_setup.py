@@ -113,6 +113,22 @@ def create_simultaneous_callbacks(
     }
 
 
+def create_long_simultaneous_callbacks(
+    game_controller: GameController,
+) -> dict[tuple[str, str], Callable]:
+    """Create long simultaneous hold callback mapping for hardware manager.
+
+    When both buttons in a pair are held for the hold threshold duration,
+    the long simultaneous callback is called instead of the short simultaneous callback.
+
+    :param game_controller: GameController instance
+    :return: Dictionary mapping button pairs (tuples) to callback functions
+    """
+    return {
+        (BUTTON_LEFT, BUTTON_RIGHT): game_controller.handle_toggle_gender_button,
+    }
+
+
 async def create_timing_indicator_task(
     timing_indicator_manager: TimingIndicatorManager, display_manager: DisplayManager
 ) -> None:
