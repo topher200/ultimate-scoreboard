@@ -23,11 +23,17 @@ class ScoreManager:
         """
         self._nvm_storage = nvm_storage
         if nvm_storage is not None:
+            from src.nvm_storage import TEAM_LEFT_BYTE
+
             self.left_score, self.right_score = nvm_storage.load_scores()
+            self._score_history: list[Team] = [
+                Team.LEFT if b == TEAM_LEFT_BYTE else Team.RIGHT
+                for b in nvm_storage.load_history()
+            ]
         else:
             self.left_score: int = 0
             self.right_score: int = 0
-        self._score_history: list[Team] = []
+            self._score_history: list[Team] = []
 
     def increment_left_score(self) -> None:
         """Increment left team score by 1."""
@@ -63,6 +69,12 @@ class ScoreManager:
         return self._score_history.pop()
 
     def save(self) -> None:
-        """Persist current scores to NVM (no-op if no storage configured)."""
+        """Persist current scores and undo history to NVM (no-op if no storage configured)."""
         if self._nvm_storage is not None:
-            self._nvm_storage.save_scores(self.left_score, self.right_score)
+            from src.nvm_storage import TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE
+
+            history_bytes = [
+                TEAM_LEFT_BYTE if t == Team.LEFT else TEAM_RIGHT_BYTE
+                for t in self._score_history
+            ]
+            self._nvm_storage.save(self.left_score, self.right_score, history_bytes)
