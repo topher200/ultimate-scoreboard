@@ -7,10 +7,8 @@ from src.display_manager import TIMING_INDICATOR_REMOVAL_INTERVAL, DisplayManage
 from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.hardware_manager import (
-    BUTTON_DOWN,
     BUTTON_LEFT,
     BUTTON_RIGHT,
-    BUTTON_UP,
     HardwareManager,
 )
 from src.network_manager import NetworkManager
@@ -91,43 +89,32 @@ async def initialize_application(
 def create_button_callbacks(game_controller: GameController) -> dict[str, Callable]:
     """Create button callback mapping for hardware manager.
 
+    Individual button callbacks fire on release if no chord was detected.
+
     :param game_controller: GameController instance
     :return: Dictionary mapping button names to callback functions
     """
     return {
-        BUTTON_UP: game_controller.handle_toggle_gender_button,
-        BUTTON_DOWN: game_controller.handle_undo_button,
         BUTTON_LEFT: game_controller.handle_left_score_button,
         BUTTON_RIGHT: game_controller.handle_right_score_button,
     }
 
 
-def create_simultaneous_callbacks(
+def create_chord_callbacks(
     game_controller: GameController,
 ) -> dict[tuple[str, str], Callable]:
-    """Create simultaneous button press callback mapping for hardware manager.
+    """Create chord callback mapping for hardware manager.
+
+    Chords fire when one button is held and the other is pressed:
+    - Hold LEFT, press RIGHT → toggle gender matchup
+    - Hold RIGHT, press LEFT → undo last point
 
     :param game_controller: GameController instance
-    :return: Dictionary mapping button pairs (tuples) to callback functions
-    """
-    return {
-        (BUTTON_LEFT, BUTTON_RIGHT): game_controller.handle_undo_button,
-    }
-
-
-def create_long_simultaneous_callbacks(
-    game_controller: GameController,
-) -> dict[tuple[str, str], Callable]:
-    """Create long simultaneous hold callback mapping for hardware manager.
-
-    When both buttons in a pair are held for the hold threshold duration,
-    the long simultaneous callback is called instead of the short simultaneous callback.
-
-    :param game_controller: GameController instance
-    :return: Dictionary mapping button pairs (tuples) to callback functions
+    :return: Dictionary mapping (held_button, pressed_button) to callback functions
     """
     return {
         (BUTTON_LEFT, BUTTON_RIGHT): game_controller.handle_toggle_gender_button,
+        (BUTTON_RIGHT, BUTTON_LEFT): game_controller.handle_undo_button,
     }
 
 

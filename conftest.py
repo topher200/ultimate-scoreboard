@@ -21,7 +21,7 @@ from src.display_manager import (
 )
 from src.game_controller import GameController
 from src.gender_manager import GenderManager
-from src.hardware_manager import BUTTON_DOWN, BUTTON_UP, HardwareManager
+from src.hardware_manager import HardwareManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
 from src.timing_indicator import TimingIndicatorManager

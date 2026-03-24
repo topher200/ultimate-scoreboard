@@ -6,17 +6,16 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 
 | Button | Action |
 |--------|--------|
-| Left | +1 left team score |
-| Right | +1 right team score |
-| Left + Right (short press) | Undo last point |
-| Left + Right (hold ~1s) | Toggle gender matchup (WMP/MMP) and refresh team names |
-| Up (on-board button) | Toggle gender matchup (WMP/MMP) and refresh team names |
-| Down (on-board button) | Undo last point |
+| Left | +1 left score |
+| Right | +1 right score |
+| Both held ~1s | Reset scores to 0-0 |
+| Hold Left, press Right | Toggle gender matchup and refresh team names |
+| Hold Right, press Left | Undo last point |
 
-- **Team names** are set via [Adafruit IO](https://io.adafruit.com) feeds (`scores-group.left-team-name` and `scores-group.right-team-name`). Update the feed values there and press Up to refresh, or they load automatically on boot.
-- **Gender matchup** cycles automatically as scores change (WMP2 → MMP1 → MMP2 → WMP1). Hold both Left + Right for ~1 second (or press the on-board Up button) to toggle whether the first point starts as WMP or MMP.
-- **Score persistence** — scores are saved to non-volatile memory after every point and automatically restored on boot.
-- **Timing dots** appear after each score and fade out over a few seconds — a visual indicator that the score was registered.
+- **Team names** are set via [Adafruit IO](https://io.adafruit.com) feeds (`scores-group.left-team-name` and `scores-group.right-team-name`). They load on boot and refresh when toggling gender.
+- **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
+- **Score persistence** — scores persist to NVM after every point and restore on boot.
+- **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
 
 ## Board Setup
 

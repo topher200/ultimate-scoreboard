@@ -179,6 +179,55 @@ class TestGameControllerDisplayMethods:
         assert counter_label.text == "1"
 
 
+class TestHandleResetButton:
+    """Test GameController reset button handler."""
+
+    @pytest.mark.asyncio
+    async def test_handle_reset_button_zeroes_display(
+        self, game_controller, display_manager, score_manager
+    ):
+        """Test that handle_reset_button resets scores to 0-0 on display."""
+        game_controller.initialize_scores()
+
+        # Score some points
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_right_score_button()
+
+        assert score_manager.left_score == 2
+        assert score_manager.right_score == 1
+
+        # Reset
+        await game_controller.handle_reset_button()
+
+        assert score_manager.left_score == 0
+        assert score_manager.right_score == 0
+
+        left_label = display_manager.text_elements["left_team_score"]["label"]
+        right_label = display_manager.text_elements["right_team_score"]["label"]
+        assert left_label.text == "0"
+        assert right_label.text == "0"
+
+    @pytest.mark.asyncio
+    async def test_handle_reset_button_resets_gender_matchup(
+        self, game_controller, display_manager
+    ):
+        """Test that after reset, gender matchup reflects score sum of 0."""
+        game_controller.initialize_scores()
+
+        # Score some points to change matchup
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_right_score_button()
+
+        # Reset
+        await game_controller.handle_reset_button()
+
+        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
+        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        assert matchup_label.text == "WMP"
+        assert counter_label.text == "2"
+
+
 class TestGameControllerKeepsScore:
     """Test GameController keeps score."""
 
