@@ -3,6 +3,7 @@
 import asyncio
 
 from fakes.fake_keypad import FakeKeys
+from fakes.fake_nvm import create_fake_nvm
 from simulator.display_window import DisplayWindow
 from simulator.simulator_matrixportal import SimulatorMatrixPortal
 from src.app_setup import (
@@ -33,8 +34,11 @@ async def local_main():
         pull=True,
     )
 
-    # Initialize managers using shared setup
-    managers = create_managers(matrixportal, keys)
+    # Initialize managers using shared setup (fake NVM for simulator)
+    from src.nvm_storage import NvmStorage
+
+    nvm_storage = NvmStorage(create_fake_nvm())
+    managers = create_managers(matrixportal, keys, nvm_storage=nvm_storage)
 
     # Initialize application state
     await initialize_application(managers.game_controller, managers.network_manager)
