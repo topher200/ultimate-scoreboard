@@ -7,6 +7,7 @@ from simulator.display_window import DisplayWindow
 from simulator.simulator_matrixportal import SimulatorMatrixPortal
 from src.app_setup import (
     create_button_callbacks,
+    create_long_simultaneous_callbacks,
     create_managers,
     create_simultaneous_callbacks,
     create_timing_indicator_task,
@@ -61,6 +62,7 @@ async def local_main():
             managers.hardware_manager.monitor_buttons(
                 create_button_callbacks(managers.game_controller),
                 create_simultaneous_callbacks(managers.game_controller),
+                create_long_simultaneous_callbacks(managers.game_controller),
             ),
             create_timing_indicator_task(
                 managers.timing_indicator_manager, managers.display_manager
