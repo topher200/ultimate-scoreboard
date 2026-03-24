@@ -4,12 +4,16 @@ NVM layout:
     [0]        magic marker (0xAB) — indicates valid saved data
     [1]        left score (0–255)
     [2]        right score (0–255)
-    [3]        history length
-    [4..4+len] history entries (0x00=LEFT, 0x01=RIGHT)
+    [3]        gender setting (0x00=WMP, 0x01=MMP)
+    [4]        history length
+    [5..5+len] history entries (0x00=LEFT, 0x01=RIGHT)
 """
 
 TEAM_LEFT_BYTE = 0x00
 TEAM_RIGHT_BYTE = 0x01
+
+GENDER_WMP_BYTE = 0x00
+GENDER_MMP_BYTE = 0x01
 
 
 class NvmStorage:
@@ -19,8 +23,9 @@ class NvmStorage:
     OFFSET_MAGIC = 0
     OFFSET_LEFT = 1
     OFFSET_RIGHT = 2
-    OFFSET_HISTORY_LEN = 3
-    OFFSET_HISTORY_START = 4
+    OFFSET_GENDER = 3
+    OFFSET_HISTORY_LEN = 4
+    OFFSET_HISTORY_START = 5
 
     def __init__(self, nvm):
         """Initialize NvmStorage.
@@ -57,16 +62,36 @@ class NvmStorage:
         start = self.OFFSET_HISTORY_START
         return list(self._nvm[start : start + length])
 
+    def load_gender(self) -> int:
+        """Load saved gender setting from NVM.
+
+        :return: Gender byte (GENDER_WMP_BYTE or GENDER_MMP_BYTE), defaults to WMP if no saved data
+        """
+        if not self.has_saved_data():
+            return GENDER_WMP_BYTE
+        return self._nvm[self.OFFSET_GENDER]
+
     def save(self, left: int, right: int, history: list[int]) -> None:
         """Save scores and undo history to NVM in a single write.
+
+        Preserves the existing gender setting.
 
         :param left: Left team score (0–255)
         :param right: Right team score (0–255)
         :param history: List of team bytes (TEAM_LEFT_BYTE or TEAM_RIGHT_BYTE)
         """
+        gender = self._nvm[self.OFFSET_GENDER] if self.has_saved_data() else GENDER_WMP_BYTE
         length = len(history)
-        data = bytes([self.MAGIC, left, right, length]) + bytes(history)
+        data = bytes([self.MAGIC, left, right, gender, length]) + bytes(history)
         self._nvm[0 : self.OFFSET_HISTORY_START + length] = data
+
+    def save_gender(self, gender_byte: int) -> None:
+        """Save gender setting to NVM.
+
+        :param gender_byte: GENDER_WMP_BYTE or GENDER_MMP_BYTE
+        """
+        self._nvm[self.OFFSET_MAGIC] = self.MAGIC
+        self._nvm[self.OFFSET_GENDER] = gender_byte
 
     def clear(self) -> None:
         """Clear all saved data from NVM."""

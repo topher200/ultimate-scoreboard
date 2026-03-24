@@ -3,7 +3,13 @@
 import pytest
 
 from fakes.fake_nvm import create_fake_nvm
-from src.nvm_storage import TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE, NvmStorage
+from src.nvm_storage import (
+    GENDER_MMP_BYTE,
+    GENDER_WMP_BYTE,
+    TEAM_LEFT_BYTE,
+    TEAM_RIGHT_BYTE,
+    NvmStorage,
+)
 
 
 class TestNvmStorage:
@@ -54,6 +60,39 @@ class TestNvmStorage:
         assert storage.has_saved_data() is False
         assert storage.load_scores() == (0, 0)
         assert storage.load_history() == []
+
+    def test_load_gender_returns_wmp_when_no_saved_data(self):
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+        assert storage.load_gender() == GENDER_WMP_BYTE
+
+    def test_save_gender_and_load(self):
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+        storage.save_gender(GENDER_MMP_BYTE)
+        assert storage.has_saved_data() is True
+        assert storage.load_gender() == GENDER_MMP_BYTE
+
+    def test_save_preserves_gender(self):
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+        storage.save_gender(GENDER_MMP_BYTE)
+        storage.save(3, 7, [TEAM_LEFT_BYTE])
+        assert storage.load_gender() == GENDER_MMP_BYTE
+        assert storage.load_scores() == (3, 7)
+
+    def test_save_defaults_gender_to_wmp(self):
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+        storage.save(1, 2, [])
+        assert storage.load_gender() == GENDER_WMP_BYTE
+
+    def test_clear_resets_gender(self):
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+        storage.save_gender(GENDER_MMP_BYTE)
+        storage.clear()
+        assert storage.load_gender() == GENDER_WMP_BYTE
 
     def test_persists_across_storage_instances(self):
         """Simulates reboot: same NVM backing, new NvmStorage instance."""
