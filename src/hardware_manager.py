@@ -18,8 +18,9 @@ BUTTON_RIGHT = "right"
 KEY_NUMBER_BUTTON_LEFT = 2
 KEY_NUMBER_BUTTON_RIGHT = 3
 
-# Polling rate for button monitoring loop
-BUTTON_POLLING_RATE = 0.1
+# Polling rates for button monitoring loop
+BUTTON_POLLING_RATE_IDLE = 0.1
+BUTTON_POLLING_RATE_ACTIVE = 0.02
 
 # Hold threshold for long simultaneous press (seconds)
 SIMULTANEOUS_HOLD_THRESHOLD = 1.0
@@ -280,4 +281,9 @@ class HardwareManager:
                     # again for repeated chords (e.g. multiple undos)
                     state = _STATE_SINGLE_HELD
 
-            await asyncio.sleep(BUTTON_POLLING_RATE)
+            poll_rate = (
+                BUTTON_POLLING_RATE_IDLE
+                if state == _STATE_IDLE
+                else BUTTON_POLLING_RATE_ACTIVE
+            )
+            await asyncio.sleep(poll_rate)
