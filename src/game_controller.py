@@ -8,6 +8,8 @@ from src.network_manager import NetworkManager
 from src.score_manager import ScoreEvent, ScoreManager
 from src.timing_indicator import TimingIndicatorManager
 
+NVM_SAVE_DELAY_SECONDS = 1.0
+
 
 class GameController:
     """Coordinates game actions between managers.
@@ -36,6 +38,22 @@ class GameController:
         self._network_manager = network_manager
         self._gender_manager = gender_manager
         self._timing_indicator_manager = timing_indicator_manager
+        self._pending_save_task: asyncio.Task | None = None
+
+    def _schedule_save(self) -> None:
+        """Schedule a debounced NVM save.
+
+        Cancels any pending save and schedules a new one after a short delay,
+        so rapid score changes result in only one NVM write.
+        """
+        if self._pending_save_task is not None:
+            self._pending_save_task.cancel()
+        self._pending_save_task = asyncio.create_task(self._deferred_save())
+
+    async def _deferred_save(self) -> None:
+        """Wait briefly then persist scores to NVM."""
+        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS)
+        self._schedule_save()
 
     def initialize_scores(self) -> None:
         """Initialize score display from current score manager state.
@@ -65,7 +83,7 @@ class GameController:
 
         self._update_gender_matchup_display()
         self._refresh_timing_indicator()
-        self._score_manager.save()
+        self._schedule_save()
 
     async def handle_right_score_button(self) -> None:
         """Handle right team score button press.
@@ -82,7 +100,7 @@ class GameController:
 
         self._update_gender_matchup_display()
         self._refresh_timing_indicator()
-        self._score_manager.save()
+        self._schedule_save()
 
     async def handle_undo_button(self) -> None:
         """Handle undo button press.
@@ -123,7 +141,7 @@ class GameController:
         self._display_manager.update_timing_indicator(
             self._timing_indicator_manager.get_dot_count()
         )
-        self._score_manager.save()
+        self._schedule_save()
 
     async def handle_reset_button(self) -> None:
         """Handle reset button press.
@@ -143,6 +161,7 @@ class GameController:
             self._timing_indicator_manager.get_dot_count()
         )
         self._update_gender_matchup_display()
+        self._schedule_save()
 
     async def handle_toggle_gender_button(self) -> None:
         """Handle toggle gender button press.
