@@ -5,7 +5,7 @@ import asyncio
 from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
-from src.score_manager import ScoreManager, Team
+from src.score_manager import ScoreEvent, ScoreManager
 from src.timing_indicator import TimingIndicatorManager
 
 
@@ -57,7 +57,7 @@ class GameController:
         """
         print("LEFT button pressed! Incrementing left score...")
         self._score_manager.increment_left_score()
-        self._score_manager.record_score_addition(Team.LEFT)
+        self._score_manager.record_score_addition(ScoreEvent.LEFT)
         self._display_manager.set_text(
             "left_team_score", self._score_manager.left_score
         )
@@ -74,7 +74,7 @@ class GameController:
         """
         print("RIGHT button pressed! Incrementing right score...")
         self._score_manager.increment_right_score()
-        self._score_manager.record_score_addition(Team.RIGHT)
+        self._score_manager.record_score_addition(ScoreEvent.RIGHT)
         self._display_manager.set_text(
             "right_team_score", self._score_manager.right_score
         )
@@ -95,13 +95,23 @@ class GameController:
             print("No score history to undo")
             return
 
-        if team_to_undo == Team.LEFT:
+        if team_to_undo == ScoreEvent.RESET:
+            self._display_manager.set_text(
+                "left_team_score", self._score_manager.left_score
+            )
+            self._display_manager.set_text(
+                "right_team_score", self._score_manager.right_score
+            )
+            print(
+                f"Reset undone: {self._score_manager.left_score}-{self._score_manager.right_score}"
+            )
+        elif team_to_undo == ScoreEvent.LEFT:
             self._score_manager.decrement_left_score()
             self._display_manager.set_text(
                 "left_team_score", self._score_manager.left_score
             )
             print(f"Left score undone: {self._score_manager.left_score}")
-        else:  # team_to_undo == Team.RIGHT
+        else:  # team_to_undo == ScoreEvent.RIGHT
             self._score_manager.decrement_right_score()
             self._display_manager.set_text(
                 "right_team_score", self._score_manager.right_score

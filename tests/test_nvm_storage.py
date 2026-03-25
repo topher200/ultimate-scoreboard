@@ -6,7 +6,9 @@ from fakes.fake_nvm import create_fake_nvm
 from src.nvm_storage import (
     GENDER_MMP_BYTE,
     GENDER_WMP_BYTE,
+    MAX_HISTORY_LENGTH,
     TEAM_LEFT_BYTE,
+    TEAM_RESET_BYTE,
     TEAM_RIGHT_BYTE,
     NvmStorage,
 )
@@ -104,6 +106,31 @@ class TestNvmStorage:
         assert storage2.load_scores() == (12, 8)
         assert storage2.load_history() == [TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE]
 
+    def test_save_and_load_history_with_reset_byte(self):
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+        history = [TEAM_LEFT_BYTE, TEAM_RESET_BYTE, TEAM_RIGHT_BYTE]
+        storage.save(0, 1, history)
+        assert storage.load_history() == history
+
+    def test_save_trims_history_to_max_length(self):
+        nvm = create_fake_nvm(size=1024)
+        storage = NvmStorage(nvm)
+        history = [TEAM_LEFT_BYTE] * (MAX_HISTORY_LENGTH + 50)
+        storage.save(0, 0, history)
+        loaded = storage.load_history()
+        assert len(loaded) == MAX_HISTORY_LENGTH
+
+    def test_save_trims_keeps_latest_entries(self):
+        nvm = create_fake_nvm(size=1024)
+        storage = NvmStorage(nvm)
+        history = [TEAM_LEFT_BYTE] * MAX_HISTORY_LENGTH + [TEAM_RIGHT_BYTE] * 50
+        storage.save(0, 0, history)
+        loaded = storage.load_history()
+        # The last 150 entries should be the tail: some LEFT then all 50 RIGHT
+        assert loaded[-50:] == [TEAM_RIGHT_BYTE] * 50
+        assert len(loaded) == MAX_HISTORY_LENGTH
+
     def test_save_zero_scores_with_empty_history(self):
         nvm = create_fake_nvm()
         storage = NvmStorage(nvm)
@@ -128,30 +155,30 @@ class TestScoreManagerWithNvm:
         assert score_manager.right_score == 3
 
     def test_restores_undo_history_on_init(self):
-        from src.score_manager import ScoreManager, Team
+        from src.score_manager import ScoreEvent, ScoreManager
 
         nvm = create_fake_nvm()
         storage = NvmStorage(nvm)
         storage.save(2, 1, [TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE, TEAM_LEFT_BYTE])
 
         score_manager = ScoreManager(nvm_storage=storage)
-        assert score_manager.undo_last_score() == Team.LEFT
-        assert score_manager.undo_last_score() == Team.RIGHT
-        assert score_manager.undo_last_score() == Team.LEFT
+        assert score_manager.undo_last_score() == ScoreEvent.LEFT
+        assert score_manager.undo_last_score() == ScoreEvent.RIGHT
+        assert score_manager.undo_last_score() == ScoreEvent.LEFT
 
     def test_save_persists_scores_and_history(self):
-        from src.score_manager import ScoreManager, Team
+        from src.score_manager import ScoreEvent, ScoreManager
 
         nvm = create_fake_nvm()
         storage = NvmStorage(nvm)
         score_manager = ScoreManager(nvm_storage=storage)
 
         score_manager.increment_left_score()
-        score_manager.record_score_addition(Team.LEFT)
+        score_manager.record_score_addition(ScoreEvent.LEFT)
         score_manager.increment_left_score()
-        score_manager.record_score_addition(Team.LEFT)
+        score_manager.record_score_addition(ScoreEvent.LEFT)
         score_manager.increment_right_score()
-        score_manager.record_score_addition(Team.RIGHT)
+        score_manager.record_score_addition(ScoreEvent.RIGHT)
         score_manager.save()
 
         assert storage.load_scores() == (2, 1)
@@ -170,7 +197,7 @@ class TestScoreManagerWithNvm:
 
     def test_round_trip_simulated_reboot(self):
         """Full round trip: score, save, 'reboot', restore, undo works."""
-        from src.score_manager import ScoreManager, Team
+        from src.score_manager import ScoreEvent, ScoreManager
 
         nvm = create_fake_nvm()
         storage = NvmStorage(nvm)
@@ -178,11 +205,11 @@ class TestScoreManagerWithNvm:
         # First session
         sm1 = ScoreManager(nvm_storage=storage)
         sm1.increment_left_score()
-        sm1.record_score_addition(Team.LEFT)
+        sm1.record_score_addition(ScoreEvent.LEFT)
         sm1.increment_right_score()
-        sm1.record_score_addition(Team.RIGHT)
+        sm1.record_score_addition(ScoreEvent.RIGHT)
         sm1.increment_right_score()
-        sm1.record_score_addition(Team.RIGHT)
+        sm1.record_score_addition(ScoreEvent.RIGHT)
         sm1.save()
 
         # Simulated reboot - new ScoreManager, same NVM
@@ -192,5 +219,31 @@ class TestScoreManagerWithNvm:
         assert sm2.right_score == 2
 
         # Undo should work after reboot
-        assert sm2.undo_last_score() == Team.RIGHT
+        assert sm2.undo_last_score() == ScoreEvent.RIGHT
         assert sm2.right_score == 2  # undo_last_score only pops history
+
+    def test_reset_persists_and_is_undoable_after_reboot(self):
+        """Reset saved to NVM can be undone after reboot."""
+        from src.score_manager import ScoreEvent, ScoreManager
+
+        nvm = create_fake_nvm()
+        storage = NvmStorage(nvm)
+
+        sm1 = ScoreManager(nvm_storage=storage)
+        sm1.increment_left_score()
+        sm1.record_score_addition(ScoreEvent.LEFT)
+        sm1.increment_right_score()
+        sm1.record_score_addition(ScoreEvent.RIGHT)
+        sm1.save()
+        sm1.reset()  # saves automatically
+
+        # Simulated reboot
+        storage2 = NvmStorage(nvm)
+        sm2 = ScoreManager(nvm_storage=storage2)
+        assert sm2.left_score == 0
+        assert sm2.right_score == 0
+
+        # Undo reset after reboot
+        assert sm2.undo_last_score() == ScoreEvent.RESET
+        assert sm2.left_score == 1
+        assert sm2.right_score == 1

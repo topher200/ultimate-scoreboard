@@ -228,6 +228,37 @@ class TestHandleResetButton:
         assert counter_label.text == "2"
 
 
+class TestHandleUndoAfterReset:
+    """Test GameController undo after reset."""
+
+    @pytest.mark.asyncio
+    async def test_undo_after_reset_restores_both_scores_on_display(
+        self, game_controller, display_manager, score_manager
+    ):
+        """Test that undoing a reset updates both score displays."""
+        game_controller.initialize_scores()
+
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_right_score_button()
+
+        assert score_manager.left_score == 2
+        assert score_manager.right_score == 1
+
+        await game_controller.handle_reset_button()
+        assert score_manager.left_score == 0
+        assert score_manager.right_score == 0
+
+        await game_controller.handle_undo_button()
+        assert score_manager.left_score == 2
+        assert score_manager.right_score == 1
+
+        left_label = display_manager.text_elements["left_team_score"]["label"]
+        right_label = display_manager.text_elements["right_team_score"]["label"]
+        assert left_label.text == "2"
+        assert right_label.text == "1"
+
+
 class TestGameControllerKeepsScore:
     """Test GameController keeps score."""
 

@@ -8,11 +8,12 @@ if TYPE_CHECKING:
     from src.nvm_storage import NvmStorage
 
 
-class Team(Enum):
-    """Enum representing the team side."""
+class ScoreEvent(Enum):
+    """Enum representing a score history entry."""
 
     LEFT = "left"
     RIGHT = "right"
+    RESET = "reset"
 
 
 class ScoreManager:
@@ -23,17 +24,19 @@ class ScoreManager:
         """
         self._nvm_storage = nvm_storage
         if nvm_storage is not None:
-            from src.nvm_storage import TEAM_LEFT_BYTE
+            from src.nvm_storage import TEAM_LEFT_BYTE, TEAM_RESET_BYTE
 
             self.left_score, self.right_score = nvm_storage.load_scores()
-            self._score_history: list[Team] = [
-                Team.LEFT if b == TEAM_LEFT_BYTE else Team.RIGHT
+            self._score_history: list[ScoreEvent] = [
+                ScoreEvent.RESET
+                if b == TEAM_RESET_BYTE
+                else (ScoreEvent.LEFT if b == TEAM_LEFT_BYTE else ScoreEvent.RIGHT)
                 for b in nvm_storage.load_history()
             ]
         else:
             self.left_score: int = 0
             self.right_score: int = 0
-            self._score_history: list[Team] = []
+            self._score_history: list[ScoreEvent] = []
 
     def increment_left_score(self) -> None:
         """Increment left team score by 1."""
@@ -51,37 +54,64 @@ class ScoreManager:
         """Decrement right team score by 1, preventing it from going below 0."""
         self.right_score = max(0, self.right_score - 1)
 
-    def record_score_addition(self, team: Team) -> None:
+    def record_score_addition(self, team: ScoreEvent) -> None:
         """Record a score addition in history.
 
-        :param team: Team.LEFT or Team.RIGHT indicating which team's score was incremented
+        :param team: ScoreEvent.LEFT or ScoreEvent.RIGHT indicating which team scored
         """
         self._score_history.append(team)
 
-    def undo_last_score(self) -> Team | None:
-        """Undo the most recent score addition.
+    def undo_last_score(self) -> ScoreEvent | None:
+        """Undo the most recent score addition or reset.
 
-        :return: Team.LEFT or Team.RIGHT indicating which score to decrement,
+        :return: ScoreEvent.LEFT, ScoreEvent.RIGHT, or ScoreEvent.RESET indicating what was undone,
             or None if history is empty
         """
         if not self._score_history:
             return None
-        return self._score_history.pop()
+        entry = self._score_history.pop()
+        if entry == ScoreEvent.RESET:
+            self._reconstruct_scores()
+        return entry
+
+    def _reconstruct_scores(self) -> None:
+        """Reconstruct scores from history after undoing a reset.
+
+        Scans backward from the end of history to the previous RESET
+        (or start), counting LEFT and RIGHT entries.
+        """
+        left = 0
+        right = 0
+        for entry in reversed(self._score_history):
+            if entry == ScoreEvent.RESET:
+                break
+            elif entry == ScoreEvent.LEFT:
+                left += 1
+            elif entry == ScoreEvent.RIGHT:
+                right += 1
+        self.left_score = left
+        self.right_score = right
 
     def reset(self) -> None:
-        """Reset scores to 0-0 and clear history."""
+        """Reset scores to 0-0 and record in history for undo support."""
+        self._score_history.append(ScoreEvent.RESET)
         self.left_score = 0
         self.right_score = 0
-        self._score_history = []
         self.save()
 
     def save(self) -> None:
         """Persist current scores and undo history to NVM (no-op if no storage configured)."""
         if self._nvm_storage is not None:
-            from src.nvm_storage import TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE
+            from src.nvm_storage import (
+                TEAM_LEFT_BYTE,
+                TEAM_RESET_BYTE,
+                TEAM_RIGHT_BYTE,
+            )
 
-            history_bytes = [
-                TEAM_LEFT_BYTE if t == Team.LEFT else TEAM_RIGHT_BYTE
-                for t in self._score_history
-            ]
+            byte_map = {
+                ScoreEvent.LEFT: TEAM_LEFT_BYTE,
+                ScoreEvent.RIGHT: TEAM_RIGHT_BYTE,
+                ScoreEvent.RESET: TEAM_RESET_BYTE,
+            }
+            history_bytes = [byte_map[t] for t in self._score_history]
             self._nvm_storage.save(self.left_score, self.right_score, history_bytes)
