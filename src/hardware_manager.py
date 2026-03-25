@@ -234,8 +234,9 @@ class HardwareManager:
                     # SINGLE_HELD for repeated chords (e.g. hold RIGHT,
                     # tap LEFT multiple times to undo)
                     state = _STATE_WAIT_RELEASE
-                elif self._button_release_event.get(held_button, False):
-                    self.consume_release_events(held_button)
+                elif not self._button_is_down.get(held_button, True):
+                    # Held button physically released — use _button_is_down
+                    # instead of release events to avoid stale-event bugs
                     if not chord_used:
                         # Released without any chord → fire individual callback
                         cb = callbacks.get(held_button)
@@ -247,13 +248,11 @@ class HardwareManager:
             elif state == _STATE_BOTH_HELD:
                 elapsed = self._get_time() - press_time
                 any_released = any(
-                    self._button_release_event.get(b, False) for b in button_names
+                    not self._button_is_down.get(b, True) for b in button_names
                 )
 
                 if any_released:
                     # Aborted hold — no action
-                    for b in button_names:
-                        self.consume_release_events(b)
                     state = _STATE_IDLE
                 elif elapsed >= SIMULTANEOUS_HOLD_THRESHOLD:
                     if hold_both_callback is not None:
@@ -261,10 +260,9 @@ class HardwareManager:
                     state = _STATE_WAIT_RELEASE
 
             elif state == _STATE_WAIT_RELEASE:
-                # Consume stray events
+                # Consume stray press events to prevent false chord detection
                 for b in button_names:
                     self.consume_button_events(b)
-                    self.consume_release_events(b)
 
                 all_up = all(
                     not self._button_is_down.get(b, False) for b in button_names
