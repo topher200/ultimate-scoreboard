@@ -546,3 +546,66 @@ class TestMonitorButtonsChords:
 
         assert chord_call_count == 3
         assert not right_called
+
+    @pytest.mark.asyncio
+    async def test_button_not_broken_after_aborted_both_held(self, fake_keys):
+        """Regression: stale release event must not permanently break a button.
+
+        Scenario: both buttons pressed simultaneously (BOTH_HELD), one
+        released before threshold → aborted → IDLE. The other button is
+        still held and releases while in IDLE. Without the fix, that
+        release event is never consumed, causing every subsequent press
+        of that button to fire immediately without waiting for a chord.
+        """
+        right_call_count = 0
+
+        async def left_cb():
+            pass
+
+        async def right_cb():
+            nonlocal right_call_count
+            right_call_count += 1
+
+        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
+        hw = HardwareManager(fake_keys)
+
+        task = asyncio.create_task(
+            hw.monitor_buttons(callbacks)
+        )
+
+        # Press both simultaneously → BOTH_HELD
+        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+        await asyncio.sleep(0.15)
+
+        # Release LEFT before threshold → aborted hold → IDLE
+        # RIGHT is still physically held
+        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
+        await asyncio.sleep(0.15)
+
+        # Release RIGHT while in IDLE → release event not consumed (the bug)
+        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
+        await asyncio.sleep(0.15)
+
+        # Press RIGHT and HOLD — should enter SINGLE_HELD and wait
+        # for a chord, NOT fire the individual callback immediately
+        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+        await asyncio.sleep(0.15)
+
+        # Still holding — individual callback must NOT have fired yet
+        assert right_call_count == 0, (
+            "Individual callback fired while button still held — "
+            "stale release event caused immediate firing"
+        )
+
+        # Release RIGHT — NOW the individual callback should fire
+        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
+        await asyncio.sleep(0.15)
+
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+        assert right_call_count == 1
