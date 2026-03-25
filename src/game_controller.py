@@ -63,9 +63,9 @@ class GameController:
         )
         print(f"Left score updated: {self._score_manager.left_score}")
 
-        self._score_manager.save()
-        self._refresh_timing_indicator()
         self._update_gender_matchup_display()
+        self._refresh_timing_indicator()
+        self._score_manager.save()
 
     async def handle_right_score_button(self) -> None:
         """Handle right team score button press.
@@ -80,9 +80,9 @@ class GameController:
         )
         print(f"Right score updated: {self._score_manager.right_score}")
 
-        self._score_manager.save()
-        self._refresh_timing_indicator()
         self._update_gender_matchup_display()
+        self._refresh_timing_indicator()
+        self._score_manager.save()
 
     async def handle_undo_button(self) -> None:
         """Handle undo button press.
@@ -118,12 +118,12 @@ class GameController:
             )
             print(f"Right score undone: {self._score_manager.right_score}")
 
-        self._score_manager.save()
+        self._update_gender_matchup_display()
         self._timing_indicator_manager.clear_dots()
         self._display_manager.update_timing_indicator(
             self._timing_indicator_manager.get_dot_count()
         )
-        self._update_gender_matchup_display()
+        self._score_manager.save()
 
     async def handle_reset_button(self) -> None:
         """Handle reset button press.
