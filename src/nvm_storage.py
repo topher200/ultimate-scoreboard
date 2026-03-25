@@ -69,7 +69,10 @@ class NvmStorage:
         """
         if not self.has_saved_data():
             return GENDER_WMP_BYTE
-        return self._nvm[self.OFFSET_GENDER]
+        gender_byte = self._nvm[self.OFFSET_GENDER]
+        if gender_byte not in {GENDER_WMP_BYTE, GENDER_MMP_BYTE}:
+            return GENDER_WMP_BYTE
+        return gender_byte
 
     def save(self, left: int, right: int, history: list[int]) -> None:
         """Save scores and undo history to NVM in a single write.
@@ -80,7 +83,7 @@ class NvmStorage:
         :param right: Right team score (0–255)
         :param history: List of team bytes (TEAM_LEFT_BYTE or TEAM_RIGHT_BYTE)
         """
-        gender = self._nvm[self.OFFSET_GENDER] if self.has_saved_data() else GENDER_WMP_BYTE
+        gender = self.load_gender()
         length = len(history)
         data = bytes([self.MAGIC, left, right, gender, length]) + bytes(history)
         self._nvm[0 : self.OFFSET_HISTORY_START + length] = data
