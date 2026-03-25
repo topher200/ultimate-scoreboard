@@ -97,7 +97,6 @@ class ScoreManager:
         self._score_history.append(ScoreEvent.RESET)
         self.left_score = 0
         self.right_score = 0
-        self.save()
 
     def save(self) -> None:
         """Persist current scores and undo history to NVM (no-op if no storage configured)."""

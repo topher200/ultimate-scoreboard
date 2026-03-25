@@ -235,7 +235,8 @@ class TestScoreManagerWithNvm:
         sm1.increment_right_score()
         sm1.record_score_addition(ScoreEvent.RIGHT)
         sm1.save()
-        sm1.reset()  # saves automatically
+        sm1.reset()
+        sm1.save()
 
         # Simulated reboot
         storage2 = NvmStorage(nvm)
