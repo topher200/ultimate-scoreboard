@@ -6,11 +6,14 @@ NVM layout:
     [2]        right score (0–255)
     [3]        gender setting (0x00=WMP, 0x01=MMP)
     [4]        history length
-    [5..5+len] history entries (0x00=LEFT, 0x01=RIGHT)
+    [5..5+len] history entries (0x00=LEFT, 0x01=RIGHT, 0x02=RESET)
 """
 
 TEAM_LEFT_BYTE = 0x00
 TEAM_RIGHT_BYTE = 0x01
+TEAM_RESET_BYTE = 0x02
+
+MAX_HISTORY_LENGTH = 150
 
 GENDER_WMP_BYTE = 0x00
 GENDER_MMP_BYTE = 0x01
@@ -54,7 +57,8 @@ class NvmStorage:
     def load_history(self) -> list[int]:
         """Load undo history from NVM.
 
-        :return: List of team bytes (TEAM_LEFT_BYTE or TEAM_RIGHT_BYTE), or [] if no saved data
+        :return: List of event bytes (TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE, or TEAM_RESET_BYTE),
+            or [] if no saved data
         """
         if not self.has_saved_data():
             return []
@@ -81,9 +85,10 @@ class NvmStorage:
 
         :param left: Left team score (0–255)
         :param right: Right team score (0–255)
-        :param history: List of team bytes (TEAM_LEFT_BYTE or TEAM_RIGHT_BYTE)
+        :param history: List of event bytes (TEAM_LEFT_BYTE, TEAM_RIGHT_BYTE, or TEAM_RESET_BYTE)
         """
         gender = self.load_gender()
+        history = history[-MAX_HISTORY_LENGTH:]
         length = len(history)
         data = bytes([self.MAGIC, left, right, gender, length]) + bytes(history)
         self._nvm[0 : self.OFFSET_HISTORY_START + length] = data

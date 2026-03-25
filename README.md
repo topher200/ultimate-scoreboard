@@ -8,7 +8,7 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 |--------|--------|
 | Left | +1 left score |
 | Right | +1 right score |
-| Both held ~1s | Reset scores to 0-0 |
+| Both held ~1s | Reset scores to 0-0 (undoable) |
 | Hold Left, press Right | Toggle gender matchup and refresh team names |
 | Hold Right, press Left | Undo last point |
 
