@@ -40,7 +40,7 @@ def create_managers(matrixportal, keys, nvm_storage: NvmStorage | None = None) -
     display_manager = DisplayManager(matrixportal)
     network_manager = NetworkManager(matrixportal, display_manager)
     score_manager = ScoreManager(nvm_storage=nvm_storage)
-    gender_manager = GenderManager()
+    gender_manager = GenderManager(nvm_storage=nvm_storage)
     from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
 
     timing_indicator_manager = TimingIndicatorManager(
