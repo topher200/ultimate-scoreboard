@@ -53,7 +53,7 @@ class GameController:
     async def _deferred_save(self) -> None:
         """Wait briefly then persist scores to NVM."""
         await asyncio.sleep(NVM_SAVE_DELAY_SECONDS)
-        self._schedule_save()
+        self._score_manager.save()
 
     def initialize_scores(self) -> None:
         """Initialize score display from current score manager state.
