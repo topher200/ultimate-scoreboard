@@ -148,8 +148,10 @@ class DisplayManager:
         element = self.text_elements[element_id]
         label_obj = element["label"]
         label_obj.text = str(content)
-        if element_id in {"gender_matchup", "gender_matchup_counter"}:
+        if element_id == "gender_matchup":
             label_obj.color = self._get_gender_matchup_color(content)
+        elif element_id == "gender_matchup_counter":
+            label_obj.color = self.text_elements["gender_matchup"]["label"].color
 
     def show_connecting(self, show):
         """Show or hide the connecting indicator."""
