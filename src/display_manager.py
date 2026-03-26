@@ -3,10 +3,10 @@ import terminalio
 from adafruit_display_text import label
 
 # Color constants
-LEFT_TEAM_COLOR = 0xAA0000  # AWAY team color (red)
-RIGHT_TEAM_COLOR = 0x00AA00  # HOME team color (green)
-MMP_GENDER_MATCHUP_COLOR = 0xFFA500  # orange
-WMP_GENDER_MATCHUP_COLOR = 0xFFA500  # orange
+LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
+RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
+MMP_GENDER_MATCHUP_COLOR = 0xFFD700  # gold
+WMP_GENDER_MATCHUP_COLOR = 0xFF80C0  # light pink
 
 # Font and scaling constants
 TEAM_NAME_FONT_SCALE = 1
