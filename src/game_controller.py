@@ -8,7 +8,7 @@ from src.network_manager import NetworkManager
 from src.score_manager import ScoreEvent, ScoreManager
 from src.timing_indicator import TimingIndicatorManager
 
-NVM_SAVE_DELAY_SECONDS = 1.0
+NVM_SAVE_DELAY_SECONDS = 5.0
 
 
 class GameController:
