@@ -5,13 +5,11 @@ to be used interchangeably in type-checked code.
 """
 
 from src.protocols.board import BoardLike
-from src.protocols.button import ButtonLike
 from src.protocols.keypad import EventLike, EventQueueLike, KeysLike
 from src.protocols.matrixportal import MatrixPortalLike
 
 __all__ = [
     "BoardLike",
-    "ButtonLike",
     "EventLike",
     "EventQueueLike",
     "KeysLike",
