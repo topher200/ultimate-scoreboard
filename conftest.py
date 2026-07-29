@@ -14,7 +14,6 @@ from fakes import (
     FakeMatrixPortal,
     FakeTerminalio,
 )
-from fakes.fake_nvm import create_fake_nvm
 from src.display_manager import (
     TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
@@ -24,7 +23,6 @@ from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.hardware_manager import HardwareManager
 from src.network_manager import NetworkManager
-from src.nvm_storage import NvmStorage
 from src.score_manager import ScoreManager
 from src.timing_indicator import TimingIndicatorManager
 
@@ -115,32 +113,6 @@ def game_controller(
     """Create GameController instance with all managers."""
     return GameController(
         score_manager,
-        display_manager,
-        network_manager,
-        gender_manager,
-        timing_indicator_manager,
-    )
-
-
-@pytest.fixture
-def nvm_storage():
-    """Create NvmStorage backed by a fake NVM bytearray."""
-    return NvmStorage(create_fake_nvm())
-
-
-@pytest.fixture
-def nvm_score_manager(nvm_storage):
-    """Create ScoreManager instance backed by NVM storage."""
-    return ScoreManager(nvm_storage=nvm_storage)
-
-
-@pytest.fixture
-def nvm_game_controller(
-    nvm_score_manager, display_manager, network_manager, gender_manager, timing_indicator_manager
-):
-    """Create GameController instance with NVM-backed score manager."""
-    return GameController(
-        nvm_score_manager,
         display_manager,
         network_manager,
         gender_manager,
