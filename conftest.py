@@ -7,7 +7,6 @@ from unittest.mock import MagicMock
 import pytest
 
 from fakes import (
-    FakeButton,
     FakeGroup,
     FakeKeys,
     FakeLabel,
@@ -31,7 +30,6 @@ from src.timing_indicator import TimingIndicatorManager
 _BASIC_MOCK_MODULES = [
     "board",
     "busio",
-    "digitalio",
     "framebufferio",
     "rgbmatrix",
     "adafruit_matrixportal",
