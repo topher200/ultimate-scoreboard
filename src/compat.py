@@ -28,23 +28,9 @@ except ImportError:
             for key, value in kwargs.items():
                 setattr(self, key, value)
 
-    # Any needs to be a class (not instance) that can be used in type annotations
-    # and supports union operations
+    # Any needs to be a class (not instance) so it can be used in annotations
     class _Any:
         """Stub Any class for CircuitPython compatibility."""
-
-        def __or__(self, other):
-            return _UnionStub(self, other)
-
-        def __ror__(self, other):
-            return _UnionStub(other, self)
-
-    class _UnionStub:
-        """Stub for union types like Any | None."""
-
-        def __init__(self, left, right):
-            self.left = left
-            self.right = right
 
 
 # Export the appropriate types based on whether typing is available
