@@ -19,5 +19,4 @@ class SimulatorMatrixPortal(FakeMatrixPortal):
         """
         self._display = RenderableDisplay()
         self._feed_data = {}
-        self._pushed_data = {}
 

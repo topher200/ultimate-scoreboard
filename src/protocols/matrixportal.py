@@ -20,19 +20,3 @@ class MatrixPortalLike(Protocol):
         """
         ...
 
-    def push_to_io(
-        self,
-        feed_key: str,
-        data: Any,
-        metadata: Any | None = None,
-        precision: Any | None = None,
-    ) -> None:
-        """Push a value to an IO feed.
-
-        :param feed_key: The feed key to push to
-        :param data: The value to push
-        :param metadata: Optional metadata for the feed
-        :param precision: Optional precision for numeric values
-        """
-        ...
-
