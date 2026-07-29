@@ -3,7 +3,11 @@
 import asyncio
 
 from src.compat import Callable, NamedTuple
-from src.display_manager import TIMING_INDICATOR_REMOVAL_INTERVAL, DisplayManager
+from src.display_manager import (
+    TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+    TIMING_INDICATOR_REMOVAL_INTERVAL,
+    DisplayManager,
+)
 from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.hardware_manager import (
@@ -39,8 +43,6 @@ def create_managers(matrixportal, keys) -> Managers:
     network_manager = NetworkManager(matrixportal, display_manager)
     score_manager = ScoreManager()
     gender_manager = GenderManager()
-    from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
-
     timing_indicator_manager = TimingIndicatorManager(
         max_dots=TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
         removal_interval=TIMING_INDICATOR_REMOVAL_INTERVAL,
