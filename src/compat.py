@@ -54,54 +54,11 @@ else:
         from enum import Enum
     except ImportError:
         # CircuitPython compatibility: create stub Enum class when enum is unavailable
-        class _EnumMeta(type):
-            """Metaclass for Enum stub that converts class attributes to enum members."""
-
-            def __new__(mcs, name, bases, namespace):
-                """Create enum class and convert attributes to members."""
-                # Remove special attributes
-                members = {}
-                for key, value in list(namespace.items()):
-                    if not key.startswith("_") and not callable(value):
-                        members[key] = value
-                        del namespace[key]
-
-                # Create the class
-                cls = super().__new__(mcs, name, bases, namespace)
-
-                # Create enum members
-                for member_name, member_value in members.items():
-                    member = cls(member_value)
-                    member.name = member_name
-                    setattr(cls, member_name, member)
-
-                return cls
-
         class Enum:
-            """Stub Enum class for CircuitPython compatibility."""
+            """Stub Enum base class for CircuitPython compatibility.
 
-            __metaclass__ = _EnumMeta
-
-            def __init__(self, value):
-                """Initialize enum member with a value."""
-                self.value = value
-                self.name = None
-
-            def __repr__(self):
-                """Return string representation of enum member."""
-                if self.name:
-                    return f"<{self.__class__.__name__}.{self.name}: {self.value!r}>"
-                return f"<{self.__class__.__name__}: {self.value!r}>"
-
-            def __eq__(self, other):
-                """Check equality with another enum member."""
-                if isinstance(other, self.__class__):
-                    return self.value == other.value
-                return False
-
-            def __hash__(self):
-                """Make enum members hashable."""
-                return hash((self.__class__, self.value))
+            Subclass attributes keep their plain values.
+            """
 
 
 __all__ = [
