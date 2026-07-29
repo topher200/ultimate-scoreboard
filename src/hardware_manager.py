@@ -70,11 +70,6 @@ class HardwareManager:
             BUTTON_LEFT: False,
             BUTTON_RIGHT: False,
         }
-        # Track pending release events by button name
-        self._button_release_event = {
-            BUTTON_LEFT: False,
-            BUTTON_RIGHT: False,
-        }
         # Track physical button state (True = currently held down)
         self._button_is_down = {
             BUTTON_LEFT: False,
@@ -100,7 +95,6 @@ class HardwareManager:
                     self._button_press_event[button_name] = True
                     self._button_is_down[button_name] = True
                 else:
-                    self._button_release_event[button_name] = True
                     self._button_is_down[button_name] = False
 
     def is_button_pressed(self, button_name: str) -> bool:
@@ -120,35 +114,6 @@ class HardwareManager:
             self._button_press_event[button_name] = False
             return True
         return False
-
-    def is_button_released(self, button_name: str) -> bool:
-        """Check if a button was just released (edge detection).
-
-        Returns True once per button release, then False until the next release.
-        Must call update() before checking button states.
-
-        :param button_name: Name of the button to check
-        :return: True if button was just released, False otherwise
-        :raises KeyError: If button_name is not configured
-        """
-        if button_name not in self._button_release_event:
-            raise KeyError(f"Unknown button name: {button_name}")
-
-        if self._button_release_event[button_name]:
-            self._button_release_event[button_name] = False
-            return True
-        return False
-
-    def consume_release_events(self, *button_names: str) -> None:
-        """Consume release events for one or more buttons.
-
-        :param button_names: One or more button names to consume release events for
-        :raises KeyError: If any button_name is not configured
-        """
-        for button_name in button_names:
-            if button_name not in self._button_release_event:
-                raise KeyError(f"Unknown button name: {button_name}")
-            self._button_release_event[button_name] = False
 
     def consume_button_events(self, *button_names: str) -> None:
         """Consume press events for one or more buttons.
@@ -235,8 +200,7 @@ class HardwareManager:
                     # tap LEFT multiple times to undo)
                     state = _STATE_WAIT_RELEASE
                 elif not self._button_is_down.get(held_button, True):
-                    # Held button physically released — use _button_is_down
-                    # instead of release events to avoid stale-event bugs
+                    # Held button is physically up
                     if not chord_used:
                         # Released without any chord → fire individual callback
                         cb = callbacks.get(held_button)
