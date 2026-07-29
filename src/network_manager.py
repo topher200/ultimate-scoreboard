@@ -44,8 +44,6 @@ class NetworkManager:
             if value is not None:
                 return value["value"]
             return None
-        except (KeyError, TypeError):
-            return None
         except Exception:
             return None
         finally:

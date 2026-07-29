@@ -49,7 +49,6 @@ except ImportError:
 
 # Export the appropriate types based on whether typing is available
 if TYPE_CHECKING:
-    from abc import ABC, abstractmethod
     from collections.abc import Callable
     from typing import Any, NamedTuple, Protocol
 else:
@@ -57,21 +56,6 @@ else:
     Any = _Any
     NamedTuple = _NamedTuple
     Protocol = _Protocol
-
-# Export ABC and abstractmethod (available in standard Python, stubs in CircuitPython)
-# For type checking, use real abc imports (handled above in TYPE_CHECKING block)
-# For runtime, try to import from abc, fall back to stubs if unavailable
-if not TYPE_CHECKING:
-    try:
-        from abc import ABC, abstractmethod
-    except ImportError:
-        # CircuitPython compatibility: create stub classes when abc is unavailable
-        class ABC:
-            """Stub ABC class for CircuitPython compatibility."""
-
-        def abstractmethod(func):
-            """Stub abstractmethod decorator for CircuitPython compatibility."""
-            return func
 
 
 # Export Enum (available in standard Python, stub in CircuitPython)
@@ -140,7 +124,5 @@ __all__ = [
     "NamedTuple",
     "Protocol",
     "TYPE_CHECKING",
-    "ABC",
-    "abstractmethod",
     "Enum",
 ]
