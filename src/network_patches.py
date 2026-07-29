@@ -14,12 +14,12 @@ def _patch_requests_get(requests_obj: Any) -> None:
     """Patch requests.get with shorter timeout if not already patched."""
     if requests_obj is None:
         return
-    
+
     # Use id() to track unique requests objects
     requests_id = id(requests_obj)
     if requests_id in _patched_requests:
         return
-    
+
     if hasattr(requests_obj, "get"):
         original_requests_get = requests_obj.get
 
@@ -60,10 +60,10 @@ def apply_network_patches(matrixportal: Any) -> None:
         """Wrapper that forces max_attempts=1 for immediate failure."""
         kwargs["max_attempts"] = 1
         result = original_connect(*args, **kwargs)
-        
+
         # Patch requests.get after connection is established (requests is now set)
         _patch_requests_get(matrixportal.network._wifi.requests)
-        
+
         return result
 
     matrixportal.network.connect = connect_with_no_retries
