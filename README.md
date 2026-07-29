@@ -14,7 +14,6 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 
 - **Team names** are set via [Adafruit IO](https://io.adafruit.com) feeds (`scores-group.left-team-name` and `scores-group.right-team-name`). They load on boot and refresh when toggling gender.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
-- **Score persistence** — scores persist to NVM after every point and restore on boot.
 - **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
 
 ## Board Setup

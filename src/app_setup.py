@@ -12,7 +12,6 @@ from src.hardware_manager import (
     HardwareManager,
 )
 from src.network_manager import NetworkManager
-from src.nvm_storage import NvmStorage
 from src.score_manager import ScoreManager
 from src.timing_indicator import TimingIndicatorManager
 
@@ -29,18 +28,17 @@ class Managers(NamedTuple):
     game_controller: GameController
 
 
-def create_managers(matrixportal, keys, nvm_storage: NvmStorage | None = None) -> Managers:
+def create_managers(matrixportal, keys) -> Managers:
     """Initialize all application managers.
 
     :param matrixportal: MatrixPortal instance (real or simulator)
     :param keys: Keys instance (real or fake) for button input
-    :param nvm_storage: Optional NvmStorage for persisting scores across reboots
     :return: Managers named tuple containing all initialized managers
     """
     display_manager = DisplayManager(matrixportal)
     network_manager = NetworkManager(matrixportal, display_manager)
-    score_manager = ScoreManager(nvm_storage=nvm_storage)
-    gender_manager = GenderManager(nvm_storage=nvm_storage)
+    score_manager = ScoreManager()
+    gender_manager = GenderManager()
     from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
 
     timing_indicator_manager = TimingIndicatorManager(

@@ -1,14 +1,9 @@
 """Tests for GameController using real manager instances."""
 
-import asyncio
-from unittest.mock import patch
-
 import pytest
 
-from src.game_controller import NVM_SAVE_DELAY_SECONDS
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
-from src.nvm_storage import TEAM_LEFT_BYTE, TEAM_RESET_BYTE, TEAM_RIGHT_BYTE
 
 
 class TestGenderMatchupCalculation:
@@ -383,106 +378,3 @@ class TestGameControllerKeepsScore:
         # sum=4 → WMP2
         assert matchup_label.text == "WMP"
         assert counter_label.text == "2"
-
-
-class TestNvmPersistence:
-    """Test that GameController persists scores to NVM after the debounce delay."""
-
-    @pytest.mark.asyncio
-    async def test_left_score_persists_to_nvm(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that left score button press persists scores to NVM after debounce."""
-        await nvm_game_controller.handle_left_score_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        assert nvm_storage.load_scores() == (1, 0)
-        assert nvm_storage.load_history() == [TEAM_LEFT_BYTE]
-
-    @pytest.mark.asyncio
-    async def test_right_score_persists_to_nvm(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that right score button press persists scores to NVM after debounce."""
-        await nvm_game_controller.handle_right_score_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        assert nvm_storage.load_scores() == (0, 1)
-        assert nvm_storage.load_history() == [TEAM_RIGHT_BYTE]
-
-    @pytest.mark.asyncio
-    async def test_multiple_scores_persist_to_nvm(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that multiple score presses persist correctly after debounce."""
-        await nvm_game_controller.handle_left_score_button()
-        await nvm_game_controller.handle_left_score_button()
-        await nvm_game_controller.handle_right_score_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        assert nvm_storage.load_scores() == (2, 1)
-        assert nvm_storage.load_history() == [
-            TEAM_LEFT_BYTE,
-            TEAM_LEFT_BYTE,
-            TEAM_RIGHT_BYTE,
-        ]
-
-    @pytest.mark.asyncio
-    async def test_reset_persists_to_nvm(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that reset persists to NVM after debounce."""
-        await nvm_game_controller.handle_left_score_button()
-        await nvm_game_controller.handle_right_score_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        await nvm_game_controller.handle_reset_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        assert nvm_storage.load_scores() == (0, 0)
-        assert nvm_storage.load_history() == [
-            TEAM_LEFT_BYTE,
-            TEAM_RIGHT_BYTE,
-            TEAM_RESET_BYTE,
-        ]
-
-    @pytest.mark.asyncio
-    async def test_undo_persists_to_nvm(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that undo persists to NVM after debounce."""
-        await nvm_game_controller.handle_left_score_button()
-        await nvm_game_controller.handle_left_score_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        await nvm_game_controller.handle_undo_button()
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        assert nvm_storage.load_scores() == (1, 0)
-        assert nvm_storage.load_history() == [TEAM_LEFT_BYTE]
-
-    @pytest.mark.asyncio
-    async def test_scores_not_persisted_before_debounce(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that scores are NOT written to NVM before the debounce delay elapses."""
-        await nvm_game_controller.handle_left_score_button()
-        # Give the event loop a chance to run, but don't wait for the full delay
-        await asyncio.sleep(0)
-
-        assert nvm_storage.has_saved_data() is False
-
-    @pytest.mark.asyncio
-    async def test_debounce_only_saves_once(
-        self, nvm_game_controller, nvm_score_manager, nvm_storage
-    ):
-        """Test that rapid button presses debounce into a single NVM write."""
-        await nvm_game_controller.handle_left_score_button()
-        # Press again before debounce, which should cancel the first save
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS / 2)
-        await nvm_game_controller.handle_right_score_button()
-        # Wait for debounce after last press
-        await asyncio.sleep(NVM_SAVE_DELAY_SECONDS + 0.1)
-
-        # Both scores should be saved in a single write
-        assert nvm_storage.load_scores() == (1, 1)
