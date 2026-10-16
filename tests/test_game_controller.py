@@ -18,7 +18,7 @@ class TestGenderMatchupDisplay:
         self, game_controller, display_manager
     ):
         """Test that gender matchup cycles correctly through multiple button presses."""
-        await game_controller.update_team_names()
+        game_controller.update_team_names()
         game_controller.initialize_scores()
 
         label = display_manager._labels[GENDER_MATCHUP]
@@ -186,7 +186,7 @@ class TestGameControllerKeepsScore:
         assert score_manager.left_score == 3
         assert score_manager.right_score == 2
 
-    async def test_update_team_names_with_custom_names(
+    def test_update_team_names_with_custom_names(
         self, fake_matrix_portal, game_controller, network_manager
     ):
         """Test that update_team_names fetches and uses custom team names."""
@@ -195,26 +195,26 @@ class TestGameControllerKeepsScore:
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Tigers")
 
         # Update team names
-        await game_controller.update_team_names()
+        game_controller.update_team_names()
 
         # Verify team names were fetched
-        assert await network_manager.get_left_team_name() == "Phoenix"
-        assert await network_manager.get_right_team_name() == "Tigers"
+        assert network_manager.get_left_team_name() == "Phoenix"
+        assert network_manager.get_right_team_name() == "Tigers"
 
-    async def test_update_team_names_uses_defaults_when_not_set(
+    def test_update_team_names_uses_defaults_when_not_set(
         self, game_controller, network_manager
     ):
         """Test that update_team_names uses defaults when network has no values."""
         # Don't set any team names in network (they'll be None)
 
         # Update team names
-        await game_controller.update_team_names()
+        game_controller.update_team_names()
 
         # Verify defaults are used
-        assert await network_manager.get_left_team_name() == "AWAY"
-        assert await network_manager.get_right_team_name() == "HOME"
+        assert network_manager.get_left_team_name() == "AWAY"
+        assert network_manager.get_right_team_name() == "HOME"
 
-    async def test_update_team_names_updates_display(
+    def test_update_team_names_updates_display(
         self, display_manager, fake_matrix_portal, game_controller
     ):
         """Test that update_team_names updates the display with fetched team names."""
@@ -223,7 +223,7 @@ class TestGameControllerKeepsScore:
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Tigers")
 
         # Update team names
-        await game_controller.update_team_names()
+        game_controller.update_team_names()
 
         # Verify display is updated
         left_label = display_manager._labels[LEFT_TEAM]
@@ -239,7 +239,7 @@ class TestGameControllerKeepsScore:
         # Initialize with team names
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "AWAY")
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "HOME")
-        await game_controller.update_team_names()
+        game_controller.update_team_names()
         game_controller.initialize_scores()
 
         # Get label references

@@ -67,12 +67,12 @@ def create_managers(matrixportal, keys) -> Managers:
     )
 
 
-async def initialize_application(game_controller: GameController) -> None:
+def initialize_application(game_controller: GameController) -> None:
     """Initialize application state (team names and scores).
 
     :param game_controller: GameController instance
     """
-    await game_controller.update_team_names()
+    game_controller.update_team_names()
     game_controller.initialize_scores()
 
 
