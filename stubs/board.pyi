@@ -8,7 +8,5 @@ from typing import Any
 
 # Board-specific pins
 NEOPIXEL: Any
-BUTTON_UP: Any
-BUTTON_DOWN: Any
 A1: Any
 A3: Any
