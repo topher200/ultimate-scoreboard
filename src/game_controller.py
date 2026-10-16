@@ -40,103 +40,42 @@ class GameController:
 
         Updates both score displays and the gender matchup display.
         """
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
-        )
+        self._redraw_scores()
         self._update_gender_matchup_display()
 
     async def handle_left_score_button(self) -> None:
-        """Handle left team score button press.
-
-        Increments the left team score and updates the display.
-        """
-        print("LEFT button pressed! Incrementing left score...")
-        self._score_manager.increment_left_score()
-        self._score_manager.record_score_addition(ScoreEvent.LEFT)
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        print(f"Left score updated: {self._score_manager.left_score}")
-
-        self._update_gender_matchup_display()
-        self._refresh_timing_indicator()
+        """Add a point for the left team."""
+        print("LEFT button pressed!")
+        self._add_point(ScoreEvent.LEFT)
 
     async def handle_right_score_button(self) -> None:
-        """Handle right team score button press.
-
-        Increments the right team score and updates the display.
-        """
-        print("RIGHT button pressed! Incrementing right score...")
-        self._score_manager.increment_right_score()
-        self._score_manager.record_score_addition(ScoreEvent.RIGHT)
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
-        )
-        print(f"Right score updated: {self._score_manager.right_score}")
-
-        self._update_gender_matchup_display()
-        self._refresh_timing_indicator()
+        """Add a point for the right team."""
+        print("RIGHT button pressed!")
+        self._add_point(ScoreEvent.RIGHT)
 
     async def handle_undo_button(self) -> None:
-        """Handle undo button press.
-
-        Undoes the most recent score addition and updates the display.
-        """
+        """Undo the most recent point or reset and update the display."""
         print("UNDO pressed! Undoing last score...")
-        team_to_undo = self._score_manager.undo_last_score()
-        if team_to_undo is None:
+        entry = self._score_manager.undo_last_score()
+        if entry is None:
             print("No score history to undo")
             return
 
-        if team_to_undo == ScoreEvent.RESET:
-            self._display_manager.set_text(
-                "left_team_score", self._score_manager.left_score
-            )
-            self._display_manager.set_text(
-                "right_team_score", self._score_manager.right_score
-            )
-            print(
-                f"Reset undone: {self._score_manager.left_score}-{self._score_manager.right_score}"
-            )
-        elif team_to_undo == ScoreEvent.LEFT:
+        if entry == ScoreEvent.LEFT:
             self._score_manager.decrement_left_score()
-            self._display_manager.set_text(
-                "left_team_score", self._score_manager.left_score
-            )
-            print(f"Left score undone: {self._score_manager.left_score}")
-        else:  # team_to_undo == ScoreEvent.RIGHT
+        elif entry == ScoreEvent.RIGHT:
             self._score_manager.decrement_right_score()
-            self._display_manager.set_text(
-                "right_team_score", self._score_manager.right_score
-            )
-            print(f"Right score undone: {self._score_manager.right_score}")
-
+        self._redraw_scores()
+        self._print_score("Undone")
         self._update_gender_matchup_display()
-        self._timing_indicator_manager.clear_dots()
-        self._display_manager.update_timing_indicator(
-            self._timing_indicator_manager.get_dot_count()
-        )
+        self._clear_timing_indicator()
 
     async def handle_reset_button(self) -> None:
-        """Handle reset button press.
-
-        Resets scores to 0-0, clears timing dots, and updates display.
-        """
+        """Reset scores to 0-0, clear the timing indicator, and update the display."""
         print("RESET pressed! Resetting scores to 0-0...")
         self._score_manager.reset()
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
-        )
-        self._timing_indicator_manager.clear_dots()
-        self._display_manager.update_timing_indicator(
-            self._timing_indicator_manager.get_dot_count()
-        )
+        self._redraw_scores()
+        self._clear_timing_indicator()
         self._update_gender_matchup_display()
 
     async def handle_toggle_gender_button(self) -> None:
@@ -174,37 +113,40 @@ class GameController:
         print(f"Team names: {left_team} vs {right_team}")
         self.set_team_names(left_team, right_team)
 
-    def _calculate_gender_matchup(
-        self, score_sum: int, starting_gender: str
-    ) -> tuple[str, int]:
-        """Calculate gender matchup based on score sum and starting gender.
+    def _add_point(self, team: ScoreEvent) -> None:
+        if team == ScoreEvent.LEFT:
+            self._score_manager.increment_left_score()
+        else:
+            self._score_manager.increment_right_score()
+        self._score_manager.record_score_addition(team)
+        self._redraw_scores()
+        self._print_score("Score")
+        self._update_gender_matchup_display()
+        self._refresh_timing_indicator()
 
-        Pattern always cycles: WMP2 → MMP1 → MMP2 → WMP1 → WMP2 → ...
-        - If starting_gender=GENDER_WMP: SUM=0→WMP2, SUM=1→MMP1, SUM=2→MMP2, SUM=3→WMP1
-        - If starting_gender=GENDER_MMP: SUM=0→MMP2, SUM=1→WMP1, SUM=2→WMP2, SUM=3→MMP1
+    def _print_score(self, prefix: str) -> None:
+        left = self._score_manager.left_score
+        right = self._score_manager.right_score
+        print(f"{prefix}: {left}-{right}")
 
-        :param score_sum: Sum of left and right scores
-        :param starting_gender: Starting gender (GenderManager.GENDER_WMP or
-            GenderManager.GENDER_MMP)
-        :return: Tuple of (matchup_type, counter)
-        """
-        # Base pattern: WMP2 (0), MMP1 (1), MMP2 (2), WMP1 (3)
-        # Offset: 0 for WMP2 start, 2 for MMP2 start
-        offset = 0 if starting_gender == GenderManager.GENDER_WMP else 2
-        position = (score_sum + offset) % 4
-
-        if position == 0:
-            return ("WMP", 2)
-        elif position == 1:
-            return ("MMP", 1)
-        elif position == 2:
-            return ("MMP", 2)
-        else:  # position == 3
-            return ("WMP", 1)
+    def _redraw_scores(self) -> None:
+        self._display_manager.set_text(
+            "left_team_score", self._score_manager.left_score
+        )
+        self._display_manager.set_text(
+            "right_team_score", self._score_manager.right_score
+        )
 
     def _refresh_timing_indicator(self) -> None:
-        """Refresh the timing indicator by refilling dots and updating the display."""
+        """Refill the timing indicator and update the display."""
         self._timing_indicator_manager.refill_dots()
+        self._display_manager.update_timing_indicator(
+            self._timing_indicator_manager.get_dot_count()
+        )
+
+    def _clear_timing_indicator(self) -> None:
+        """Empty the timing indicator and update the display."""
+        self._timing_indicator_manager.clear_dots()
         self._display_manager.update_timing_indicator(
             self._timing_indicator_manager.get_dot_count()
         )
@@ -212,11 +154,6 @@ class GameController:
     def _update_gender_matchup_display(self) -> None:
         """Update the gender matchup display based on current scores and starting gender."""
         score_sum = self._score_manager.left_score + self._score_manager.right_score
-        starting_gender = self._gender_manager.get_first_point_gender()
-        gender_matchup, gender_matchup_count = self._calculate_gender_matchup(
-            score_sum, starting_gender
-        )
-        self._display_manager.set_text("gender_matchup", gender_matchup)
-        self._display_manager.set_text(
-            "gender_matchup_counter", str(gender_matchup_count)
-        )
+        gender, count = self._gender_manager.get_matchup(score_sum)
+        self._display_manager.set_text("gender_matchup", gender)
+        self._display_manager.set_text("gender_matchup_counter", str(count))

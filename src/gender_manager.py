@@ -2,12 +2,20 @@ from __future__ import annotations
 
 
 class GenderManager:
-    """Manages first point gender state locally."""
+    """Manages first point gender state and the per-point gender matchup."""
 
     # Gender constants
     GENDER_WMP = "WMP"
     GENDER_MMP = "MMP"
     DEFAULT_GENDER = GENDER_WMP
+
+    # ABBA cycle with a WMP first point: WMP2, MMP1, MMP2, WMP1
+    _MATCHUP_CYCLE = (
+        (GENDER_WMP, 2),
+        (GENDER_MMP, 1),
+        (GENDER_MMP, 2),
+        (GENDER_WMP, 1),
+    )
 
     def __init__(self):
         """Initialize GenderManager with the default first point gender."""
@@ -27,3 +35,14 @@ class GenderManager:
             if self._first_point_gender == self.GENDER_WMP
             else self.GENDER_WMP
         )
+
+    def get_matchup(self, score_sum: int) -> tuple[str, int]:
+        """Get the gender matchup for the next point.
+
+        An MMP first point shifts the cycle by two: MMP2, WMP1, WMP2, MMP1.
+
+        :param score_sum: Sum of left and right scores
+        :return: Tuple of (gender, count)
+        """
+        offset = 0 if self._first_point_gender == self.GENDER_WMP else 2
+        return self._MATCHUP_CYCLE[(score_sum + offset) % 4]

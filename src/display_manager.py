@@ -2,6 +2,8 @@ import displayio
 import terminalio
 from adafruit_display_text import label
 
+from src.gender_manager import GenderManager
+
 # Color constants
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
 RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
@@ -141,7 +143,7 @@ class DisplayManager:
         self._setup_timing_indicator()
 
     def _get_gender_matchup_color(self, gender_matchup):
-        if "MMP" in gender_matchup:
+        if gender_matchup == GenderManager.GENDER_MMP:
             return MMP_GENDER_MATCHUP_COLOR
         else:
             return WMP_GENDER_MATCHUP_COLOR
