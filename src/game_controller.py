@@ -1,7 +1,5 @@
 """Coordinates game actions and state changes."""
 
-import asyncio
-
 from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
@@ -171,22 +169,10 @@ class GameController:
 
         Fetches team names from the network and updates the display.
         """
-        team_left_team = NetworkManager.DEFAULT_LEFT_TEAM_NAME
-        team_right_team = NetworkManager.DEFAULT_RIGHT_TEAM_NAME
-
-        await asyncio.sleep(0)
-        team_name = await self._network_manager.get_left_team_name()
-        if team_name is not None:
-            print(f"Team {team_left_team} is now Team {team_name}")
-            team_left_team = team_name
-
-        await asyncio.sleep(0)
-        team_name = await self._network_manager.get_right_team_name()
-        if team_name is not None:
-            print(f"Team {team_right_team} is now Team {team_name}")
-            team_right_team = team_name
-
-        self.set_team_names(team_left_team, team_right_team)
+        left_team = await self._network_manager.get_left_team_name()
+        right_team = await self._network_manager.get_right_team_name()
+        print(f"Team names: {left_team} vs {right_team}")
+        self.set_team_names(left_team, right_team)
 
     def _calculate_gender_matchup(
         self, score_sum: int, starting_gender: str

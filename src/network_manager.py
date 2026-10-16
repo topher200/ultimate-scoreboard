@@ -28,7 +28,7 @@ class NetworkManager:
         :param display_manager: DisplayManager instance for showing connection status
         """
         self._matrixportal = matrixportal
-        self.display_manager = display_manager
+        self._display_manager = display_manager
 
     async def _get_feed_value(self, feed_key: str) -> None | str:
         """Fetch the last value from an Adafruit IO feed.
@@ -37,17 +37,18 @@ class NetworkManager:
         :return: The last value from the feed, or None if not available
         """
         await asyncio.sleep(0)
-        self.display_manager.show_connecting(True)
         try:
+            self._display_manager.show_connecting(True)
             feed = self._matrixportal.get_io_feed(feed_key, detailed=True)
             value = feed["details"]["data"]["last"]
             if value is not None:
                 return value["value"]
             return None
-        except Exception:
+        except Exception as e:
+            print(f"Failed to fetch feed {feed_key}: {e}")
             return None
         finally:
-            self.display_manager.show_connecting(False)
+            self._display_manager.show_connecting(False)
 
     async def get_left_team_name(self) -> str:
         if value := await self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
