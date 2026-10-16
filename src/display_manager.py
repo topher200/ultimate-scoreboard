@@ -29,11 +29,17 @@ MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 
 # Timing indicator constants
-TIMING_INDICATOR_MAX_DOTS_WHEN_FULL = 12
-TIMING_INDICATOR_MAX_DOTS_TO_SHOW = 4
-TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 5
-TIMING_INDICATOR_DOT_CHAR = "."
-TIMING_INDICATOR_REMOVAL_INTERVAL = 5.0
+# Time from a goal to the pull, per USA Ultimate rules
+TIMING_INDICATOR_DURATION_SECONDS = 80
+TIMING_INDICATOR_PIXEL_COUNT = 40
+TIMING_INDICATOR_REMOVAL_INTERVAL = (
+    TIMING_INDICATOR_DURATION_SECONDS / TIMING_INDICATOR_PIXEL_COUNT
+)
+TIMING_INDICATOR_X_POSITION = (
+    DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH - TIMING_INDICATOR_PIXEL_COUNT
+)
+TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 1
+TIMING_INDICATOR_COLOR = 0xFFFFFF
 
 
 class DisplayManager:
@@ -41,7 +47,6 @@ class DisplayManager:
         self.matrixportal = matrixportal
         self.display = matrixportal.display
         self.text_elements = {}
-        self.timing_indicator_dots = []
         self.main_group = displayio.Group()
         self._setup_layout()
         self.display.root_group = self.main_group
@@ -161,35 +166,26 @@ class DisplayManager:
             self.set_text("connecting", " ")
 
     def _setup_timing_indicator(self):
-        """Initialize timing indicator dots along the bottom of the screen."""
-        available_width = DISPLAY_WIDTH - 2 * LEFT_BORDER_MARGIN_WIDTH
-        dot_spacing = available_width / TIMING_INDICATOR_MAX_DOTS_WHEN_FULL
-        start_x = LEFT_BORDER_MARGIN_WIDTH
-        first_dot_index = (
-            TIMING_INDICATOR_MAX_DOTS_WHEN_FULL - TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+        """Initialize the timing indicator bar on the bottom row of the screen."""
+        self.timing_indicator_bitmap = displayio.Bitmap(TIMING_INDICATOR_PIXEL_COUNT, 1, 2)
+        palette = displayio.Palette(2)
+        palette[0] = 0x000000
+        palette[1] = TIMING_INDICATOR_COLOR
+        palette.make_transparent(0)
+        tile_grid = displayio.TileGrid(
+            self.timing_indicator_bitmap,
+            pixel_shader=palette,
+            x=TIMING_INDICATOR_X_POSITION,
+            y=TIMING_INDICATOR_Y_POSITION,
         )
-
-        for i in range(TIMING_INDICATOR_MAX_DOTS_TO_SHOW):
-            x_pos = int(start_x + (first_dot_index + i) * dot_spacing)
-            dot_label = label.Label(
-                FONT_TYPE,
-                text=" ",
-                scale=1,
-                color=0xFFFFFF,  # White color for dots
-            )
-            dot_label.x = x_pos
-            dot_label.y = TIMING_INDICATOR_Y_POSITION
-            self.timing_indicator_dots.append(dot_label)
-            self.main_group.append(dot_label)
+        self.main_group.append(tile_grid)
 
     def update_timing_indicator(self, count: int) -> None:
-        """Update timing indicator to show specified number of dots.
+        """Light the right-most `count` pixels of the timing indicator.
 
-        :param count: Number of dots to display (0 to max_dots)
+        :param count: Number of pixels to light (0 to TIMING_INDICATOR_PIXEL_COUNT)
         """
-        count = max(0, min(count, TIMING_INDICATOR_MAX_DOTS_TO_SHOW))
-        for i, dot_label in enumerate(self.timing_indicator_dots):
-            if i >= (TIMING_INDICATOR_MAX_DOTS_TO_SHOW - count):
-                dot_label.text = TIMING_INDICATOR_DOT_CHAR
-            else:
-                dot_label.text = " "
+        count = max(0, min(count, TIMING_INDICATOR_PIXEL_COUNT))
+        first_lit = TIMING_INDICATOR_PIXEL_COUNT - count
+        for i in range(TIMING_INDICATOR_PIXEL_COUNT):
+            self.timing_indicator_bitmap[i, 0] = 1 if i >= first_lit else 0

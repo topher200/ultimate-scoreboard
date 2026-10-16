@@ -113,6 +113,28 @@ class DisplayRenderer:
 
         draw.text((x, y), text, font=font, fill=rgb_color)
 
+    def _render_tile_grid(self, image: Image.Image, tile_grid) -> None:
+        """Render a single-tile TileGrid to the image.
+
+        :param image: PIL Image to render to
+        :param tile_grid: TileGrid object to render
+        """
+        bitmap = tile_grid.bitmap
+        palette = tile_grid.pixel_shader
+        draw = ImageDraw.Draw(image)
+        scale = self._render_scale
+        for by in range(bitmap.height):
+            for bx in range(bitmap.width):
+                value = bitmap[bx, by]
+                if palette.is_transparent(value):
+                    continue
+                x = (tile_grid.x + bx) * scale
+                y = (tile_grid.y + by) * scale
+                draw.rectangle(
+                    (x, y, x + scale - 1, y + scale - 1),
+                    fill=self._hex_to_rgb(palette[value]),
+                )
+
     def _render_group(self, image: Image.Image, group) -> None:
         """Recursively render a group and all its children.
 
@@ -125,6 +147,8 @@ class DisplayRenderer:
         for item in group:
             if hasattr(item, "text"):
                 self._render_label(image, item)
+            elif hasattr(item, "bitmap"):
+                self._render_tile_grid(image, item)
             elif hasattr(item, "__iter__") and not isinstance(item, str):
                 self._render_group(image, item)
 
