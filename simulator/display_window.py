@@ -3,6 +3,7 @@
 import pygame
 
 from src.display_manager import DISPLAY_HEIGHT, DISPLAY_WIDTH
+from src.hardware_manager import KEY_NUMBER_BUTTON_LEFT, KEY_NUMBER_BUTTON_RIGHT
 
 
 class DisplayWindow:
@@ -24,12 +25,11 @@ class DisplayWindow:
         self._clock: pygame.time.Clock | None = None
         self._keys = keys
         # Keyboard mapping: pygame key -> button key_number
-        # LEFT=2, RIGHT=3
         self._keyboard_map = {
-            pygame.K_LEFT: 2,  # LEFT button
-            pygame.K_RIGHT: 3,  # RIGHT button
-            pygame.K_a: 2,  # A key for LEFT
-            pygame.K_d: 3,  # D key for RIGHT
+            pygame.K_LEFT: KEY_NUMBER_BUTTON_LEFT,
+            pygame.K_RIGHT: KEY_NUMBER_BUTTON_RIGHT,
+            pygame.K_a: KEY_NUMBER_BUTTON_LEFT,
+            pygame.K_d: KEY_NUMBER_BUTTON_RIGHT,
         }
 
     def _init_pygame(self):

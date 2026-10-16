@@ -87,7 +87,7 @@ class GameController:
 
         Undoes the most recent score addition and updates the display.
         """
-        print("DOWN button pressed! Undoing last score...")
+        print("UNDO pressed! Undoing last score...")
         team_to_undo = self._score_manager.undo_last_score()
         if team_to_undo is None:
             print("No score history to undo")
@@ -146,7 +146,7 @@ class GameController:
 
         Toggles the starting gender between MMP and WMP and recalculates matchup.
         """
-        print("UP button pressed! Toggling starting gender...")
+        print("TOGGLE GENDER pressed! Toggling starting gender...")
         self._gender_manager.toggle_first_point_gender()
         starting_gender = self._gender_manager.get_first_point_gender()
         print(f"Starting gender updated: {starting_gender}")
