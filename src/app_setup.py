@@ -108,6 +108,25 @@ def create_chord_callbacks(
     }
 
 
+async def run_tasks(managers: Managers, *extra_tasks) -> None:
+    """Run the button monitor, the timing indicator, and any extra tasks.
+
+    :param managers: Managers from create_managers
+    :param extra_tasks: Additional coroutines to run alongside
+    """
+    await asyncio.gather(
+        managers.hardware_manager.monitor_buttons(
+            create_button_callbacks(managers.game_controller),
+            hold_both_callback=managers.game_controller.handle_reset_button,
+            chord_callbacks=create_chord_callbacks(managers.game_controller),
+        ),
+        create_timing_indicator_task(
+            managers.timing_indicator_manager, managers.display_manager
+        ),
+        *extra_tasks,
+    )
+
+
 async def create_timing_indicator_task(
     timing_indicator_manager: TimingIndicatorManager, display_manager: DisplayManager
 ) -> None:
