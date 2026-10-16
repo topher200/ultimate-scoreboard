@@ -15,20 +15,8 @@ from fakes import (
     FakeTerminalio,
     FakeTileGrid,
 )
-from src.display_manager import (
-    TIMING_INDICATOR_PIXEL_COUNT,
-    TIMING_INDICATOR_REMOVAL_INTERVAL,
-    DisplayManager,
-)
-from src.game_controller import GameController
-from src.gender_manager import GenderManager
-from src.hardware_manager import HardwareManager
-from src.network_manager import NetworkManager
-from src.score_manager import ScoreManager
-from src.timing_indicator import TimingIndicatorManager
 
 # Mock CircuitPython-specific modules that don't exist in regular Python
-# These must be mocked before any imports try to use them
 _BASIC_MOCK_MODULES = [
     "board",
     "busio",
@@ -56,6 +44,19 @@ sys.modules["terminalio"] = MagicMock(FONT=FakeTerminalio.FONT)
 label_module = MagicMock(Label=FakeLabel)
 sys.modules["adafruit_display_text"] = MagicMock(label=label_module)
 sys.modules["adafruit_display_text.label"] = label_module
+
+# src imports these modules, so it must load after the fakes above
+from src.display_manager import (
+    TIMING_INDICATOR_PIXEL_COUNT,
+    TIMING_INDICATOR_REMOVAL_INTERVAL,
+    DisplayManager,
+)
+from src.game_controller import GameController
+from src.gender_manager import GenderManager
+from src.hardware_manager import HardwareManager
+from src.network_manager import NetworkManager
+from src.score_manager import ScoreManager
+from src.timing_indicator import TimingIndicatorManager
 
 
 @pytest.fixture
