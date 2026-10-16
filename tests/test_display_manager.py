@@ -1,98 +1,63 @@
 """Basic tests for display_manager using fake implementations."""
 
-import pytest
+from src.display_manager import (
+    CONNECTING,
+    GENDER_MATCHUP,
+    GENDER_MATCHUP_COUNTER,
+    LEFT_TEAM,
+    LEFT_TEAM_SCORE,
+    MMP_GENDER_MATCHUP_COLOR,
+    RIGHT_TEAM,
+    RIGHT_TEAM_SCORE,
+    WMP_GENDER_MATCHUP_COLOR,
+)
+from src.gender_manager import GenderManager
+
+
+def _root_group(fake_matrix_portal):
+    return fake_matrix_portal.display.root_group
 
 
 class TestDisplayManager:
     """Test DisplayManager with fake hardware."""
 
-    def test_initialization(self, display_manager, fake_matrix_portal):
-        """Test that DisplayManager initializes without errors."""
-        assert display_manager is not None
-        assert display_manager.matrixportal == fake_matrix_portal
-        assert display_manager.display == fake_matrix_portal.display
+    def test_root_group_holds_labels_and_timing_indicator(
+        self, display_manager, fake_matrix_portal
+    ):
+        """Test that the root group holds 7 labels plus the timing indicator."""
+        assert len(_root_group(fake_matrix_portal)) == 8
 
-    def test_root_group_set(self, display_manager, fake_matrix_portal):
-        """Test that root_group is set on display."""
-        assert fake_matrix_portal.display.root_group is not None
-        assert fake_matrix_portal.display.root_group == display_manager.main_group
+    def test_set_team_names(self, display_manager):
+        display_manager.set_team_names("Red Team", "Blue Team")
+        assert display_manager._labels[LEFT_TEAM].text == "Red Team"
+        assert display_manager._labels[RIGHT_TEAM].text == "Blue Team"
 
-    def test_text_elements_created(self, display_manager):
-        """Test that all expected text elements are created."""
-        expected_elements = [
-            "left_team",
-            "right_team",
-            "left_team_score",
-            "right_team_score",
-            "gender_matchup",
-            "gender_matchup_counter",
-            "connecting",
-        ]
-        for element_id in expected_elements:
-            assert element_id in display_manager.text_elements
-            assert "label" in display_manager.text_elements[element_id]
+    def test_set_scores(self, display_manager):
+        display_manager.set_scores(42, 3)
+        assert display_manager._labels[LEFT_TEAM_SCORE].text == "42"
+        assert display_manager._labels[RIGHT_TEAM_SCORE].text == "3"
 
-    def test_set_text_left_team(self, display_manager):
-        """Test setting text for left team."""
-        display_manager.set_text("left_team", "Red Team")
-        label = display_manager.text_elements["left_team"]["label"]
-        assert label.text == "Red Team"
+    def test_set_gender_matchup_wmp(self, display_manager):
+        display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 2)
+        matchup = display_manager._labels[GENDER_MATCHUP]
+        counter = display_manager._labels[GENDER_MATCHUP_COUNTER]
+        assert (matchup.text, counter.text) == ("WMP", "2")
+        assert matchup.color == counter.color == WMP_GENDER_MATCHUP_COLOR
 
-    def test_set_text_right_team(self, display_manager):
-        """Test setting text for right team."""
-        display_manager.set_text("right_team", "Blue Team")
-        label = display_manager.text_elements["right_team"]["label"]
-        assert label.text == "Blue Team"
+    def test_set_gender_matchup_mmp(self, display_manager):
+        display_manager.set_gender_matchup(GenderManager.GENDER_MMP, 1)
+        matchup = display_manager._labels[GENDER_MATCHUP]
+        counter = display_manager._labels[GENDER_MATCHUP_COUNTER]
+        assert (matchup.text, counter.text) == ("MMP", "1")
+        assert matchup.color == counter.color == MMP_GENDER_MATCHUP_COLOR
 
-    def test_set_text_left_score(self, display_manager):
-        """Test setting text for left team score."""
-        display_manager.set_text("left_team_score", "5")
-        left_label = display_manager.text_elements["left_team_score"]["label"]
-        assert left_label.text == "5"
-
-    def test_set_text_right_score(self, display_manager):
-        """Test setting text for right team score."""
-        display_manager.set_text("right_team_score", "3")
-        right_label = display_manager.text_elements["right_team_score"]["label"]
-        assert right_label.text == "3"
-
-    def test_set_text_gender_matchup(self, display_manager):
-        """Test setting gender matchup text."""
-        display_manager.set_text("gender_matchup", "WMP")
-        label = display_manager.text_elements["gender_matchup"]["label"]
-        assert label.text == "WMP"
-
-    def test_set_text_invalid_element(self, display_manager):
-        """Test that setting text for invalid element raises error."""
-        with pytest.raises(ValueError) as excinfo:
-            display_manager.set_text("invalid_element", "test")
-        assert "Unknown text element" in str(excinfo.value)
-
-    def test_show_connecting_true(self, display_manager):
-        """Test showing connecting indicator."""
+    def test_show_connecting(self, display_manager):
         display_manager.show_connecting(True)
-        label = display_manager.text_elements["connecting"]["label"]
-        assert label.text == "."
-
-    def test_show_connecting_false(self, display_manager):
-        """Test hiding connecting indicator."""
+        assert display_manager._labels[CONNECTING].text == "."
         display_manager.show_connecting(False)
-        label = display_manager.text_elements["connecting"]["label"]
-        assert label.text == " "
+        assert display_manager._labels[CONNECTING].text == " "
 
-    def test_set_text_converts_to_string(self, display_manager):
-        """Test that set_text converts content to string."""
-        display_manager.set_text("left_team_score", 42)
-        label = display_manager.text_elements["left_team_score"]["label"]
-        assert label.text == "42"
-        assert isinstance(label.text, str)
-
-    def test_all_elements_in_group(self, display_manager):
-        """Test that all labels and the timing indicator are appended to the main group."""
-        # 7 text elements + timing indicator tile grid
-        assert len(display_manager.main_group) == 8
-
-    def test_timing_indicator_on_bottom_row(self, display_manager):
+    def test_timing_indicator_on_bottom_row(self, display_manager, fake_matrix_portal):
         """Test that the timing indicator sits on the bottom row, right-aligned."""
         from src.display_manager import (
             DISPLAY_HEIGHT,
@@ -101,7 +66,7 @@ class TestDisplayManager:
         )
         from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
-        tile_grid = display_manager.main_group[-1]
+        tile_grid = _root_group(fake_matrix_portal)[-1]
         assert tile_grid.y == DISPLAY_HEIGHT - 1
         assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == (
             DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH
@@ -109,7 +74,7 @@ class TestDisplayManager:
         assert tile_grid.bitmap.width == TIMING_INDICATOR_PIXEL_COUNT
 
     def _lit_pixels(self, display_manager):
-        bitmap = display_manager.timing_indicator_bitmap
+        bitmap = display_manager._timing_indicator_bitmap
         return [bitmap[i, 0] for i in range(bitmap.width)]
 
     def test_timing_indicator_starts_empty(self, display_manager):

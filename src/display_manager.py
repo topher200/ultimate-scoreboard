@@ -3,9 +3,20 @@ import terminalio
 from adafruit_display_text import label
 
 from src.gender_manager import GenderManager
+from src.protocols import MatrixPortalLike
 from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
+# Text element IDs
+LEFT_TEAM = "left_team"
+RIGHT_TEAM = "right_team"
+LEFT_TEAM_SCORE = "left_team_score"
+RIGHT_TEAM_SCORE = "right_team_score"
+GENDER_MATCHUP = "gender_matchup"
+GENDER_MATCHUP_COUNTER = "gender_matchup_counter"
+CONNECTING = "connecting"
+
 # Color constants
+CONNECTING_COLOR = 0xFFFF00
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
 RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
 MMP_GENDER_MATCHUP_COLOR = 0xFFD700  # gold
@@ -39,132 +50,120 @@ TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 1
 TIMING_INDICATOR_COLOR = 0xFFFFFF
 
 
+# (element ID, initial text, scale, color, anchor point, anchored position)
+_ANCHORED_LABELS = (
+    (
+        LEFT_TEAM,
+        "",
+        TEAM_NAME_FONT_SCALE,
+        LEFT_TEAM_COLOR,
+        LEFT_JUSTIFY_ANCHOR_POINT,
+        (LEFT_BORDER_MARGIN_WIDTH, TEAM_NAME_Y_POSITION),
+    ),
+    (
+        RIGHT_TEAM,
+        "",
+        TEAM_NAME_FONT_SCALE,
+        RIGHT_TEAM_COLOR,
+        RIGHT_JUSTIFY_ANCHOR_POINT,
+        (DISPLAY_WIDTH, TEAM_NAME_Y_POSITION),
+    ),
+    (
+        LEFT_TEAM_SCORE,
+        "",
+        SCORE_FONT_SCALE,
+        LEFT_TEAM_COLOR,
+        LEFT_JUSTIFY_ANCHOR_POINT,
+        (LEFT_BORDER_MARGIN_WIDTH, SCORE_Y_POSITION),
+    ),
+    (
+        RIGHT_TEAM_SCORE,
+        "",
+        SCORE_FONT_SCALE,
+        RIGHT_TEAM_COLOR,
+        RIGHT_JUSTIFY_ANCHOR_POINT,
+        (DISPLAY_WIDTH, SCORE_Y_POSITION),
+    ),
+    (
+        GENDER_MATCHUP,
+        " ",
+        GENDER_MATCHUP_FONT_SCALE,
+        WMP_GENDER_MATCHUP_COLOR,
+        MIDDLE_JUSTIFY_ANCHOR_POINT,
+        (GENDER_MATCHUP_X_POSITION, GENDER_MATCHUP_Y_POSITION),
+    ),
+    (
+        GENDER_MATCHUP_COUNTER,
+        " ",
+        GENDER_MATCHUP_FONT_SCALE,
+        WMP_GENDER_MATCHUP_COLOR,
+        MIDDLE_JUSTIFY_ANCHOR_POINT,
+        (GENDER_MATCHUP_X_POSITION, GENDER_MATCHUP_Y_POSITION + 10),
+    ),
+)
+
+
 class DisplayManager:
-    def __init__(self, matrixportal):
-        self.matrixportal = matrixportal
-        self.display = matrixportal.display
-        self.text_elements = {}
-        self.main_group = displayio.Group()
-        self._setup_layout()
-        self.display.root_group = self.main_group
+    """Lays out the scoreboard and updates what it shows."""
 
-    def _setup_layout(self):
-        """Initialize all text elements with their positions and properties."""
-        # Left Team name
-        left_team_label = label.Label(
-            FONT_TYPE,
-            text="",
-            scale=TEAM_NAME_FONT_SCALE,
-            color=LEFT_TEAM_COLOR,
-            anchor_point=LEFT_JUSTIFY_ANCHOR_POINT,
-            anchored_position=(LEFT_BORDER_MARGIN_WIDTH, TEAM_NAME_Y_POSITION),
-        )
-        self.text_elements["left_team"] = {"label": left_team_label}
-        self.main_group.append(left_team_label)
+    def __init__(self, matrixportal: MatrixPortalLike):
+        self._labels: dict[str, label.Label] = {}
+        self._main_group = displayio.Group()
 
-        # Right Team name (right-justified)
-        right_team_label = label.Label(
-            FONT_TYPE,
-            text="",
-            scale=TEAM_NAME_FONT_SCALE,
-            color=RIGHT_TEAM_COLOR,
-            anchor_point=RIGHT_JUSTIFY_ANCHOR_POINT,
-            anchored_position=(DISPLAY_WIDTH, TEAM_NAME_Y_POSITION),
-        )
-        self.text_elements["right_team"] = {"label": right_team_label}
-        self.main_group.append(right_team_label)
+        for element_id, text, scale, color, anchor_point, position in _ANCHORED_LABELS:
+            self._add_label(
+                element_id,
+                label.Label(
+                    FONT_TYPE,
+                    text=text,
+                    scale=scale,
+                    color=color,
+                    anchor_point=anchor_point,
+                    anchored_position=position,
+                ),
+            )
 
-        # Left Team Score
-        left_team_score_label = label.Label(
-            FONT_TYPE,
-            text="",
-            scale=SCORE_FONT_SCALE,
-            color=LEFT_TEAM_COLOR,
-            anchor_point=LEFT_JUSTIFY_ANCHOR_POINT,
-            anchored_position=(LEFT_BORDER_MARGIN_WIDTH, SCORE_Y_POSITION),
-        )
-        self.text_elements["left_team_score"] = {"label": left_team_score_label}
-        self.main_group.append(left_team_score_label)
+        connecting_label = label.Label(FONT_TYPE, text=" ", color=CONNECTING_COLOR)
+        connecting_label.x = DISPLAY_WIDTH - 5
+        connecting_label.y = DISPLAY_HEIGHT - 5
+        self._add_label(CONNECTING, connecting_label)
 
-        # Right Team Score (right-justified)
-        right_team_score_label = label.Label(
-            FONT_TYPE,
-            text="",
-            scale=SCORE_FONT_SCALE,
-            color=RIGHT_TEAM_COLOR,
-            anchor_point=RIGHT_JUSTIFY_ANCHOR_POINT,
-            anchored_position=(DISPLAY_WIDTH, SCORE_Y_POSITION),
-        )
-        self.text_elements["right_team_score"] = {"label": right_team_score_label}
-        self.main_group.append(right_team_score_label)
-
-        # Gender matchup
-        gender_matchup_label = label.Label(
-            FONT_TYPE,
-            text=" ",
-            scale=GENDER_MATCHUP_FONT_SCALE,
-            color=WMP_GENDER_MATCHUP_COLOR,
-            anchor_point=MIDDLE_JUSTIFY_ANCHOR_POINT,
-            anchored_position=(GENDER_MATCHUP_X_POSITION, GENDER_MATCHUP_Y_POSITION),
-        )
-        self.text_elements["gender_matchup"] = {"label": gender_matchup_label}
-        self.main_group.append(gender_matchup_label)
-
-        # Gender matchup counter
-        gender_matchup_counter_label = label.Label(
-            FONT_TYPE,
-            text=" ",
-            scale=GENDER_MATCHUP_FONT_SCALE,
-            color=WMP_GENDER_MATCHUP_COLOR,
-            anchor_point=MIDDLE_JUSTIFY_ANCHOR_POINT,
-            anchored_position=(
-                GENDER_MATCHUP_X_POSITION,
-                GENDER_MATCHUP_Y_POSITION + 10,
-            ),
-        )
-        self.text_elements["gender_matchup_counter"] = {
-            "label": gender_matchup_counter_label
-        }
-        self.main_group.append(gender_matchup_counter_label)
-
-        # 'Connecting' indicator
-        connecting_label = label.Label(FONT_TYPE, text=" ", color=0xFFFF00)
-        connecting_label.x = DISPLAY_WIDTH - 5  # number may not be accurate
-        connecting_label.y = DISPLAY_HEIGHT - 5  # number may not be accurate
-        self.text_elements["connecting"] = {"label": connecting_label}
-        self.main_group.append(connecting_label)
-
-        # Timing indicator dots
         self._setup_timing_indicator()
+        matrixportal.display.root_group = self._main_group
 
-    def _get_gender_matchup_color(self, gender_matchup):
-        if gender_matchup == GenderManager.GENDER_MMP:
-            return MMP_GENDER_MATCHUP_COLOR
-        else:
-            return WMP_GENDER_MATCHUP_COLOR
+    def _add_label(self, element_id: str, label_obj: label.Label) -> None:
+        self._labels[element_id] = label_obj
+        self._main_group.append(label_obj)
 
-    def set_text(self, element_id, content):
-        """Set text content for a specific element."""
-        if element_id not in self.text_elements:
-            raise ValueError(f"Unknown text element: {element_id}")
-        element = self.text_elements[element_id]
-        label_obj = element["label"]
-        label_obj.text = str(content)
-        if element_id == "gender_matchup":
-            label_obj.color = self._get_gender_matchup_color(content)
-        elif element_id == "gender_matchup_counter":
-            label_obj.color = self.text_elements["gender_matchup"]["label"].color
+    def set_team_names(self, left_team: str, right_team: str) -> None:
+        self._labels[LEFT_TEAM].text = left_team
+        self._labels[RIGHT_TEAM].text = right_team
 
-    def show_connecting(self, show):
+    def set_scores(self, left_score: int, right_score: int) -> None:
+        self._labels[LEFT_TEAM_SCORE].text = str(left_score)
+        self._labels[RIGHT_TEAM_SCORE].text = str(right_score)
+
+    def set_gender_matchup(self, gender: str, count: int) -> None:
+        """Show the gender matchup, colored by gender."""
+        color = (
+            MMP_GENDER_MATCHUP_COLOR
+            if gender == GenderManager.GENDER_MMP
+            else WMP_GENDER_MATCHUP_COLOR
+        )
+        for element_id, text in (
+            (GENDER_MATCHUP, gender),
+            (GENDER_MATCHUP_COUNTER, str(count)),
+        ):
+            self._labels[element_id].text = text
+            self._labels[element_id].color = color
+
+    def show_connecting(self, show: bool) -> None:
         """Show or hide the connecting indicator."""
-        if show:
-            self.set_text("connecting", ".")
-        else:
-            self.set_text("connecting", " ")
+        self._labels[CONNECTING].text = "." if show else " "
 
-    def _setup_timing_indicator(self):
+    def _setup_timing_indicator(self) -> None:
         """Initialize the timing indicator bar on the bottom row of the screen."""
-        self.timing_indicator_bitmap = displayio.Bitmap(
+        self._timing_indicator_bitmap = displayio.Bitmap(
             TIMING_INDICATOR_PIXEL_COUNT, 1, 2
         )
         palette = displayio.Palette(2)
@@ -172,12 +171,12 @@ class DisplayManager:
         palette[1] = TIMING_INDICATOR_COLOR
         palette.make_transparent(0)
         tile_grid = displayio.TileGrid(
-            self.timing_indicator_bitmap,
+            self._timing_indicator_bitmap,
             pixel_shader=palette,
             x=TIMING_INDICATOR_X_POSITION,
             y=TIMING_INDICATOR_Y_POSITION,
         )
-        self.main_group.append(tile_grid)
+        self._main_group.append(tile_grid)
 
     def update_timing_indicator(self, count: int) -> None:
         """Light the right-most `count` pixels of the timing indicator.
@@ -187,4 +186,4 @@ class DisplayManager:
         count = max(0, min(count, TIMING_INDICATOR_PIXEL_COUNT))
         first_lit = TIMING_INDICATOR_PIXEL_COUNT - count
         for i in range(TIMING_INDICATOR_PIXEL_COUNT):
-            self.timing_indicator_bitmap[i, 0] = 1 if i >= first_lit else 0
+            self._timing_indicator_bitmap[i, 0] = 1 if i >= first_lit else 0

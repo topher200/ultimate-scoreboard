@@ -100,8 +100,7 @@ class GameController:
         :param left_team: Name for the left team
         :param right_team: Name for the right team
         """
-        self._display_manager.set_text("left_team", left_team)
-        self._display_manager.set_text("right_team", right_team)
+        self._display_manager.set_team_names(left_team, right_team)
 
     async def update_team_names(self) -> None:
         """Update team names from network.
@@ -130,11 +129,8 @@ class GameController:
         print(f"{prefix}: {left}-{right}")
 
     def _redraw_scores(self) -> None:
-        self._display_manager.set_text(
-            "left_team_score", self._score_manager.left_score
-        )
-        self._display_manager.set_text(
-            "right_team_score", self._score_manager.right_score
+        self._display_manager.set_scores(
+            self._score_manager.left_score, self._score_manager.right_score
         )
 
     def _refresh_timing_indicator(self) -> None:
@@ -155,5 +151,4 @@ class GameController:
         """Update the gender matchup display based on current scores and starting gender."""
         score_sum = self._score_manager.left_score + self._score_manager.right_score
         gender, count = self._gender_manager.get_matchup(score_sum)
-        self._display_manager.set_text("gender_matchup", gender)
-        self._display_manager.set_text("gender_matchup_counter", str(count))
+        self._display_manager.set_gender_matchup(gender, count)
