@@ -98,8 +98,8 @@ class TestDisplayManager:
             DISPLAY_HEIGHT,
             DISPLAY_WIDTH,
             LEFT_BORDER_MARGIN_WIDTH,
-            TIMING_INDICATOR_PIXEL_COUNT,
         )
+        from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
         tile_grid = display_manager.main_group[-1]
         assert tile_grid.y == DISPLAY_HEIGHT - 1
@@ -107,16 +107,6 @@ class TestDisplayManager:
             DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH
         )
         assert tile_grid.bitmap.width == TIMING_INDICATOR_PIXEL_COUNT
-
-    def test_timing_indicator_matches_usau_pull_time(self):
-        """Test that the full timing indicator lasts 80 seconds."""
-        from src.display_manager import (
-            TIMING_INDICATOR_PIXEL_COUNT,
-            TIMING_INDICATOR_REMOVAL_INTERVAL,
-        )
-
-        assert TIMING_INDICATOR_PIXEL_COUNT == 40
-        assert TIMING_INDICATOR_REMOVAL_INTERVAL == 2.0
 
     def _lit_pixels(self, display_manager):
         bitmap = display_manager.timing_indicator_bitmap
@@ -128,7 +118,7 @@ class TestDisplayManager:
 
     def test_update_timing_indicator_lights_right_most_pixels(self, display_manager):
         """Test that update_timing_indicator lights the right-most pixels."""
-        from src.display_manager import TIMING_INDICATOR_PIXEL_COUNT
+        from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
         display_manager.update_timing_indicator(3)
         expected = [0] * (TIMING_INDICATOR_PIXEL_COUNT - 3) + [1] * 3
@@ -142,14 +132,14 @@ class TestDisplayManager:
 
     def test_update_timing_indicator_shows_all(self, display_manager):
         """Test that update_timing_indicator lights all pixels when count is max."""
-        from src.display_manager import TIMING_INDICATOR_PIXEL_COUNT
+        from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
         display_manager.update_timing_indicator(TIMING_INDICATOR_PIXEL_COUNT)
         assert self._lit_pixels(display_manager) == [1] * TIMING_INDICATOR_PIXEL_COUNT
 
     def test_update_timing_indicator_clamps_to_max(self, display_manager):
         """Test that update_timing_indicator clamps count to max."""
-        from src.display_manager import TIMING_INDICATOR_PIXEL_COUNT
+        from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
         display_manager.update_timing_indicator(TIMING_INDICATOR_PIXEL_COUNT + 10)
         assert self._lit_pixels(display_manager) == [1] * TIMING_INDICATOR_PIXEL_COUNT

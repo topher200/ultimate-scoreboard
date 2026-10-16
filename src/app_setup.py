@@ -3,11 +3,7 @@
 import asyncio
 
 from src.compat import Callable, NamedTuple
-from src.display_manager import (
-    TIMING_INDICATOR_PIXEL_COUNT,
-    TIMING_INDICATOR_REMOVAL_INTERVAL,
-    DisplayManager,
-)
+from src.display_manager import DisplayManager
 from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.hardware_manager import (
@@ -17,7 +13,11 @@ from src.hardware_manager import (
 )
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
-from src.timing_indicator import TimingIndicatorManager
+from src.timing_indicator import (
+    TIMING_INDICATOR_PIXEL_COUNT,
+    TIMING_INDICATOR_REMOVAL_INTERVAL,
+    TimingIndicatorManager,
+)
 
 
 class Managers(NamedTuple):
@@ -120,12 +120,8 @@ async def create_timing_indicator_task(
     """
     POLLING_INTERVAL = 0.1
     while True:
-        if timing_indicator_manager.has_dots():
-            await asyncio.sleep(timing_indicator_manager.removal_interval)
-            if timing_indicator_manager.has_dots():
-                timing_indicator_manager.remove_dot()
-                display_manager.update_timing_indicator(
-                    timing_indicator_manager.get_dot_count()
-                )
-        else:
-            await asyncio.sleep(POLLING_INTERVAL)
+        if timing_indicator_manager.remove_due_dots():
+            display_manager.update_timing_indicator(
+                timing_indicator_manager.get_dot_count()
+            )
+        await asyncio.sleep(POLLING_INTERVAL)
