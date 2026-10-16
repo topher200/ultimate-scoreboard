@@ -3,6 +3,7 @@ import terminalio
 from adafruit_display_text import label
 
 from src.gender_manager import GenderManager
+from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
 # Color constants
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
@@ -31,12 +32,6 @@ MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 
 # Timing indicator constants
-# Time from a goal to the pull, per USA Ultimate rules
-TIMING_INDICATOR_DURATION_SECONDS = 80
-TIMING_INDICATOR_PIXEL_COUNT = 40
-TIMING_INDICATOR_REMOVAL_INTERVAL = (
-    TIMING_INDICATOR_DURATION_SECONDS / TIMING_INDICATOR_PIXEL_COUNT
-)
 TIMING_INDICATOR_X_POSITION = (
     DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH - TIMING_INDICATOR_PIXEL_COUNT
 )
