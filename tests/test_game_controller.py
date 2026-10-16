@@ -1,5 +1,13 @@
 """Tests for GameController using real manager instances."""
 
+from src.display_manager import (
+    GENDER_MATCHUP,
+    GENDER_MATCHUP_COUNTER,
+    LEFT_TEAM,
+    LEFT_TEAM_SCORE,
+    RIGHT_TEAM,
+    RIGHT_TEAM_SCORE,
+)
 from src.network_manager import NetworkManager
 
 
@@ -13,8 +21,8 @@ class TestGenderMatchupDisplay:
         await game_controller.update_team_names()
         game_controller.initialize_scores()
 
-        label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        label = display_manager._labels[GENDER_MATCHUP]
+        counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
 
         assert label.text == "WMP"
         assert counter_label.text == "2"
@@ -47,8 +55,8 @@ class TestGameControllerDisplayMethods:
         """Test that set_team_names updates display correctly."""
         game_controller.set_team_names("Phoenix", "Tigers")
 
-        left_label = display_manager.text_elements["left_team"]["label"]
-        right_label = display_manager.text_elements["right_team"]["label"]
+        left_label = display_manager._labels[LEFT_TEAM]
+        right_label = display_manager._labels[RIGHT_TEAM]
 
         assert left_label.text == "Phoenix"
         assert right_label.text == "Tigers"
@@ -63,15 +71,15 @@ class TestGameControllerDisplayMethods:
         game_controller.initialize_scores()
 
         # Verify scores are displayed
-        left_score_label = display_manager.text_elements["left_team_score"]["label"]
-        right_score_label = display_manager.text_elements["right_team_score"]["label"]
+        left_score_label = display_manager._labels[LEFT_TEAM_SCORE]
+        right_score_label = display_manager._labels[RIGHT_TEAM_SCORE]
 
         assert left_score_label.text == "3"
         assert right_score_label.text == "2"
 
         # Verify gender matchup is updated (sum=5, 5%4=1, WMP start → MMP1)
-        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        matchup_label = display_manager._labels[GENDER_MATCHUP]
+        counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
 
         assert matchup_label.text == "MMP"
         assert counter_label.text == "1"
@@ -100,8 +108,8 @@ class TestHandleResetButton:
         assert score_manager.left_score == 0
         assert score_manager.right_score == 0
 
-        left_label = display_manager.text_elements["left_team_score"]["label"]
-        right_label = display_manager.text_elements["right_team_score"]["label"]
+        left_label = display_manager._labels[LEFT_TEAM_SCORE]
+        right_label = display_manager._labels[RIGHT_TEAM_SCORE]
         assert left_label.text == "0"
         assert right_label.text == "0"
 
@@ -118,8 +126,8 @@ class TestHandleResetButton:
         # Reset
         await game_controller.handle_reset_button()
 
-        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        matchup_label = display_manager._labels[GENDER_MATCHUP]
+        counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
         assert matchup_label.text == "WMP"
         assert counter_label.text == "2"
 
@@ -148,8 +156,8 @@ class TestHandleUndoAfterReset:
         assert score_manager.left_score == 2
         assert score_manager.right_score == 1
 
-        left_label = display_manager.text_elements["left_team_score"]["label"]
-        right_label = display_manager.text_elements["right_team_score"]["label"]
+        left_label = display_manager._labels[LEFT_TEAM_SCORE]
+        right_label = display_manager._labels[RIGHT_TEAM_SCORE]
         assert left_label.text == "2"
         assert right_label.text == "1"
 
@@ -218,8 +226,8 @@ class TestGameControllerKeepsScore:
         await game_controller.update_team_names()
 
         # Verify display is updated
-        left_label = display_manager.text_elements["left_team"]["label"]
-        right_label = display_manager.text_elements["right_team"]["label"]
+        left_label = display_manager._labels[LEFT_TEAM]
+        right_label = display_manager._labels[RIGHT_TEAM]
 
         assert left_label.text == "Phoenix"
         assert right_label.text == "Tigers"
@@ -235,8 +243,8 @@ class TestGameControllerKeepsScore:
         game_controller.initialize_scores()
 
         # Get label references
-        matchup_label = display_manager.text_elements["gender_matchup"]["label"]
-        counter_label = display_manager.text_elements["gender_matchup_counter"]["label"]
+        matchup_label = display_manager._labels[GENDER_MATCHUP]
+        counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
 
         # Verify initial state (0-0, sum=0) → WMP2
         assert matchup_label.text == "WMP"
