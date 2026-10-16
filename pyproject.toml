@@ -38,8 +38,14 @@ addopts = [
 ]
 
 [tool.pyrefly]
-search-path = ["./src", "./stubs"]
-project-excludes = [
-    "**/*.tmp*",   # Excludes any temporary files
-    "**/.*.tmp*",  # Excludes hidden temporary files
+project-includes = [
+    "conftest.py",
+    "fakes",
+    "local_main.py",
+    "main.py",
+    "scripts",
+    "simulator",
+    "src",
+    "tests",
 ]
+search-path = [".", "stubs"]
