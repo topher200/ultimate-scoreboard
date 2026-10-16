@@ -49,7 +49,6 @@ sys.modules["adafruit_display_text.label"] = label_module
 from src.display_manager import DisplayManager
 from src.game_controller import GameController
 from src.gender_manager import GenderManager
-from src.hardware_manager import HardwareManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
 from src.timing_indicator import (
@@ -127,9 +126,3 @@ def fake_keys():
         value_when_pressed=False,
         pull=True,
     )
-
-
-@pytest.fixture
-def hardware_manager(fake_keys):
-    """Create HardwareManager instance with fake keys."""
-    return HardwareManager(fake_keys)
