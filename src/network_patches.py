@@ -70,4 +70,3 @@ def apply_network_patches(matrixportal: Any) -> None:
 
     # Patch requests.get immediately if it already exists (e.g., from previous connection)
     _patch_requests_get(matrixportal.network._wifi.requests)
-

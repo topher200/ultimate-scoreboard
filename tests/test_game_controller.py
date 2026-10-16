@@ -1,7 +1,5 @@
 """Tests for GameController using real manager instances."""
 
-import pytest
-
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 
@@ -105,7 +103,6 @@ class TestGenderMatchupCalculation:
         assert matchup == "MMP"
         assert count == 1
 
-    @pytest.mark.asyncio
     async def test_gender_matchup_cycles_through_button_presses(
         self, game_controller, display_manager
     ):
@@ -180,7 +177,6 @@ class TestGameControllerDisplayMethods:
 class TestHandleResetButton:
     """Test GameController reset button handler."""
 
-    @pytest.mark.asyncio
     async def test_handle_reset_button_zeroes_display(
         self, game_controller, display_manager, score_manager
     ):
@@ -206,7 +202,6 @@ class TestHandleResetButton:
         assert left_label.text == "0"
         assert right_label.text == "0"
 
-    @pytest.mark.asyncio
     async def test_handle_reset_button_resets_gender_matchup(
         self, game_controller, display_manager
     ):
@@ -229,7 +224,6 @@ class TestHandleResetButton:
 class TestHandleUndoAfterReset:
     """Test GameController undo after reset."""
 
-    @pytest.mark.asyncio
     async def test_undo_after_reset_restores_both_scores_on_display(
         self, game_controller, display_manager, score_manager
     ):
@@ -264,7 +258,6 @@ class TestGameControllerKeepsScore:
         """Test that GameController initializes."""
         assert game_controller is not None
 
-    @pytest.mark.asyncio
     async def test_handle_multiple_button_presses(
         self, fake_matrix_portal, game_controller, score_manager
     ):
@@ -282,7 +275,6 @@ class TestGameControllerKeepsScore:
         assert score_manager.left_score == 3
         assert score_manager.right_score == 2
 
-    @pytest.mark.asyncio
     async def test_update_team_names_with_custom_names(
         self, fake_matrix_portal, game_controller, network_manager
     ):
@@ -298,7 +290,6 @@ class TestGameControllerKeepsScore:
         assert await network_manager.get_left_team_name() == "Phoenix"
         assert await network_manager.get_right_team_name() == "Tigers"
 
-    @pytest.mark.asyncio
     async def test_update_team_names_uses_defaults_when_not_set(
         self, game_controller, network_manager
     ):
@@ -312,7 +303,6 @@ class TestGameControllerKeepsScore:
         assert await network_manager.get_left_team_name() == "AWAY"
         assert await network_manager.get_right_team_name() == "HOME"
 
-    @pytest.mark.asyncio
     async def test_update_team_names_updates_display(
         self, display_manager, fake_matrix_portal, game_controller
     ):
@@ -331,7 +321,6 @@ class TestGameControllerKeepsScore:
         assert left_label.text == "Phoenix"
         assert right_label.text == "Tigers"
 
-    @pytest.mark.asyncio
     async def test_full_game_workflow(
         self, display_manager, fake_matrix_portal, game_controller, score_manager
     ):

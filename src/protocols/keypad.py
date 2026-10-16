@@ -31,4 +31,3 @@ class KeysLike(Protocol):
     def events(self) -> EventQueueLike:
         """Get the event queue for key events."""
         ...
-

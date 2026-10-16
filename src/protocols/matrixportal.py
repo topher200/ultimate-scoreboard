@@ -19,4 +19,3 @@ class MatrixPortalLike(Protocol):
         :return: Feed data structure
         """
         ...
-

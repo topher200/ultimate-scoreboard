@@ -8,6 +8,7 @@ default:
 # Run linter and formatter to fix issues automatically
 lint:
     uv run ruff check --fix --quiet .
+    uv run ruff format --quiet .
     uv run pyrefly check --summary=none .
     uv run python scripts/check_circuitpython_imports.py
 

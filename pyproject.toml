@@ -3,7 +3,7 @@ name = "ultimate-scoreboard"
 version = "0.1.0"
 description = "A scoreboard for ultimate frisbee, keeping track of score and WMP/MMP matchup"
 readme = "README.md"
-requires-python = "==3.13.3"
+requires-python = ">=3.13"
 dependencies = [
     "adafruit-circuitpython-matrixportal>=3.2.9",
 ]
@@ -30,6 +30,7 @@ python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
 norecursedirs = [".git", ".venv", "__pycache__"]
+asyncio_mode = "auto"
 addopts = [
     "-v",
     "--strict-markers",

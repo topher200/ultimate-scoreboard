@@ -132,7 +132,6 @@ class TestHardwareManager:
 class TestMonitorButtonsChords:
     """Test the chord-based button monitoring state machine."""
 
-    @pytest.mark.asyncio
     async def test_individual_press_fires_on_release(self, fake_keys):
         """Test that individual button press fires callback on release."""
         left_called = False
@@ -168,7 +167,6 @@ class TestMonitorButtonsChords:
 
         assert left_called
 
-    @pytest.mark.asyncio
     async def test_chord_left_then_right(self, fake_keys):
         """Test hold LEFT then press RIGHT fires chord callback."""
         chord_called = False
@@ -211,7 +209,6 @@ class TestMonitorButtonsChords:
         assert not left_called
         assert not right_called
 
-    @pytest.mark.asyncio
     async def test_chord_right_then_left(self, fake_keys):
         """Test hold RIGHT then press LEFT fires chord callback."""
         chord_called = False
@@ -254,7 +251,6 @@ class TestMonitorButtonsChords:
         assert not left_called
         assert not right_called
 
-    @pytest.mark.asyncio
     async def test_hold_both_fires_reset(self, fake_keys):
         """Test holding both buttons for threshold fires hold_both callback."""
         reset_called = False
@@ -292,7 +288,6 @@ class TestMonitorButtonsChords:
 
         assert reset_called
 
-    @pytest.mark.asyncio
     async def test_hold_both_released_early_no_action(self, fake_keys):
         """Test releasing both before threshold fires nothing."""
         reset_called = False
@@ -338,7 +333,6 @@ class TestMonitorButtonsChords:
         assert not left_called
         assert not right_called
 
-    @pytest.mark.asyncio
     async def test_chord_suppresses_individual(self, fake_keys):
         """Test that chord suppresses individual callbacks on release."""
         left_called = False
@@ -385,7 +379,6 @@ class TestMonitorButtonsChords:
         assert not left_called
         assert not right_called
 
-    @pytest.mark.asyncio
     async def test_simultaneous_press_enters_both_held(self, fake_keys):
         """Test both pressed in same cycle enters BOTH_HELD, not chord."""
         chord_called = False
@@ -431,7 +424,6 @@ class TestMonitorButtonsChords:
         assert reset_called
         assert not chord_called
 
-    @pytest.mark.asyncio
     async def test_individual_press_works_after_chord(self, fake_keys):
         """Test individual presses work after a chord completes."""
         left_call_count = 0
@@ -483,7 +475,6 @@ class TestMonitorButtonsChords:
 
         assert left_call_count == 1
 
-    @pytest.mark.asyncio
     async def test_repeated_chord_while_holding(self, fake_keys):
         """Test hold RIGHT, tap LEFT multiple times fires chord each time."""
         chord_call_count = 0
@@ -547,7 +538,6 @@ class TestMonitorButtonsChords:
         assert chord_call_count == 3
         assert not right_called
 
-    @pytest.mark.asyncio
     async def test_button_not_broken_after_aborted_both_held(self, fake_keys):
         """Regression: stale release event must not permanently break a button.
 
@@ -569,9 +559,7 @@ class TestMonitorButtonsChords:
         callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
         hw = HardwareManager(fake_keys)
 
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks)
-        )
+        task = asyncio.create_task(hw.monitor_buttons(callbacks))
 
         # Press both simultaneously → BOTH_HELD
         fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)

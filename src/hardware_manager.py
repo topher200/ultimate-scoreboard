@@ -234,9 +234,8 @@ class HardwareManager:
                 if all_up:
                     state = _STATE_IDLE
                     held_button = None
-                elif (
-                    held_button is not None
-                    and self._button_is_down.get(held_button, False)
+                elif held_button is not None and self._button_is_down.get(
+                    held_button, False
                 ):
                     # The original held button is still down — return to
                     # SINGLE_HELD so the user can tap the other button
