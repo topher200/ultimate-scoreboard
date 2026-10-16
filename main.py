@@ -29,7 +29,7 @@ async def main():
     managers = create_managers(matrixportal, keys)
 
     # Initialize application state
-    await initialize_application(managers.game_controller, managers.network_manager)
+    await initialize_application(managers.game_controller)
 
     # Run all tasks concurrently
     await asyncio.gather(
