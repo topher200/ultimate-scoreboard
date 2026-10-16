@@ -168,7 +168,7 @@ class TestMonitorButtonsChords:
         assert left_called
 
     async def test_chord_left_then_right(self, fake_keys):
-        """Test hold LEFT then press RIGHT fires chord callback."""
+        """Test hold LEFT, tap RIGHT fires the chord callback on release."""
         chord_called = False
         left_called = False
         right_called = False
@@ -198,6 +198,10 @@ class TestMonitorButtonsChords:
 
         fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
         await asyncio.sleep(0.15)
+        assert not chord_called
+
+        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
+        await asyncio.sleep(0.15)
 
         task.cancel()
         try:
@@ -210,7 +214,7 @@ class TestMonitorButtonsChords:
         assert not right_called
 
     async def test_chord_right_then_left(self, fake_keys):
-        """Test hold RIGHT then press LEFT fires chord callback."""
+        """Test hold RIGHT, tap LEFT fires the chord callback on release."""
         chord_called = False
         left_called = False
         right_called = False
@@ -239,6 +243,10 @@ class TestMonitorButtonsChords:
         await asyncio.sleep(0.15)
 
         fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+        await asyncio.sleep(0.15)
+        assert not chord_called
+
+        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
         await asyncio.sleep(0.15)
 
         task.cancel()
@@ -597,3 +605,93 @@ class TestMonitorButtonsChords:
             pass
 
         assert right_call_count == 1
+
+
+class TestChordOrReset:
+    """Test how the state machine picks between a chord and holding both."""
+
+    async def _run(self, fake_keys, steps):
+        """Drive monitor_buttons through steps and return the fired actions.
+
+        :param steps: list of ("press"|"release", button) or ("time", seconds)
+        """
+        fired = []
+
+        def recorder(name):
+            async def cb():
+                fired.append(name)
+
+            return cb
+
+        mock_time = [0.0]
+        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
+        task = asyncio.create_task(
+            hw.monitor_buttons(
+                {BUTTON_LEFT: recorder("left"), BUTTON_RIGHT: recorder("right")},
+                hold_both_callback=recorder("reset"),
+                chord_callbacks={
+                    (BUTTON_LEFT, BUTTON_RIGHT): recorder("toggle"),
+                    (BUTTON_RIGHT, BUTTON_LEFT): recorder("undo"),
+                },
+            )
+        )
+        keys = {"left": KEY_NUMBER_BUTTON_LEFT, "right": KEY_NUMBER_BUTTON_RIGHT}
+        for action, arg in steps:
+            if action == "press":
+                fake_keys.press_key(keys[arg])
+            elif action == "release":
+                fake_keys.release_key(keys[arg])
+            else:
+                mock_time[0] += arg
+            await asyncio.sleep(0.15)
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        return fired
+
+    async def test_staggered_press_held_resets_without_chord(self, fake_keys):
+        """Test that pressing LEFT then RIGHT and holding both resets."""
+        fired = await self._run(
+            fake_keys,
+            [
+                ("press", "left"),
+                ("time", 0.2),
+                ("press", "right"),
+                ("time", SIMULTANEOUS_HOLD_THRESHOLD),
+                ("release", "left"),
+                ("release", "right"),
+            ],
+        )
+        assert fired == ["reset"]
+
+    async def test_held_button_released_first_fires_chord(self, fake_keys):
+        """Test that releasing the held button first still fires the chord."""
+        fired = await self._run(
+            fake_keys,
+            [
+                ("press", "right"),
+                ("press", "left"),
+                ("time", 0.3),
+                ("release", "right"),
+                ("release", "left"),
+            ],
+        )
+        assert fired == ["undo"]
+
+    async def test_individual_press_after_reset(self, fake_keys):
+        """Test that a single press after a staggered reset scores normally."""
+        fired = await self._run(
+            fake_keys,
+            [
+                ("press", "right"),
+                ("press", "left"),
+                ("time", SIMULTANEOUS_HOLD_THRESHOLD),
+                ("release", "right"),
+                ("release", "left"),
+                ("press", "left"),
+                ("release", "left"),
+            ],
+        )
+        assert fired == ["reset", "left"]

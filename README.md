@@ -9,8 +9,8 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 | Left | +1 left score |
 | Right | +1 right score |
 | Both held ~1s | Reset scores to 0-0 (undoable) |
-| Hold Left, press Right | Toggle gender matchup and refresh team names |
-| Hold Right, press Left | Undo last point |
+| Hold Left, tap Right | Toggle gender matchup and refresh team names |
+| Hold Right, tap Left | Undo last point |
 
 - **Team names** are set via [Adafruit IO](https://io.adafruit.com) feeds (`scores-group.left-team-name` and `scores-group.right-team-name`). They load on boot and refresh when toggling gender.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
