@@ -28,7 +28,7 @@ async def local_main():
     managers = create_managers(matrixportal, keys)
 
     # Initialize application state
-    await initialize_application(managers.game_controller)
+    initialize_application(managers.game_controller)
 
     # Initialize Pygame display window (simulator-specific)
     # Pass keys instance to enable keyboard button simulation

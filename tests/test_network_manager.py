@@ -19,7 +19,7 @@ class TestNetworkManager:
 
 
 class TestNetworkManagerTeamNames:
-    async def test_get_left_team_name_with_valid_data(
+    def test_get_left_team_name_with_valid_data(
         self, network_manager, fake_matrix_portal
     ):
         """Test getting left team name with valid data."""
@@ -27,11 +27,11 @@ class TestNetworkManagerTeamNames:
             NetworkManager.TEAM_LEFT_TEAM_FEED, "Red Team"
         )
 
-        result = await network_manager.get_left_team_name()
+        result = network_manager.get_left_team_name()
 
         assert result == "Red Team"
 
-    async def test_get_right_team_name_with_valid_data(
+    def test_get_right_team_name_with_valid_data(
         self, network_manager, fake_matrix_portal
     ):
         """Test getting right team name with valid data."""
@@ -39,11 +39,11 @@ class TestNetworkManagerTeamNames:
             NetworkManager.TEAM_RIGHT_TEAM_FEED, "Blue Team"
         )
 
-        result = await network_manager.get_right_team_name()
+        result = network_manager.get_right_team_name()
 
         assert result == "Blue Team"
 
-    async def test_show_connecting_called_on_successful_fetch(
+    def test_show_connecting_called_on_successful_fetch(
         self, network_manager, display_manager, fake_matrix_portal
     ):
         """Test that show_connecting is called with True before fetch and False after."""
@@ -53,13 +53,13 @@ class TestNetworkManagerTeamNames:
         mock_show_connecting = MagicMock()
         display_manager.show_connecting = mock_show_connecting
 
-        await network_manager.get_left_team_name()
+        network_manager.get_left_team_name()
 
         assert mock_show_connecting.call_count == 2
         mock_show_connecting.assert_any_call(True)
         mock_show_connecting.assert_any_call(False)
 
-    async def test_show_connecting_called_on_exception(
+    def test_show_connecting_called_on_exception(
         self, network_manager, display_manager, fake_matrix_portal
     ):
         """Test that show_connecting(False) is called even when an exception occurs."""
@@ -67,7 +67,7 @@ class TestNetworkManagerTeamNames:
         display_manager.show_connecting = mock_show_connecting
         fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, None)
 
-        await network_manager.get_left_team_name()
+        network_manager.get_left_team_name()
 
         assert mock_show_connecting.call_count == 2
         mock_show_connecting.assert_any_call(True)

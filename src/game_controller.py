@@ -92,7 +92,7 @@ class GameController:
 
         # Semi-hack: we're using this button as a shortcut to re-check team
         # names
-        await self.update_team_names()
+        self.update_team_names()
 
     def set_team_names(self, left_team: str, right_team: str) -> None:
         """Set team names on the display.
@@ -102,13 +102,14 @@ class GameController:
         """
         self._display_manager.set_team_names(left_team, right_team)
 
-    async def update_team_names(self) -> None:
+    def update_team_names(self) -> None:
         """Update team names from network.
 
-        Fetches team names from the network and updates the display.
+        Fetches team names from the network, blocking until it finishes, and
+        updates the display.
         """
-        left_team = await self._network_manager.get_left_team_name()
-        right_team = await self._network_manager.get_right_team_name()
+        left_team = self._network_manager.get_left_team_name()
+        right_team = self._network_manager.get_right_team_name()
         print(f"Team names: {left_team} vs {right_team}")
         self.set_team_names(left_team, right_team)
 
