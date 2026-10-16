@@ -75,8 +75,8 @@ class DisplayWindow:
             print("  LEFT/A: +1 left score (on release)")
             print("  RIGHT/D: +1 right score (on release)")
             print("  Both held ~1s: Reset scores to 0-0")
-            print("  Hold LEFT, press RIGHT: Toggle gender matchup")
-            print("  Hold RIGHT, press LEFT: Undo last point")
+            print("  Hold LEFT, tap RIGHT: Toggle gender matchup")
+            print("  Hold RIGHT, tap LEFT: Undo last point")
             print("  Q or ESC: Quit")
 
     def update(self):
