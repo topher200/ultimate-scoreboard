@@ -11,6 +11,7 @@ class Label(_Layer):
     y: int
     text: str
     color: int | None
+    background_color: int | None
     scale: int
 
     def __init__(
@@ -20,5 +21,10 @@ class Label(_Layer):
         text: str = "",
         color: int | None = None,
         scale: int = 1,
+        background_color: int | None = None,
+        padding_top: int = 0,
+        padding_bottom: int = 0,
+        padding_left: int = 0,
+        padding_right: int = 0,
         **kwargs: Any,
     ) -> None: ...

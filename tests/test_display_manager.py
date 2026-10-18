@@ -2,14 +2,19 @@
 
 from src.display_manager import (
     CONNECTING,
+    FONT_HEIGHT,
     GENDER_MATCHUP,
     GENDER_MATCHUP_COUNTER,
+    GENDER_MATCHUP_COUNTER_Y_OFFSET,
+    GENDER_MATCHUP_Y_POSITION,
     LEFT_TEAM,
     LEFT_TEAM_SCORE,
     MMP_GENDER_MATCHUP_COLOR,
     RIGHT_TEAM,
     RIGHT_TEAM_SCORE,
+    TIMING_INDICATOR_Y_POSITION,
     WMP_GENDER_MATCHUP_COLOR,
+    WMP_GENDER_MATCHUP_TEXT_COLOR,
 )
 from src.gender_manager import GenderManager
 
@@ -42,7 +47,9 @@ class TestDisplayManager:
         matchup = display_manager._labels[GENDER_MATCHUP]
         counter = display_manager._labels[GENDER_MATCHUP_COUNTER]
         assert (matchup.text, counter.text) == ("WMP", "2")
-        assert matchup.color == counter.color == WMP_GENDER_MATCHUP_COLOR
+        assert matchup.color == counter.color == WMP_GENDER_MATCHUP_TEXT_COLOR
+        assert matchup.background_color == WMP_GENDER_MATCHUP_COLOR
+        assert counter.background_color is None
 
     def test_set_gender_matchup_mmp(self, display_manager):
         display_manager.set_gender_matchup(GenderManager.GENDER_MMP, 1)
@@ -50,6 +57,21 @@ class TestDisplayManager:
         counter = display_manager._labels[GENDER_MATCHUP_COUNTER]
         assert (matchup.text, counter.text) == ("MMP", "1")
         assert matchup.color == counter.color == MMP_GENDER_MATCHUP_COLOR
+        assert matchup.background_color is None
+
+    def test_set_gender_matchup_mmp_clears_wmp_background(self, display_manager):
+        display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 1)
+        display_manager.set_gender_matchup(GenderManager.GENDER_MMP, 1)
+        assert display_manager._labels[GENDER_MATCHUP].background_color is None
+
+    def test_wmp_background_ends_above_timing_indicator(self, display_manager):
+        matchup = display_manager._labels[GENDER_MATCHUP]
+        background_bottom = (
+            GENDER_MATCHUP_Y_POSITION + FONT_HEIGHT + matchup.padding_bottom - 1
+        )
+        counter_top = GENDER_MATCHUP_Y_POSITION + GENDER_MATCHUP_COUNTER_Y_OFFSET
+        assert counter_top + FONT_HEIGHT - 1 > background_bottom >= counter_top
+        assert background_bottom < TIMING_INDICATOR_Y_POSITION
 
     def test_show_connecting(self, display_manager):
         display_manager.show_connecting(True)

@@ -19,14 +19,17 @@ CONNECTING = "connecting"
 CONNECTING_COLOR = 0xFFFF00
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
 RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
-MMP_GENDER_MATCHUP_COLOR = 0xFFD700  # gold
-WMP_GENDER_MATCHUP_COLOR = 0xFF80C0  # light pink
+MMP_GENDER_MATCHUP_COLOR = 0xFFFFFF  # white
+WMP_GENDER_MATCHUP_COLOR = 0xFF00FF  # magenta
+# Unlit, so WMP shows as dark text on a lit block
+WMP_GENDER_MATCHUP_TEXT_COLOR = 0x000000
 
 # Font and scaling constants
 TEAM_NAME_FONT_SCALE = 1
 SCORE_FONT_SCALE = 2
 GENDER_MATCHUP_FONT_SCALE = 1
 FONT_TYPE = terminalio.FONT
+FONT_HEIGHT = 12
 
 # Display dimensions
 DISPLAY_HEIGHT = 32
@@ -38,6 +41,7 @@ TEAM_NAME_Y_POSITION = 0
 SCORE_Y_POSITION = int(DISPLAY_HEIGHT * 0.25)
 GENDER_MATCHUP_X_POSITION = int(DISPLAY_WIDTH * 0.5) + 2
 GENDER_MATCHUP_Y_POSITION = int(DISPLAY_HEIGHT * 0.35)
+GENDER_MATCHUP_COUNTER_Y_OFFSET = 9
 LEFT_JUSTIFY_ANCHOR_POINT = (0.0, 0.0)
 MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
@@ -48,6 +52,11 @@ TIMING_INDICATOR_X_POSITION = (
 )
 TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 1
 TIMING_INDICATOR_COLOR = 0xFFFFFF
+
+# The WMP background extends down behind the counter and stops above the timing indicator
+GENDER_MATCHUP_BACKGROUND_PADDING_BOTTOM = (TIMING_INDICATOR_Y_POSITION - 1) - (
+    GENDER_MATCHUP_Y_POSITION + FONT_HEIGHT - 1
+)
 
 
 # (element ID, initial text, scale, color, anchor point, anchored position)
@@ -98,9 +107,22 @@ _ANCHORED_LABELS = (
         GENDER_MATCHUP_FONT_SCALE,
         WMP_GENDER_MATCHUP_COLOR,
         MIDDLE_JUSTIFY_ANCHOR_POINT,
-        (GENDER_MATCHUP_X_POSITION, GENDER_MATCHUP_Y_POSITION + 10),
+        (
+            GENDER_MATCHUP_X_POSITION,
+            GENDER_MATCHUP_Y_POSITION + GENDER_MATCHUP_COUNTER_Y_OFFSET,
+        ),
     ),
 )
+
+_LABEL_OPTIONS = {
+    # The WMP background sits one pixel left of the text, which fits it between
+    # two-digit scores and keeps a lit column left of the W
+    GENDER_MATCHUP: {
+        "padding_bottom": GENDER_MATCHUP_BACKGROUND_PADDING_BOTTOM,
+        "padding_left": 1,
+        "padding_right": -1,
+    },
+}
 
 
 class DisplayManager:
@@ -120,6 +142,7 @@ class DisplayManager:
                     color=color,
                     anchor_point=anchor_point,
                     anchored_position=position,
+                    **_LABEL_OPTIONS.get(element_id, {}),
                 ),
             )
 
@@ -144,12 +167,15 @@ class DisplayManager:
         self._labels[RIGHT_TEAM_SCORE].text = str(right_score)
 
     def set_gender_matchup(self, gender: str, count: int) -> None:
-        """Show the gender matchup, colored by gender."""
-        color = (
-            MMP_GENDER_MATCHUP_COLOR
-            if gender == GenderManager.GENDER_MMP
-            else WMP_GENDER_MATCHUP_COLOR
-        )
+        """Show the gender matchup: MMP as lit text, WMP as dark text on a lit block."""
+        if gender == GenderManager.GENDER_MMP:
+            color, background_color = MMP_GENDER_MATCHUP_COLOR, None
+        else:
+            color, background_color = (
+                WMP_GENDER_MATCHUP_TEXT_COLOR,
+                WMP_GENDER_MATCHUP_COLOR,
+            )
+        self._labels[GENDER_MATCHUP].background_color = background_color
         for element_id, text in (
             (GENDER_MATCHUP, gender),
             (GENDER_MATCHUP_COUNTER, str(count)),

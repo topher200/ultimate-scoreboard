@@ -12,6 +12,11 @@ class FakeLabel:
         color=0xFFFFFF,
         anchor_point=(0.0, 0.0),
         anchored_position=None,
+        background_color=None,
+        padding_top=0,
+        padding_bottom=0,
+        padding_left=0,
+        padding_right=0,
     ):
         """Initialize a fake label.
 
@@ -21,6 +26,12 @@ class FakeLabel:
         :param int color: Color in 0xRRGGBB format, defaults to white
         :param tuple anchor_point: Anchor point (x, y) as floats between 0.0 and 1.0
         :param tuple anchored_position: Position (x, y) in pixels, defaults to None
+        :param int background_color: Background color in 0xRRGGBB format, or None for
+            transparent
+        :param int padding_top: Pixels added to the background box at the top
+        :param int padding_bottom: Pixels added to the background box at the bottom
+        :param int padding_left: Pixels added to the background box at the left
+        :param int padding_right: Pixels added to the background box at the right
         """
         self.font = font
         self._text = text
@@ -28,6 +39,11 @@ class FakeLabel:
         self._color = color
         self.anchor_point = anchor_point
         self.anchored_position = anchored_position
+        self.background_color = background_color
+        self.padding_top = padding_top
+        self.padding_bottom = padding_bottom
+        self.padding_left = padding_left
+        self.padding_right = padding_right
         self.x = 0
         self.y = 0
 
