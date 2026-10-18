@@ -17,10 +17,12 @@ from src.lab_screens import (
     GENDER_THICK_FRAME,
     MOTION_BLINK,
     MOTION_MARCH,
+    MOTION_MARCH_THEN_HOLD,
+    PAIR_DISTINCT,
     DrawnScreen,
     Pair,
     Screen,
-    round_two_screens,
+    round_three_screens,
 )
 from src.settings_store import LEFT_TEAM_NAME, SettingsStore
 from tests.test_display_renderer import _run
@@ -222,6 +224,18 @@ class TestPairs:
         assert pair_lab.item.screen_id == "F1"
         assert "Right better" in html
 
+    def test_distinct_pair_asks_how_easily_they_tell_apart(self, display, nvm, clock):
+        pair = Pair(
+            "M1", "W vs M", Screen("", "W"), Screen("", "M"), kind=PAIR_DISTINCT
+        )
+        lab = Lab(display, [pair], VoteStore(nvm), get_time=clock)
+
+        html = lab.respond(None)
+        lab.respond({"action": "hard", "note": ""})
+
+        assert "Easy to tell apart" in html
+        assert lab.votes == {"M1": ["hard", ""]}
+
     def test_next_pair_starts_on_a(self, pair_lab):
         pair_lab.respond({"action": "show_b"})
         pair_lab.respond({"action": "next"})
@@ -245,6 +259,22 @@ class TestMotion:
         assert before != after
         assert after == before[-1:] + before[:-1]
 
+    def test_march_then_hold_stops_after_the_march(self):
+        screen = Screen(
+            "", "", gender=GENDER_THICK_FRAME, motion=MOTION_MARCH_THEN_HOLD
+        )
+        drawn = DrawnScreen(screen)
+        bitmap = drawn._bitmap
+        start = [bitmap[x, 0] for x in range(64)]
+
+        drawn.animate(0.1)
+        marching = [bitmap[x, 0] for x in range(64)]
+        drawn.animate(30.0)
+        held = [bitmap[x, 0] for x in range(64)]
+
+        assert marching != start
+        assert held == start
+
     def test_blink_turns_the_gender_color_off(self):
         drawn = DrawnScreen(
             Screen("", "", gender=GENDER_THICK_FRAME, motion=MOTION_BLINK)
@@ -259,41 +289,39 @@ class TestMotion:
         assert palette[5] == 0
 
 
-def test_round_two_ids_are_unique():
-    ids = [item.screen_id for item in round_two_screens()]
+def test_round_three_ids_are_unique():
+    ids = [item.screen_id for item in round_three_screens()]
 
     assert len(ids) == len(set(ids))
 
 
-def test_round_two_digits_stay_inside_their_margins():
-    """Test that each screen draws its digits clear of the edges and the center."""
+def test_round_three_text_overlaps_nothing():
+    """Test that no label lights a pixel that the frame or another label lights."""
     result = _run(
         """
 import json
 from simulator.display_renderer import render_pixels
-from src.lab_screens import (
-    COLORS, GENDER_CORNERS, GENDER_THICK_FRAME, MARGIN, THICK_GENDER_MARGIN,
-    DrawnScreen, Pair, round_two_screens,
-)
+from src.lab_screens import LAYOUT_CURRENT, DrawnScreen, Pair, round_three_screens
 
 screens = []
-for item in round_two_screens():
+for item in round_three_screens():
     screens += [item.a, item.b] if isinstance(item, Pair) else [item]
 bad = []
 for screen in screens:
-    thick = screen.gender in (GENDER_THICK_FRAME, GENDER_CORNERS)
-    margin = THICK_GENDER_MARGIN if thick else MARGIN
-    digit_colors = {COLORS[screen.left], COLORS[screen.right]}
-    pixels = render_pixels(DrawnScreen(screen).group)
-    for i, color in enumerate(pixels):
-        x, y = i % 64, i // 64
-        if color in digit_colors and (
-            x < margin or x >= 64 - margin or y < margin or y >= 32 - margin
-            or x in (31, 32)
-        ):
-            bad.append(screen.title)
-            break
-print(json.dumps(bad))
+    if screen.layout == LAYOUT_CURRENT:
+        continue
+    group = DrawnScreen(screen).group
+    layers = list(group)
+    lit = []
+    for layer in layers:
+        for other in layers:
+            other.hidden = other is not layer
+        lit.append({i for i, color in enumerate(render_pixels(group)) if color})
+    for i, pixels in enumerate(lit):
+        for other in lit[i + 1:]:
+            if pixels & other:
+                bad.append(screen.title)
+print(json.dumps(sorted(set(bad))))
 """
     )
 
