@@ -1,697 +1,121 @@
-"""Tests for HardwareManager using fake keypad implementation."""
+"""Tests for HardwareManager's keypad wiring and callback dispatch."""
 
 import asyncio
 
-import pytest
-
+from src.button_state_machine import SIMULTANEOUS_HOLD_THRESHOLD
 from src.hardware_manager import (
-    BUTTON_LEFT,
-    BUTTON_RIGHT,
     KEY_NUMBER_BUTTON_LEFT,
     KEY_NUMBER_BUTTON_RIGHT,
-    SIMULTANEOUS_HOLD_THRESHOLD,
     HardwareManager,
 )
 
-
-class TestHardwareManager:
-    """Test HardwareManager with fake hardware."""
-
-    def test_initialization(self, hardware_manager):
-        """Test that HardwareManager initializes without errors."""
-        assert hardware_manager is not None
-
-    def test_button_not_pressed_initially(self, hardware_manager):
-        """Test that buttons are not detected as pressed initially."""
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-        assert not hardware_manager.is_button_pressed(BUTTON_RIGHT)
-
-    def test_button_press_detected(self, hardware_manager, fake_keys):
-        """Test that a button press is detected."""
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        # Simulate button press
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-
-        # Should detect the press
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-    def test_button_press_only_detected_once(self, hardware_manager, fake_keys):
-        """Test that a button press is only detected once until next press."""
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-    def test_button_press_release_press_cycle(self, hardware_manager, fake_keys):
-        """Test a full press, release, press cycle."""
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-    def test_multiple_buttons_independently(self, hardware_manager, fake_keys):
-        """Test that multiple buttons work independently."""
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-        assert not hardware_manager.is_button_pressed(BUTTON_RIGHT)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)  # Already detected
-        assert hardware_manager.is_button_pressed(BUTTON_RIGHT)  # New press
-
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        hardware_manager.update()
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-        assert not hardware_manager.is_button_pressed(BUTTON_RIGHT)
-
-    def test_unknown_button_raises_error(self, hardware_manager):
-        """Test that checking an unknown button raises KeyError."""
-        hardware_manager.update()
-        with pytest.raises(KeyError, match="Unknown button name: nonexistent"):
-            hardware_manager.is_button_pressed("nonexistent")
-
-    def test_debouncing_prevents_multiple_detections(self, hardware_manager, fake_keys):
-        """Test that debouncing prevents detecting the same press multiple times."""
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-
-        hardware_manager.update()
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        for _ in range(10):
-            hardware_manager.update()
-            assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        hardware_manager.update()
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-
-    def test_consume_button_events(self, hardware_manager, fake_keys):
-        """Test consuming button events for multiple buttons."""
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        hardware_manager.update()
-
-        assert hardware_manager.is_button_pressed(BUTTON_LEFT)
-        assert hardware_manager.is_button_pressed(BUTTON_RIGHT)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        hardware_manager.update()
-
-        hardware_manager.consume_button_events(BUTTON_LEFT, BUTTON_RIGHT)
-
-        assert not hardware_manager.is_button_pressed(BUTTON_LEFT)
-        assert not hardware_manager.is_button_pressed(BUTTON_RIGHT)
+UNKNOWN_KEY_NUMBER = 7
 
 
-class TestMonitorButtonsChords:
-    """Test the chord-based button monitoring state machine."""
+async def _run(fake_keys, steps):
+    """Drive monitor_buttons through steps and return the fired callbacks.
 
-    async def test_individual_press_fires_on_release(self, fake_keys):
-        """Test that individual button press fires callback on release."""
-        left_called = False
+    :param steps: list of ("press"|"release", key_number) or ("time", seconds)
+    """
+    fired = []
 
-        async def left_cb():
-            nonlocal left_called
-            left_called = True
+    def recorder(name):
+        async def cb():
+            fired.append(name)
 
-        async def right_cb():
-            pass
+        return cb
 
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        hw = HardwareManager(fake_keys)
-
-        # Press LEFT
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-
-        task = asyncio.create_task(hw.monitor_buttons(callbacks))
-        await asyncio.sleep(0.15)
-
-        # Should NOT have fired yet (still held)
-        assert not left_called
-
-        # Release LEFT
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert left_called
-
-    async def test_chord_left_then_right(self, fake_keys):
-        """Test hold LEFT, tap RIGHT fires the chord callback on release."""
-        chord_called = False
-        left_called = False
-        right_called = False
-
-        async def left_cb():
-            nonlocal left_called
-            left_called = True
-
-        async def right_cb():
-            nonlocal right_called
-            right_called = True
-
-        async def chord_cb():
-            nonlocal chord_called
-            chord_called = True
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        chord_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): chord_cb}
-        hw = HardwareManager(fake_keys)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, chord_callbacks=chord_callbacks)
+    mock_time = [0.0]
+    hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
+    task = asyncio.create_task(
+        hw.monitor_buttons(
+            {"left": recorder("left"), "right": recorder("right")},
+            hold_both_callback=recorder("reset"),
+            chord_callbacks={
+                ("left", "right"): recorder("toggle"),
+                ("right", "left"): recorder("undo"),
+            },
         )
+    )
+    for action, arg in steps:
+        if action == "press":
+            fake_keys.press_key(arg)
+        elif action == "release":
+            fake_keys.release_key(arg)
+        else:
+            mock_time[0] += arg
         await asyncio.sleep(0.15)
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
+    return fired
 
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
+
+async def test_single_press_runs_button_callback(fake_keys):
+    fired = await _run(
+        fake_keys,
+        [("press", KEY_NUMBER_BUTTON_RIGHT), ("release", KEY_NUMBER_BUTTON_RIGHT)],
+    )
+    assert fired == ["right"]
+
+
+async def test_chord_runs_chord_callback(fake_keys):
+    fired = await _run(
+        fake_keys,
+        [
+            ("press", KEY_NUMBER_BUTTON_LEFT),
+            ("press", KEY_NUMBER_BUTTON_RIGHT),
+            ("release", KEY_NUMBER_BUTTON_RIGHT),
+            ("release", KEY_NUMBER_BUTTON_LEFT),
+        ],
+    )
+    assert fired == ["toggle"]
+
+
+async def test_hold_both_runs_hold_both_callback(fake_keys):
+    fired = await _run(
+        fake_keys,
+        [
+            ("press", KEY_NUMBER_BUTTON_RIGHT),
+            ("press", KEY_NUMBER_BUTTON_LEFT),
+            ("time", SIMULTANEOUS_HOLD_THRESHOLD),
+            ("release", KEY_NUMBER_BUTTON_RIGHT),
+            ("release", KEY_NUMBER_BUTTON_LEFT),
+        ],
+    )
+    assert fired == ["reset"]
+
+
+async def test_unknown_key_is_ignored(fake_keys):
+    fired = await _run(
+        fake_keys,
+        [
+            ("press", UNKNOWN_KEY_NUMBER),
+            ("release", UNKNOWN_KEY_NUMBER),
+            ("press", KEY_NUMBER_BUTTON_LEFT),
+            ("release", KEY_NUMBER_BUTTON_LEFT),
+        ],
+    )
+    assert fired == ["left"]
+
+
+async def test_gesture_without_callback_does_nothing(fake_keys):
+    hw = HardwareManager(fake_keys)
+    task = asyncio.create_task(hw.monitor_buttons({}))
+    for key in (KEY_NUMBER_BUTTON_LEFT, KEY_NUMBER_BUTTON_RIGHT):
+        fake_keys.press_key(key)
         await asyncio.sleep(0.15)
-        assert not chord_called
-
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert chord_called
-        assert not left_called
-        assert not right_called
-
-    async def test_chord_right_then_left(self, fake_keys):
-        """Test hold RIGHT, tap LEFT fires the chord callback on release."""
-        chord_called = False
-        left_called = False
-        right_called = False
-
-        async def left_cb():
-            nonlocal left_called
-            left_called = True
-
-        async def right_cb():
-            nonlocal right_called
-            right_called = True
-
-        async def chord_cb():
-            nonlocal chord_called
-            chord_called = True
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        chord_callbacks = {(BUTTON_RIGHT, BUTTON_LEFT): chord_cb}
-        hw = HardwareManager(fake_keys)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, chord_callbacks=chord_callbacks)
-        )
-        await asyncio.sleep(0.15)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-        assert not chord_called
-
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert chord_called
-        assert not left_called
-        assert not right_called
-
-    async def test_hold_both_fires_reset(self, fake_keys):
-        """Test holding both buttons for threshold fires hold_both callback."""
-        reset_called = False
-
-        async def left_cb():
-            pass
-
-        async def right_cb():
-            pass
-
-        async def reset_cb():
-            nonlocal reset_called
-            reset_called = True
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        mock_time = [0.0]
-        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, hold_both_callback=reset_cb)
-        )
-        await asyncio.sleep(0.15)
-
-        mock_time[0] = SIMULTANEOUS_HOLD_THRESHOLD + 0.1
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert reset_called
-
-    async def test_hold_both_released_early_no_action(self, fake_keys):
-        """Test releasing both before threshold fires nothing."""
-        reset_called = False
-        left_called = False
-        right_called = False
-
-        async def left_cb():
-            nonlocal left_called
-            left_called = True
-
-        async def right_cb():
-            nonlocal right_called
-            right_called = True
-
-        async def reset_cb():
-            nonlocal reset_called
-            reset_called = True
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        mock_time = [0.0]
-        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, hold_both_callback=reset_cb)
-        )
-        await asyncio.sleep(0.15)
-
-        mock_time[0] = 0.5
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert not reset_called
-        assert not left_called
-        assert not right_called
-
-    async def test_chord_suppresses_individual(self, fake_keys):
-        """Test that chord suppresses individual callbacks on release."""
-        left_called = False
-        right_called = False
-        chord_called = False
-
-        async def left_cb():
-            nonlocal left_called
-            left_called = True
-
-        async def right_cb():
-            nonlocal right_called
-            right_called = True
-
-        async def chord_cb():
-            nonlocal chord_called
-            chord_called = True
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        chord_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): chord_cb}
-        hw = HardwareManager(fake_keys)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, chord_callbacks=chord_callbacks)
-        )
-        await asyncio.sleep(0.15)
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert chord_called
-        assert not left_called
-        assert not right_called
-
-    async def test_simultaneous_press_enters_both_held(self, fake_keys):
-        """Test both pressed in same cycle enters BOTH_HELD, not chord."""
-        chord_called = False
-        reset_called = False
-
-        async def noop():
-            pass
-
-        async def chord_cb():
-            nonlocal chord_called
-            chord_called = True
-
-        async def reset_cb():
-            nonlocal reset_called
-            reset_called = True
-
-        callbacks = {BUTTON_LEFT: noop, BUTTON_RIGHT: noop}
-        chord_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): chord_cb}
-        mock_time = [0.0]
-        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
-
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(
-                callbacks,
-                hold_both_callback=reset_cb,
-                chord_callbacks=chord_callbacks,
-            )
-        )
-        await asyncio.sleep(0.15)
-
-        mock_time[0] = SIMULTANEOUS_HOLD_THRESHOLD + 0.1
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert reset_called
-        assert not chord_called
-
-    async def test_individual_press_works_after_chord(self, fake_keys):
-        """Test individual presses work after a chord completes."""
-        left_call_count = 0
-        chord_called = False
-
-        async def left_cb():
-            nonlocal left_call_count
-            left_call_count += 1
-
-        async def right_cb():
-            pass
-
-        async def chord_cb():
-            nonlocal chord_called
-            chord_called = True
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        chord_callbacks = {(BUTTON_LEFT, BUTTON_RIGHT): chord_cb}
-        hw = HardwareManager(fake_keys)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, chord_callbacks=chord_callbacks)
-        )
-
-        # Chord: LEFT then RIGHT
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        # Release both
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        assert chord_called
-
-        # Individual LEFT press and release
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert left_call_count == 1
-
-    async def test_repeated_chord_while_holding(self, fake_keys):
-        """Test hold RIGHT, tap LEFT multiple times fires chord each time."""
-        chord_call_count = 0
-        right_called = False
-
-        async def left_cb():
-            pass
-
-        async def right_cb():
-            nonlocal right_called
-            right_called = True
-
-        async def chord_cb():
-            nonlocal chord_call_count
-            chord_call_count += 1
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        chord_callbacks = {(BUTTON_RIGHT, BUTTON_LEFT): chord_cb}
-        hw = HardwareManager(fake_keys)
-
-        task = asyncio.create_task(
-            hw.monitor_buttons(callbacks, chord_callbacks=chord_callbacks)
-        )
-
-        # Hold RIGHT
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        # First tap LEFT
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        assert chord_call_count == 1
-
-        # Second tap LEFT (still holding RIGHT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        assert chord_call_count == 2
-
-        # Third tap LEFT
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        # Release RIGHT
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert chord_call_count == 3
-        assert not right_called
-
-    async def test_button_not_broken_after_aborted_both_held(self, fake_keys):
-        """Regression: stale release event must not permanently break a button.
-
-        Scenario: both buttons pressed simultaneously (BOTH_HELD), one
-        released before threshold → aborted → IDLE. The other button is
-        still held and releases while in IDLE. Without the fix, that
-        release event is never consumed, causing every subsequent press
-        of that button to fire immediately without waiting for a chord.
-        """
-        right_call_count = 0
-
-        async def left_cb():
-            pass
-
-        async def right_cb():
-            nonlocal right_call_count
-            right_call_count += 1
-
-        callbacks = {BUTTON_LEFT: left_cb, BUTTON_RIGHT: right_cb}
-        hw = HardwareManager(fake_keys)
-
-        task = asyncio.create_task(hw.monitor_buttons(callbacks))
-
-        # Press both simultaneously → BOTH_HELD
-        fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        # Release LEFT before threshold → aborted hold → IDLE
-        # RIGHT is still physically held
-        fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
-        await asyncio.sleep(0.15)
-
-        # Release RIGHT while in IDLE → release event not consumed (the bug)
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        # Press RIGHT and HOLD — should enter SINGLE_HELD and wait
-        # for a chord, NOT fire the individual callback immediately
-        fake_keys.press_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        # Still holding — individual callback must NOT have fired yet
-        assert right_call_count == 0, (
-            "Individual callback fired while button still held — "
-            "stale release event caused immediate firing"
-        )
-
-        # Release RIGHT — NOW the individual callback should fire
-        fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
-        await asyncio.sleep(0.15)
-
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-
-        assert right_call_count == 1
-
-
-class TestChordOrReset:
-    """Test how the state machine picks between a chord and holding both."""
-
-    async def _run(self, fake_keys, steps):
-        """Drive monitor_buttons through steps and return the fired actions.
-
-        :param steps: list of ("press"|"release", button) or ("time", seconds)
-        """
-        fired = []
-
-        def recorder(name):
-            async def cb():
-                fired.append(name)
-
-            return cb
-
-        mock_time = [0.0]
-        hw = HardwareManager(fake_keys, get_time=lambda: mock_time[0])
-        task = asyncio.create_task(
-            hw.monitor_buttons(
-                {BUTTON_LEFT: recorder("left"), BUTTON_RIGHT: recorder("right")},
-                hold_both_callback=recorder("reset"),
-                chord_callbacks={
-                    (BUTTON_LEFT, BUTTON_RIGHT): recorder("toggle"),
-                    (BUTTON_RIGHT, BUTTON_LEFT): recorder("undo"),
-                },
-            )
-        )
-        keys = {"left": KEY_NUMBER_BUTTON_LEFT, "right": KEY_NUMBER_BUTTON_RIGHT}
-        for action, arg in steps:
-            if action == "press":
-                fake_keys.press_key(keys[arg])
-            elif action == "release":
-                fake_keys.release_key(keys[arg])
-            else:
-                mock_time[0] += arg
-            await asyncio.sleep(0.15)
-        task.cancel()
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
-        return fired
-
-    async def test_staggered_press_held_resets_without_chord(self, fake_keys):
-        """Test that pressing LEFT then RIGHT and holding both resets."""
-        fired = await self._run(
-            fake_keys,
-            [
-                ("press", "left"),
-                ("time", 0.2),
-                ("press", "right"),
-                ("time", SIMULTANEOUS_HOLD_THRESHOLD),
-                ("release", "left"),
-                ("release", "right"),
-            ],
-        )
-        assert fired == ["reset"]
-
-    async def test_held_button_released_first_fires_chord(self, fake_keys):
-        """Test that releasing the held button first still fires the chord."""
-        fired = await self._run(
-            fake_keys,
-            [
-                ("press", "right"),
-                ("press", "left"),
-                ("time", 0.3),
-                ("release", "right"),
-                ("release", "left"),
-            ],
-        )
-        assert fired == ["undo"]
-
-    async def test_individual_press_after_reset(self, fake_keys):
-        """Test that a single press after a staggered reset scores normally."""
-        fired = await self._run(
-            fake_keys,
-            [
-                ("press", "right"),
-                ("press", "left"),
-                ("time", SIMULTANEOUS_HOLD_THRESHOLD),
-                ("release", "right"),
-                ("release", "left"),
-                ("press", "left"),
-                ("release", "left"),
-            ],
-        )
-        assert fired == ["reset", "left"]
+    fake_keys.release_key(KEY_NUMBER_BUTTON_RIGHT)
+    fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
+    await asyncio.sleep(0.15)
+    fake_keys.press_key(KEY_NUMBER_BUTTON_LEFT)
+    fake_keys.release_key(KEY_NUMBER_BUTTON_LEFT)
+    await asyncio.sleep(0.15)
+    assert not task.done()
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
