@@ -43,6 +43,43 @@ print(json.dumps(gaps))
     assert min(gaps) >= 1
 
 
+def test_scores_clear_the_wmp_frame():
+    """Test that no bold two-digit score lights the WMP frame or the column inside it."""
+    overlaps = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from simulator.simulator_matrixportal import SimulatorMatrixPortal
+from src.display_manager import (
+    DisplayManager, FRAME_WIDTH, LEFT_TEAM_SCORE, LEFT_TEAM_SCORE_BOLD,
+    RIGHT_TEAM_SCORE, RIGHT_TEAM_SCORE_BOLD,
+)
+
+matrixportal = SimulatorMatrixPortal()
+display_manager = DisplayManager(matrixportal)
+display_manager.set_gender_matchup("WMP", 1)
+root = matrixportal.display.root_group
+labels = display_manager._labels
+scores = [labels[element_id] for element_id in (
+    LEFT_TEAM_SCORE, LEFT_TEAM_SCORE_BOLD, RIGHT_TEAM_SCORE, RIGHT_TEAM_SCORE_BOLD,
+)]
+for item in root:
+    item.hidden = item not in scores
+
+overlaps = []
+for score in range(10, 100):
+    display_manager.set_scores(score, score)
+    pixels = render_pixels(root)
+    for i, color in enumerate(pixels):
+        x = i % 64
+        if color and not FRAME_WIDTH < x < 63 - FRAME_WIDTH:
+            overlaps.append((score, x))
+print(json.dumps(overlaps))
+"""
+    )
+    assert overlaps == []
+
+
 def test_wifi_search_fits_the_screen():
     """Test that the Wi-Fi icon and "Searching" stay on screen and apart."""
     bounds = _run(
