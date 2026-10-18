@@ -56,7 +56,7 @@ def create_managers(matrixportal, keys, nvm, network, web_server) -> Managers:
         network,
         display_manager,
         web_server,
-        SettingsPage(settings_store, on_settings_saved).respond,
+        SettingsPage(settings_store, on_settings_saved),
     )
     score_manager = ScoreManager()
     gender_manager = GenderManager()
