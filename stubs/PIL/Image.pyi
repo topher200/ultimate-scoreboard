@@ -1,10 +1,19 @@
 """Type stubs for PIL.Image module."""
 
+from collections.abc import Sequence
+from enum import IntEnum
+
+class Resampling(IntEnum):
+    NEAREST = 0
+
 class Image:
     """PIL Image class."""
 
     def convert(self, mode: str) -> Image: ...
     def tobytes(self) -> bytes: ...
+    def putdata(self, data: Sequence[tuple[int, int, int]]) -> None: ...
+    def paste(self, im: Image, box: tuple[int, int]) -> None: ...
+    def resize(self, size: tuple[int, int], resample: Resampling) -> Image: ...
     @property
     def size(self) -> tuple[int, int]: ...
 

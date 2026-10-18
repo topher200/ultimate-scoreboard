@@ -15,10 +15,10 @@ class RenderableDisplay(FakeDisplay):
         super().__init__()
         self._renderer = DisplayRenderer()
 
-    def render_to_image(self, target_scale: int = 1):
+    def render_to_image(self, target_scale: int):
         """Render the current display state to a PIL Image.
 
-        :param target_scale: Scale factor for rendering (1 = native size)
+        :param target_scale: Size of each LED in image pixels
         :return: PIL Image of the current display state
         """
         return self._renderer.render(self._root_group, target_scale=target_scale)

@@ -748,6 +748,7 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "circup" },
+    { name = "pillow" },
     { name = "pyrefly" },
     { name = "pyserial" },
     { name = "pytest" },
@@ -767,6 +768,7 @@ requires-dist = [{ name = "adafruit-circuitpython-matrixportal", specifier = ">=
 [package.metadata.requires-dev]
 dev = [
     { name = "circup", specifier = ">=2.2.5" },
+    { name = "pillow", specifier = ">=10.0.0" },
     { name = "pyrefly", specifier = ">=0.40.0" },
     { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", specifier = ">=8.4.2" },
