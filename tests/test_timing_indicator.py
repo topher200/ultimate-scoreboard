@@ -1,5 +1,7 @@
 """Tests for TimingIndicatorManager."""
 
+import pytest
+
 from src.timing_indicator import (
     TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
@@ -28,8 +30,9 @@ class TestTimingIndicatorManager:
 
     def test_matches_usau_pull_time(self):
         """Test that the full timing indicator lasts 80 seconds."""
-        assert TIMING_INDICATOR_PIXEL_COUNT == 40
-        assert TIMING_INDICATOR_REMOVAL_INTERVAL == 2.0
+        assert TIMING_INDICATOR_PIXEL_COUNT * TIMING_INDICATOR_REMOVAL_INTERVAL == (
+            pytest.approx(80)
+        )
 
     def test_starts_empty(self):
         manager, _ = _manager()
