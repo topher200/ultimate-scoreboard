@@ -1,5 +1,8 @@
 """Basic tests for display_manager using fake implementations."""
 
+import pytest
+
+import src.display_manager as display_manager_module
 from src.display_manager import (
     DISPLAY_HEIGHT,
     DISPLAY_WIDTH,
@@ -94,14 +97,12 @@ class TestDisplayManager:
         display_manager.hide_wifi_search()
         assert not display_manager.wifi_search_shown
 
-    def test_timing_indicator_above_bottom_row(
-        self, display_manager, fake_matrix_portal
-    ):
+    def test_timing_indicator_above_bottom_row(self, display_manager):
         """Test that the timing indicator sits above the bottom row, right-aligned."""
         from src.display_manager import LEFT_BORDER_MARGIN_WIDTH
         from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
-        tile_grid = _root_group(fake_matrix_portal)[-3]
+        tile_grid = display_manager._timing_indicator
         assert tile_grid.y == DISPLAY_HEIGHT - 2
         assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == (
             DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH
@@ -148,3 +149,38 @@ class TestDisplayManager:
         """Test that update_timing_indicator clamps negative count to 0."""
         display_manager.update_timing_indicator(-5)
         assert sum(self._lit_pixels(display_manager)) == 0
+
+
+class TestFrameDrawingAllocations:
+    """CircuitPython allocates a tuple per item for enumerate() and zip().
+
+    Frame redraws run several times a second, so that garbage causes visible
+    garbage collection pauses on the board.
+    """
+
+    @pytest.fixture(autouse=True)
+    def forbid_tuple_iterators(self, display_manager, monkeypatch):
+        def forbidden(*args):
+            raise AssertionError("frame drawing must not allocate per pixel")
+
+        monkeypatch.setattr(
+            display_manager_module, "enumerate", forbidden, raising=False
+        )
+        monkeypatch.setattr(display_manager_module, "zip", forbidden, raising=False)
+
+    def test_marching_wmp_frame(self, display_manager, monkeypatch):
+        display_manager.march_wmp_frame()
+        start = display_manager._wmp_frame_march_start
+        for step in range(1, 10):
+            monkeypatch.setattr(
+                display_manager_module.time,
+                "monotonic",
+                lambda step=step: (
+                    start + step * display_manager_module.WMP_FRAME_MARCH_STEP_SECONDS
+                ),
+            )
+            display_manager.animate_wmp_frame()
+
+    def test_timing_indicator_update(self, display_manager):
+        display_manager.update_timing_indicator(5)
+        display_manager.update_timing_indicator(0)
