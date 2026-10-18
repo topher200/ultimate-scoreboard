@@ -1,168 +1,92 @@
-"""Renderer that converts displayio.Group hierarchy to pixel image."""
+"""Renderer that converts a displayio.Group hierarchy to an LED matrix image."""
 
-from PIL import Image, ImageDraw, ImageFont
+from displayio._area import Area
+from displayio._structs import ColorspaceStruct
+from PIL import Image, ImageChops, ImageDraw
 
 from src.display_manager import DISPLAY_HEIGHT, DISPLAY_WIDTH
 
+# Bits per color channel that the MatrixPortal drives each LED with
+MATRIX_BIT_DEPTH = 2
+UNLIT_LED_COLOR = (24, 24, 24)
+LED_DIAMETER_FRACTION = 0.8
+
+
+def render_pixels(root_group) -> list[int]:
+    """Render a Blinka displayio group to 0xRRGGBB pixels.
+
+    Blinka draws the group with a port of CircuitPython's fill code, so labels
+    pick up the real terminalio font, anchors, and scaling.
+
+    :param root_group: The root displayio.Group to render
+    :return: DISPLAY_WIDTH * DISPLAY_HEIGHT colors in row order (0 is unlit)
+    """
+    pixel_count = DISPLAY_WIDTH * DISPLAY_HEIGHT
+    buffer = memoryview(bytearray(pixel_count * 4)).cast("I")
+    mask = memoryview(bytearray((pixel_count + 31) // 32 * 4)).cast("I")
+    if root_group is not None:
+        root_group._fill_area(
+            ColorspaceStruct(depth=32),
+            Area(0, 0, DISPLAY_WIDTH, DISPLAY_HEIGHT),
+            mask,
+            buffer,
+        )
+    return list(buffer)
+
+
+_LEVELS = (1 << MATRIX_BIT_DEPTH) - 1
+# sRGB value for the light output of each brightness level the matrix can show
+_LEVEL_TO_SRGB = [
+    round(255 * (level / _LEVELS) ** (1 / 2.2)) for level in range(_LEVELS + 1)
+]
+
+
+def _led_color(color: int) -> tuple[int, int, int]:
+    if color == 0:
+        return UNLIT_LED_COLOR
+    red, green, blue = (
+        _LEVEL_TO_SRGB[((color >> shift) & 0xFF) >> (8 - MATRIX_BIT_DEPTH)]
+        for shift in (16, 8, 0)
+    )
+    return (red, green, blue)
+
 
 class DisplayRenderer:
-    """Renders displayio.Group hierarchy to a pixel image."""
+    """Renders a displayio.Group hierarchy as a grid of LEDs."""
 
     def __init__(self):
         """Initialize the display renderer."""
-        self._font_cache = {}
-        self._base_font_size = 8
-        self._render_scale = 1
+        self._led_masks: dict[int, Image.Image] = {}
 
-    def _get_font(self, scale: int = 1) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-        """Get a font at the specified scale.
-
-        :param scale: Font scale factor
-        :return: PIL ImageFont object
-        """
-        font_size = int(self._base_font_size * scale * self._render_scale)
-        if font_size not in self._font_cache:
-            font_paths = [
-                "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
-                "/System/Library/Fonts/Monaco.ttf",
-                "/System/Library/Fonts/Courier.ttc",
-                "/usr/share/fonts/truetype/liberation/LiberationMono-Regular.ttf",
-            ]
-            font = None
-            for path in font_paths:
-                try:
-                    font = ImageFont.truetype(path, font_size)
-                    break
-                except OSError:
-                    continue
-            if font is None:
-                font = ImageFont.load_default()
-            self._font_cache[font_size] = font
-        return self._font_cache[font_size]
-
-    def _hex_to_rgb(self, color: int) -> tuple[int, int, int]:
-        """Convert 0xRRGGBB color to RGB tuple.
-
-        :param color: Color in 0xRRGGBB format
-        :return: RGB tuple (r, g, b)
-        """
-        r = (color >> 16) & 0xFF
-        g = (color >> 8) & 0xFF
-        b = color & 0xFF
-        return (r, g, b)
-
-    def _calculate_text_position(
-        self, label, text_width: int, text_height: int
-    ) -> tuple[int, int]:
-        """Calculate the actual pixel position for a label based on anchor point.
-
-        :param label: Label object with anchor_point and anchored_position
-        :param text_width: Width of the text in pixels
-        :param text_height: Height of the text in pixels
-        :return: (x, y) position tuple
-        """
-        if hasattr(label, "anchored_position") and label.anchored_position:
-            anchor_x, anchor_y = label.anchored_position
-            anchor_point_x, anchor_point_y = label.anchor_point
-
-            # Scale anchor positions to target resolution
-            # text_width and text_height are already in target resolution
-            scaled_anchor_x = anchor_x * self._render_scale
-            scaled_anchor_y = anchor_y * self._render_scale
-
-            # For x: 0.0 = left, 0.5 = center, 1.0 = right
-            x = int(scaled_anchor_x - (anchor_point_x * text_width))
-            # For y: 0.0 = top (no adjustment needed), 1.0 = bottom
-            y = int(scaled_anchor_y - (anchor_point_y * text_height))
-            return (x, y)
-        else:
-            return (
-                int(label.x * self._render_scale),
-                int(label.y * self._render_scale),
+    def _led_mask(self, target_scale: int) -> Image.Image:
+        """Get a full-size mask that is white inside each LED and black between."""
+        if target_scale not in self._led_masks:
+            cell = Image.new("RGB", (target_scale, target_scale))
+            inset = target_scale * (1 - LED_DIAMETER_FRACTION) / 2
+            ImageDraw.Draw(cell).ellipse(
+                (inset, inset, target_scale - inset, target_scale - inset),
+                fill=(255, 255, 255),
             )
+            mask = Image.new(
+                "RGB", (DISPLAY_WIDTH * target_scale, DISPLAY_HEIGHT * target_scale)
+            )
+            for y in range(DISPLAY_HEIGHT):
+                for x in range(DISPLAY_WIDTH):
+                    mask.paste(cell, (x * target_scale, y * target_scale))
+            self._led_masks[target_scale] = mask
+        return self._led_masks[target_scale]
 
-    def _render_label(self, image: Image.Image, label) -> None:
-        """Render a single label to the image.
-
-        :param image: PIL Image to render to
-        :param label: Label object to render
-        """
-        text = label.text if hasattr(label, "text") else ""
-        if not text or not text.strip():
-            return
-
-        scale = label.scale if hasattr(label, "scale") else 1
-        color = label.color if hasattr(label, "color") else 0xFFFFFF
-        rgb_color = self._hex_to_rgb(color)
-
-        font = self._get_font(scale)
-        draw = ImageDraw.Draw(image)
-
-        bbox = draw.textbbox((0, 0), text, font=font)
-        text_width = int(bbox[2] - bbox[0])
-        text_height = int(bbox[3] - bbox[1])
-
-        x, y = self._calculate_text_position(label, text_width, text_height)
-
-        # Convert from top-left (CircuitPython) to baseline (PIL)
-        # textbbox returns bbox when baseline is at y=0, so bbox[1] is the top offset
-        # (typically negative). To convert top-left y to baseline y, we subtract
-        # bbox[1] (the negative top offset)
-        if not (hasattr(label, "anchored_position") and label.anchored_position):
-            y -= bbox[1]
-
-        draw.text((x, y), text, font=font, fill=rgb_color)
-
-    def _render_tile_grid(self, image: Image.Image, tile_grid) -> None:
-        """Render a single-tile TileGrid to the image.
-
-        :param image: PIL Image to render to
-        :param tile_grid: TileGrid object to render
-        """
-        bitmap = tile_grid.bitmap
-        palette = tile_grid.pixel_shader
-        draw = ImageDraw.Draw(image)
-        scale = self._render_scale
-        for by in range(bitmap.height):
-            for bx in range(bitmap.width):
-                value = bitmap[bx, by]
-                if palette.is_transparent(value):
-                    continue
-                x = (tile_grid.x + bx) * scale
-                y = (tile_grid.y + by) * scale
-                draw.rectangle(
-                    (x, y, x + scale - 1, y + scale - 1),
-                    fill=self._hex_to_rgb(palette[value]),
-                )
-
-    def _render_group(self, image: Image.Image, group) -> None:
-        """Recursively render a group and all its children.
-
-        :param image: PIL Image to render to
-        :param group: Group object to render
-        """
-        if not group:
-            return
-
-        for item in group:
-            if hasattr(item, "text"):
-                self._render_label(image, item)
-            elif hasattr(item, "bitmap"):
-                self._render_tile_grid(image, item)
-            elif hasattr(item, "__iter__") and not isinstance(item, str):
-                self._render_group(image, item)
-
-    def render(self, root_group, target_scale: int = 1) -> Image.Image:
-        """Render the display root group to a pixel image.
+    def render(self, root_group, target_scale: int) -> Image.Image:
+        """Render the display root group to an image of the LED matrix.
 
         :param root_group: The root displayio.Group to render
-        :param target_scale: Scale factor for rendering (1 = native size, 20 = 20x for window)
+        :param target_scale: Size of each LED in image pixels
         :return: PIL Image of size (DISPLAY_WIDTH * target_scale, DISPLAY_HEIGHT * target_scale)
         """
-        self._render_scale = target_scale
-        width = DISPLAY_WIDTH * target_scale
-        height = DISPLAY_HEIGHT * target_scale
-        image = Image.new("RGB", (width, height), color=(0, 0, 0))
-        if root_group:
-            self._render_group(image, root_group)
-        return image
+        image = Image.new("RGB", (DISPLAY_WIDTH, DISPLAY_HEIGHT))
+        image.putdata([_led_color(color) for color in render_pixels(root_group)])
+        image = image.resize(
+            (DISPLAY_WIDTH * target_scale, DISPLAY_HEIGHT * target_scale),
+            Image.Resampling.NEAREST,
+        )
+        return ImageChops.multiply(image, self._led_mask(target_scale))
