@@ -45,7 +45,9 @@ class FakeKeys:
     Mimics the keypad.Keys API with an event queue.
     """
 
-    def __init__(self, pins: tuple, value_when_pressed: bool = False, pull: bool = True):
+    def __init__(
+        self, pins: tuple, value_when_pressed: bool = False, pull: bool = True
+    ):
         """Initialize fake keys.
 
         :param pins: Tuple of pin objects (not used in fake, but kept for API compatibility)
@@ -70,4 +72,3 @@ class FakeKeys:
         :param key_number: The key number (0-indexed) to release
         """
         self.events.push(key_number, False)
-

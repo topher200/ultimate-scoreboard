@@ -167,7 +167,9 @@ class DisplayManager:
 
     def _setup_timing_indicator(self):
         """Initialize the timing indicator bar on the bottom row of the screen."""
-        self.timing_indicator_bitmap = displayio.Bitmap(TIMING_INDICATOR_PIXEL_COUNT, 1, 2)
+        self.timing_indicator_bitmap = displayio.Bitmap(
+            TIMING_INDICATOR_PIXEL_COUNT, 1, 2
+        )
         palette = displayio.Palette(2)
         palette[0] = 0x000000
         palette[1] = TIMING_INDICATOR_COLOR

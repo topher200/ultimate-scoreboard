@@ -1,7 +1,5 @@
 """Tests for TimingIndicatorManager."""
 
-import pytest
-
 from src.display_manager import (
     TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
@@ -95,4 +93,3 @@ class TestTimingIndicatorManager:
             manager.remove_dot()
 
         assert manager.get_dot_count() == 0
-

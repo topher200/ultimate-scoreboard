@@ -2,8 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
-
 from src.network_manager import NetworkManager
 
 
@@ -21,7 +19,6 @@ class TestNetworkManager:
 
 
 class TestNetworkManagerTeamNames:
-    @pytest.mark.asyncio
     async def test_get_left_team_name_with_valid_data(
         self, network_manager, fake_matrix_portal
     ):
@@ -34,7 +31,6 @@ class TestNetworkManagerTeamNames:
 
         assert result == "Red Team"
 
-    @pytest.mark.asyncio
     async def test_get_right_team_name_with_valid_data(
         self, network_manager, fake_matrix_portal
     ):
@@ -47,7 +43,6 @@ class TestNetworkManagerTeamNames:
 
         assert result == "Blue Team"
 
-    @pytest.mark.asyncio
     async def test_show_connecting_called_on_successful_fetch(
         self, network_manager, fake_matrix_portal
     ):
@@ -64,7 +59,6 @@ class TestNetworkManagerTeamNames:
         mock_show_connecting.assert_any_call(True)
         mock_show_connecting.assert_any_call(False)
 
-    @pytest.mark.asyncio
     async def test_show_connecting_called_on_exception(
         self, network_manager, fake_matrix_portal
     ):

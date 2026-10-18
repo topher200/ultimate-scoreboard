@@ -1,6 +1,5 @@
 """Pytest configuration and fixtures for mocking CircuitPython modules."""
 
-import asyncio
 import sys
 from unittest.mock import MagicMock
 
@@ -58,17 +57,6 @@ label_module = MagicMock(Label=FakeLabel)
 sys.modules["adafruit_display_text"] = MagicMock(label=label_module)
 sys.modules["adafruit_display_text.label"] = label_module
 
-# Configure pytest-asyncio
-pytest_plugins = ("pytest_asyncio",)
-
-
-@pytest.fixture
-def event_loop():
-    """Create an event loop for async tests."""
-    loop = asyncio.new_event_loop()
-    yield loop
-    loop.close()
-
 
 @pytest.fixture
 def fake_matrix_portal():
@@ -111,7 +99,11 @@ def timing_indicator_manager():
 
 @pytest.fixture
 def game_controller(
-    score_manager, display_manager, network_manager, gender_manager, timing_indicator_manager
+    score_manager,
+    display_manager,
+    network_manager,
+    gender_manager,
+    timing_indicator_manager,
 ):
     """Create GameController instance with all managers."""
     return GameController(

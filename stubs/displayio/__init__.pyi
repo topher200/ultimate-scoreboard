@@ -4,6 +4,7 @@ from typing import Any, Protocol
 
 class _Layer(Protocol):
     """Protocol for displayable layers that can be added to groups."""
+
     x: int
     y: int
 
@@ -28,6 +29,7 @@ class Palette:
 
 class TileGrid(_Layer):
     """TileGrid display element."""
+
     x: int
     y: int
     def __init__(
@@ -36,5 +38,6 @@ class TileGrid(_Layer):
 
 class _VectorShape(_Layer):
     """Vector shape display element."""
+
     x: int
     y: int

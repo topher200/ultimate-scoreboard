@@ -20,5 +20,5 @@ class Label(_Layer):
         text: str = "",
         color: int | None = None,
         scale: int = 1,
-        **kwargs: Any
+        **kwargs: Any,
     ) -> None: ...

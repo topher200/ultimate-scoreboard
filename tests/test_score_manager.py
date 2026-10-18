@@ -1,7 +1,5 @@
 """Tests for ScoreManager using fake implementations."""
 
-import pytest
-
 from src.score_manager import ScoreEvent, ScoreManager
 
 
@@ -100,10 +98,10 @@ class TestScoreManager:
         assert score_manager.left_score == 0
         assert score_manager.right_score == 1
 
-        # Undo the right point — back to 0-0
+        # Undo the right point — undo_last_score pops it but leaves the score
         score_manager.undo_last_score()
         assert score_manager.left_score == 0
-        assert score_manager.right_score == 1  # undo_last_score only pops, doesn't decrement
+        assert score_manager.right_score == 1
 
         # Undo first reset — restores 1-0
         score_manager.undo_last_score()
