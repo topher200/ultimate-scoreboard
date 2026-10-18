@@ -19,11 +19,13 @@ from src.lab_screens import (
     COLOR_NAMES,
     FONTS,
     GENDERS,
+    LABELS,
     MOTIONS,
+    PAIR_DISTINCT,
     DrawnScreen,
     Pair,
     Screen,
-    round_two_screens,
+    round_three_screens,
 )
 from src.network_manager import NetworkManager
 from src.settings_page import _escape
@@ -39,7 +41,20 @@ _LENGTH_BYTES = 2
 RATING_VOTES = (("good", "Good"), ("ok", "OK"), ("bad", "Bad"))
 COMPARE_VOTES = (("left", "Left better"), ("same", "Same"), ("right", "Right better"))
 PAIR_VOTES = (("a", "A better"), ("same", "Same"), ("b", "B better"))
-VOTES = ("good", "ok", "bad", "left", "same", "right", "a", "b")
+DISTINCT_VOTES = (("easy", "Easy to tell apart"), ("hard", "Hard"), ("cannot", "Can't"))
+VOTES = (
+    "good",
+    "ok",
+    "bad",
+    "left",
+    "same",
+    "right",
+    "a",
+    "b",
+    "easy",
+    "hard",
+    "cannot",
+)
 MAX_NOTE_LENGTH = 40
 ID_OVERLAY_SECONDS = 3.0
 AUTO_ADVANCE_SECONDS = 8.0
@@ -157,7 +172,9 @@ class Lab:
         :param get_time: Callable returning current time in seconds
         """
         self._display = display
-        self._custom = Screen(CUSTOM_SCREEN_ID, "custom", left="yellow", right="cyan")
+        self._custom = Screen(
+            CUSTOM_SCREEN_ID, "custom", left="yellow", right="cyan", label="W1"
+        )
         self._items = list(items) + [self._custom]
         self._vote_store = vote_store
         self._votes = vote_store.load()
@@ -284,6 +301,8 @@ class Lab:
             ("right", COLOR_NAMES),
             ("gender", GENDERS),
             ("motion", MOTIONS),
+            ("gender_color", COLOR_NAMES),
+            ("label_style", LABELS),
             ("left_bg", BACKGROUND_NAMES),
             ("right_bg", BACKGROUND_NAMES),
         )
@@ -295,7 +314,8 @@ class Lab:
         custom.title = (
             f"custom: {custom.font}, {custom.left}/{custom.right} on"
             + f" {custom.left_bg}/{custom.right_bg},"
-            + f" gender {custom.gender} {custom.motion}{names}"
+            + f" gender {custom.gender_color} {custom.gender} {custom.motion},"
+            + f" label {custom.label_style}{names}"
         )
 
     def results(self) -> str:
@@ -336,13 +356,15 @@ class Lab:
                     ("right_bg", "Right background", BACKGROUND_NAMES),
                     ("gender", "Gender", GENDERS),
                     ("motion", "Gender motion", MOTIONS),
+                    ("gender_color", "Gender color", COLOR_NAMES),
+                    ("label_style", "W1 label", LABELS),
                 )
             )
             + f'<label><input type="checkbox" name="names"{checked}> Team names</label>'
         )
 
         if isinstance(item, Pair):
-            votes = PAIR_VOTES
+            votes = DISTINCT_VOTES if item.kind == PAIR_DISTINCT else PAIR_VOTES
             pair_buttons = (
                 '<div class="row">'
                 + "".join(
@@ -398,7 +420,7 @@ async def run_lab(
         which restarts into the scoreboard
     """
     display_manager = DisplayManager(matrixportal)
-    lab = Lab(matrixportal.display, round_two_screens(), VoteStore(nvm))
+    lab = Lab(matrixportal.display, round_three_screens(), VoteStore(nvm))
     network_manager = NetworkManager(network, display_manager, web_server, lab.respond)
     network_manager.connect()
     if not display_manager.qr_code_shown:
