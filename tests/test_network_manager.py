@@ -6,15 +6,10 @@ from unittest.mock import MagicMock
 import pytest
 
 from fakes import FakeNetwork
-from src.network_manager import (
-    ACCESS_POINT_QR_CODE_TEXT,
-    ACCESS_POINT_SSID,
-    SETTINGS_PAGE_PORT,
-)
+from src.network_manager import SETTINGS_PAGE_PORT
 from tests.qr_code import shows_qr_code
 
 URL = f"http://{FakeNetwork.IP_ADDRESS}:{SETTINGS_PAGE_PORT}/"
-ACCESS_POINT_URL = f"http://{FakeNetwork.ACCESS_POINT_IP_ADDRESS}:{SETTINGS_PAGE_PORT}/"
 
 
 async def _serve_briefly(network_manager):
@@ -53,6 +48,21 @@ class TestNetworkManagerConnect:
             (False,),
         ]
 
+    def test_failed_join_shows_no_qr_code_and_can_retry(
+        self, network_manager, display_manager, fake_network
+    ):
+        fake_network.connect_error = OSError("no Wi-Fi")
+
+        network_manager.connect()
+
+        assert network_manager.url is None
+        assert not display_manager.qr_code_shown
+
+        fake_network.connect_error = None
+        network_manager.connect()
+
+        assert shows_qr_code(display_manager, URL)
+
     def test_failed_server_start_shows_no_qr_code_and_can_retry(
         self, network_manager, display_manager, fake_web_server
     ):
@@ -68,51 +78,6 @@ class TestNetworkManagerConnect:
         network_manager.connect()
 
         assert network_manager.url == URL
-
-
-class TestNetworkManagerAccessPoint:
-    @pytest.fixture(autouse=True)
-    def no_wifi(self, fake_network):
-        fake_network.connect_error = OSError("no Wi-Fi")
-
-    def test_failed_join_hosts_access_point(
-        self, network_manager, fake_network, fake_web_server
-    ):
-        network_manager.connect()
-
-        assert fake_network.access_point_ssid == ACCESS_POINT_SSID
-        assert fake_web_server.host == FakeNetwork.ACCESS_POINT_IP_ADDRESS
-        assert network_manager.url == ACCESS_POINT_URL
-
-    def test_shows_wifi_qr_code_until_a_device_joins(
-        self, network_manager, display_manager
-    ):
-        network_manager.connect()
-
-        assert shows_qr_code(display_manager, ACCESS_POINT_QR_CODE_TEXT)
-
-    async def test_shows_url_qr_code_after_a_device_joins(
-        self, network_manager, display_manager, fake_network
-    ):
-        network_manager.connect()
-        await _serve_briefly(network_manager)
-        assert shows_qr_code(display_manager, ACCESS_POINT_QR_CODE_TEXT)
-
-        fake_network.access_point_clients = 1
-        await _serve_briefly(network_manager)
-
-        assert shows_qr_code(display_manager, ACCESS_POINT_URL)
-
-    async def test_dismissed_qr_code_stays_hidden_after_a_device_joins(
-        self, network_manager, display_manager, fake_network
-    ):
-        network_manager.connect()
-        display_manager.hide_qr_code()
-
-        fake_network.access_point_clients = 1
-        await _serve_briefly(network_manager)
-
-        assert not display_manager.qr_code_shown
 
 
 class TestNetworkManagerServe:

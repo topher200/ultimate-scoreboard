@@ -1,14 +1,11 @@
 """Tests for the DisplayManager QR code."""
 
-import pytest
-
 from src.display_manager import (
     DISPLAY_HEIGHT,
     DISPLAY_WIDTH,
     QR_CODE_QUIET_ZONE_WIDTH,
     make_qr_matrix,
 )
-from src.network_manager import ACCESS_POINT_QR_CODE_TEXT
 from tests.qr_code import shows_qr_code
 
 URL = "http://192.168.100.200:8080/"
@@ -28,9 +25,8 @@ class TestDisplayQrCode:
         display_manager.hide_qr_code()
         assert not display_manager.qr_code_shown
 
-    @pytest.mark.parametrize("text", [URL, ACCESS_POINT_QR_CODE_TEXT])
-    def test_qr_code_fits_with_its_quiet_zone(self, text):
-        matrix = make_qr_matrix(text)
+    def test_longest_url_fits_with_its_quiet_zone(self):
+        matrix = make_qr_matrix(URL)
 
         assert matrix.height + 2 * QR_CODE_QUIET_ZONE_WIDTH <= DISPLAY_HEIGHT
 

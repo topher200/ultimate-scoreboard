@@ -14,18 +14,6 @@ class NetworkLike(Protocol):
         """
         ...
 
-    def start_access_point(self, ssid: str) -> str:
-        """Start an open Wi-Fi network for phones to join.
-
-        :param ssid: Name of the network
-        :return: The board's IP address on that network
-        """
-        ...
-
-    def access_point_has_clients(self) -> bool:
-        """True when a device has joined the access point."""
-        ...
-
 
 class WebServerLike(Protocol):
     """Protocol defining the settings page server."""

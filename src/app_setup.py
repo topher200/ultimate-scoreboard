@@ -41,7 +41,7 @@ def create_managers(matrixportal, keys, nvm, network, web_server) -> Managers:
     :param matrixportal: MatrixPortal instance (real or simulator)
     :param keys: Keys instance (real or fake) for button input
     :param nvm: Byte buffer that keeps settings across reboots
-    :param network: Network that joins Wi-Fi or hosts an access point (real or simulator)
+    :param network: Network that joins Wi-Fi (real or simulator)
     :param web_server: Server for the settings page (real or simulator)
     :return: Managers named tuple containing all initialized managers
     """
