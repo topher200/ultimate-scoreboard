@@ -22,7 +22,7 @@ from src.lab_screens import (
     DrawnScreen,
     Pair,
     Screen,
-    round_three_screens,
+    round_four_screens,
 )
 from src.settings_store import LEFT_TEAM_NAME, SettingsStore
 from tests.test_display_renderer import _run
@@ -289,22 +289,22 @@ class TestMotion:
         assert palette[5] == 0
 
 
-def test_round_three_ids_are_unique():
-    ids = [item.screen_id for item in round_three_screens()]
+def test_round_four_ids_are_unique():
+    ids = [item.screen_id for item in round_four_screens()]
 
     assert len(ids) == len(set(ids))
 
 
-def test_round_three_text_overlaps_nothing():
+def test_round_four_text_overlaps_nothing():
     """Test that no label lights a pixel that the frame or another label lights."""
     result = _run(
         """
 import json
 from simulator.display_renderer import render_pixels
-from src.lab_screens import LAYOUT_CURRENT, DrawnScreen, Pair, round_three_screens
+from src.lab_screens import LAYOUT_CURRENT, DrawnScreen, Pair, round_four_screens
 
 screens = []
-for item in round_three_screens():
+for item in round_four_screens():
     screens += [item.a, item.b] if isinstance(item, Pair) else [item]
 bad = []
 for screen in screens:
@@ -317,9 +317,13 @@ for screen in screens:
         for other in layers:
             other.hidden = other is not layer
         lit.append({i for i, color in enumerate(render_pixels(group)) if color})
+    texts = [getattr(layer, "text", None) for layer in layers]
     for i, pixels in enumerate(lit):
-        for other in lit[i + 1:]:
-            if pixels & other:
+        for j in range(i + 1, len(lit)):
+            # A bold score is two copies of the same text
+            if texts[i] is not None and texts[i] == texts[j]:
+                continue
+            if pixels & lit[j]:
                 bad.append(screen.title)
 print(json.dumps(sorted(set(bad))))
 """

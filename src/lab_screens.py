@@ -152,6 +152,9 @@ class Screen:
         label: str = "",
         label_style: str = LABEL_NONE,
         layout: str = LAYOUT_LAB,
+        bold: bool = False,
+        names_level: int = 3,
+        gender_level: int = 3,
     ):
         self.screen_id = screen_id
         self.title = title
@@ -170,6 +173,9 @@ class Screen:
         self.label = label
         self.label_style = label_style
         self.layout = layout
+        self.bold = bold
+        self.names_level = names_level
+        self.gender_level = gender_level
 
 
 class Pair:
@@ -191,80 +197,76 @@ class Pair:
 
 def _scoreboard(
     title: str,
-    names: bool = True,
-    label_style: str = LABEL_STACKED,
+    screen_id: str = "",
     gender: str = "W",
-    gender_color: str = "magenta",
-    left: str = "yellow",
-    right: str = "cyan",
+    gender_color: str = "cyan",
+    left: str = "white",
+    right: str = "yellow",
+    **options,
 ) -> Screen:
-    """Return a full scoreboard with a 3 px dashed frame and a matchup label."""
+    """Return the round 3 winner: names, a W/1 label between the scores, and a
+    3 px dashed frame. A gender_color of "none" leaves out the frame."""
+    framed = gender_color != "none"
     return Screen(
-        "",
+        screen_id,
         title,
         font=FONT_TERMINAL,
         left=left,
         right=right,
-        names=names,
-        gender=GENDER_THICK_FRAME,
-        gender_color=gender_color,
+        names=True,
+        gender=GENDER_THICK_FRAME if framed else GENDER_NONE,
+        gender_color=gender_color if framed else "white",
         motion=MOTION_MARCH_THEN_HOLD if gender == "W" else MOTION_DASHES,
         label=f"{gender}1",
-        label_style=label_style,
+        label_style=LABEL_STACKED,
+        **options,
     )
 
 
-def _layout_pairs() -> list:
-    current = Screen("", "current scoreboard", layout=LAYOUT_CURRENT)
-    names_stacked = _scoreboard("names, W/1 between scores")
-    no_names_stacked = _scoreboard("no names, W/1 between scores", names=False)
-    no_names_under = _scoreboard(
-        "no names, W1 under scores", names=False, label_style=LABEL_UNDER
-    )
-    pairs = (
-        (current, names_stacked),
-        (names_stacked, no_names_stacked),
-        (no_names_stacked, no_names_under),
-    )
+def _wmp_color_screens() -> list:
+    colors = ("magenta", "cyan", "sky", "orange", "amber", "lime", "spring", "red")
     return [
-        Pair(f"L{i + 1}", f"{a.title} vs {b.title}", a, b)
-        for i, (a, b) in enumerate(pairs)
+        _scoreboard(f"WMP {color}", f"W{i + 1}", gender_color=color)
+        for i, color in enumerate(colors)
     ]
 
 
 def _distinct_pairs() -> list:
-    wmp = _scoreboard("WMP magenta")
-    return [
-        Pair(
-            f"M{i + 1}",
-            f"WMP magenta vs MMP {color}",
-            wmp,
-            _scoreboard(f"MMP {color}", gender="M", gender_color=color),
-            kind=PAIR_DISTINCT,
-        )
-        for i, color in enumerate(("white", "green", "amber"))
-    ]
-
-
-def _color_pairs() -> list:
-    pairs = (
-        (("yellow", "cyan"), ("white", "cyan")),
-        (("white", "cyan"), ("white", "yellow")),
+    combos = (
+        ("cyan", "white"),
+        ("orange", "white"),
+        ("cyan", "amber"),
+        ("orange", "cyan"),
+        ("cyan", "none"),
     )
     return [
         Pair(
-            f"C{i + 1}",
-            f"{a[0]}/{a[1]} vs {b[0]}/{b[1]}",
-            _scoreboard(f"{a[0]}/{a[1]}", left=a[0], right=a[1]),
-            _scoreboard(f"{b[0]}/{b[1]}", left=b[0], right=b[1]),
+            f"M{i + 1}",
+            f"WMP {wmp} vs MMP {mmp}",
+            _scoreboard(f"WMP {wmp}", gender_color=wmp),
+            _scoreboard(f"MMP {mmp}", gender="M", gender_color=mmp),
+            kind=PAIR_DISTINCT,
         )
-        for i, (a, b) in enumerate(pairs)
+        for i, (wmp, mmp) in enumerate(combos)
     ]
 
 
-def round_three_screens() -> list:
-    """Return the third round of pairs, in the order the lab shows them."""
-    return _layout_pairs() + _distinct_pairs() + _color_pairs()
+def _tweak_pairs() -> list:
+    plain = _scoreboard("plain")
+    tweaks = (
+        _scoreboard("bold scores", bold=True),
+        _scoreboard("names at 2/3 brightness", names_level=2),
+        _scoreboard("frame at 2/3 brightness", gender_level=2),
+        _scoreboard("white/yellow swapped", left="yellow", right="white"),
+    )
+    return [
+        Pair(f"X{i + 1}", f"plain vs {b.title}", plain, b) for i, b in enumerate(tweaks)
+    ]
+
+
+def round_four_screens() -> list:
+    """Return the fourth round of screens and pairs, in the order the lab shows them."""
+    return _wmp_color_screens() + _distinct_pairs() + _tweak_pairs()
 
 
 class _Capture:
@@ -346,7 +348,9 @@ class DrawnScreen:
 
     def __init__(self, screen: Screen):
         self.screen = screen
-        self._gender_color = COLORS[screen.gender_color]
+        self._gender_color = _scaled_color(
+            COLORS[screen.gender_color], screen.gender_level
+        )
         self._palette = displayio.Palette(7)
         self._bitmap = displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 7)
         self._frame: list = []
@@ -411,33 +415,43 @@ class DrawnScreen:
         if under:
             content += SMALL_INK_HEIGHT + INK_GAP
         top = frame_width + (DISPLAY_HEIGHT - 2 * frame_width - content) // 2
-        left_color, right_color = COLORS[screen.left], COLORS[screen.right]
-        right_edge = DISPLAY_WIDTH - inset
         if screen.names:
             self._draw_names(inset, top)
             top += SMALL_INK_HEIGHT + INK_GAP
         self._draw_matchup_label(top)
+        self._draw_scores(inset, top)
 
+    def _draw_scores(self, inset: int, top: int) -> None:
+        """Draw the scores with their top lit row at `top`, bold or not."""
+        screen = self.screen
+        left_color, right_color = COLORS[screen.left], COLORS[screen.right]
+        right_edge = DISPLAY_WIDTH - inset
         y = top - LARGE_INK_TOP
         left_text, right_text = str(screen.scores[0]), str(screen.scores[1])
+        offsets = (0, 1) if screen.bold else (0,)
         if screen.label_style == LABEL_STACKED:
             left_x = inset - LARGE_INK_LEFT
-            self._add_text(left_text, 2, left_color, (0.0, 0.0), (left_x, y))
-            right_x = right_edge + LARGE_INK_RIGHT_PAD
-            self._add_text(right_text, 2, right_color, (1.0, 0.0), (right_x, y))
+            right_x = right_edge + LARGE_INK_RIGHT_PAD - offsets[-1]
+            anchors = ((0.0, 0.0), (1.0, 0.0))
         else:
-            quarter = DISPLAY_WIDTH // 4
-            self._add_text(left_text, 2, left_color, (0.5, 0.0), (quarter, y))
-            right_x = DISPLAY_WIDTH - quarter
-            self._add_text(right_text, 2, right_color, (0.5, 0.0), (right_x, y))
+            left_x = DISPLAY_WIDTH // 4
+            right_x = DISPLAY_WIDTH - left_x
+            anchors = ((0.5, 0.0), (0.5, 0.0))
+        for offset in offsets:
+            position = (left_x + offset, y)
+            self._add_text(left_text, 2, left_color, anchors[0], position)
+            position = (right_x + offset, y)
+            self._add_text(right_text, 2, right_color, anchors[1], position)
 
     def _draw_names(self, inset: int, top: int) -> None:
         """Draw the team names with their top lit row at `top`."""
         screen = self.screen
         y = top - SMALL_INK_TOP
-        self._add_text("AWAY", 1, COLORS[screen.left], (0.0, 0.0), (inset, y))
+        left_color = _scaled_color(COLORS[screen.left], screen.names_level)
+        right_color = _scaled_color(COLORS[screen.right], screen.names_level)
+        self._add_text("AWAY", 1, left_color, (0.0, 0.0), (inset, y))
         right = DISPLAY_WIDTH - inset + SMALL_INK_RIGHT_PAD
-        self._add_text("HOME", 1, COLORS[screen.right], (1.0, 0.0), (right, y))
+        self._add_text("HOME", 1, right_color, (1.0, 0.0), (right, y))
 
     def _draw_matchup_label(self, scores_top: int) -> None:
         """Draw the matchup label between or under scores whose top lit row is `scores_top`."""
