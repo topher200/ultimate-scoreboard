@@ -2,14 +2,18 @@
 
 # Hold threshold for long simultaneous press (seconds)
 SIMULTANEOUS_HOLD_THRESHOLD = 1.0
+# Hold threshold for a longer simultaneous press, after the first (seconds)
+LONG_HOLD_THRESHOLD = 5.0
 
 ACTION_SINGLE = "single"
 ACTION_CHORD = "chord"
 ACTION_HOLD_BOTH = "hold_both"
+ACTION_LONG_HOLD_BOTH = "long_hold_both"
 
 _STATE_IDLE = "idle"
 _STATE_SINGLE_HELD = "single_held"
 _STATE_BOTH_DOWN = "both_down"
+_STATE_BOTH_HELD = "both_held"
 _STATE_WAIT_RELEASE = "wait_release"
 
 
@@ -24,6 +28,7 @@ class ButtonStateMachine:
       While A stays down, each further tap of B repeats the chord.
     - Both down for SIMULTANEOUS_HOLD_THRESHOLD: (ACTION_HOLD_BOTH,),
       whichever button went down first
+    - Both still down at LONG_HOLD_THRESHOLD: (ACTION_LONG_HOLD_BOTH,)
 
     Both buttons pressed in the same step have no order, so a quick release
     of both returns no action.
@@ -65,6 +70,8 @@ class ButtonStateMachine:
             return self._step_single_held(now)
         if self._state == _STATE_BOTH_DOWN:
             return self._step_both_down(now)
+        if self._state == _STATE_BOTH_HELD:
+            return self._step_both_held(now)
         return self._step_wait_release()
 
     def _other(self, button: str) -> str:
@@ -108,8 +115,17 @@ class ButtonStateMachine:
             return None
         if now - self._both_down_since >= SIMULTANEOUS_HOLD_THRESHOLD:
             self._held = None
-            self._state = _STATE_WAIT_RELEASE
+            self._state = _STATE_BOTH_HELD
             return (ACTION_HOLD_BOTH,)
+        return None
+
+    def _step_both_held(self, now: float) -> tuple | None:
+        if not all(self._down.values()):
+            self._state = _STATE_WAIT_RELEASE
+            return None
+        if now - self._both_down_since >= LONG_HOLD_THRESHOLD:
+            self._state = _STATE_WAIT_RELEASE
+            return (ACTION_LONG_HOLD_BOTH,)
         return None
 
     def _step_wait_release(self) -> None:

@@ -148,11 +148,12 @@ def dismiss_qr_code_first(display_manager: DisplayManager, callback: Callable):
     return wrapped
 
 
-async def run_tasks(managers: Managers, *extra_tasks) -> None:
+async def run_tasks(managers: Managers, *extra_tasks, enter_lab=None) -> None:
     """Run the button monitor, the timing indicator, the settings page, and any extra tasks.
 
     :param managers: Managers from create_managers
     :param extra_tasks: Additional coroutines to run alongside
+    :param enter_lab: Optional async callback for holding both buttons longer
     """
     display_manager = managers.display_manager
     game_controller = managers.game_controller
@@ -169,6 +170,7 @@ async def run_tasks(managers: Managers, *extra_tasks) -> None:
                 chord: dismiss_qr_code_first(display_manager, callback)
                 for chord, callback in create_chord_callbacks(game_controller).items()
             },
+            long_hold_both_callback=enter_lab,
         ),
         managers.network_manager.serve(),
         create_timing_indicator_task(

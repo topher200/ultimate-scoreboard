@@ -3,7 +3,9 @@
 from src.button_state_machine import (
     ACTION_CHORD,
     ACTION_HOLD_BOTH,
+    ACTION_LONG_HOLD_BOTH,
     ACTION_SINGLE,
+    LONG_HOLD_THRESHOLD,
     SIMULTANEOUS_HOLD_THRESHOLD,
     ButtonStateMachine,
 )
@@ -15,6 +17,7 @@ SINGLE_R = (ACTION_SINGLE, R)
 CHORD_LR = (ACTION_CHORD, L, R)
 CHORD_RL = (ACTION_CHORD, R, L)
 HOLD_BOTH = (ACTION_HOLD_BOTH,)
+LONG_HOLD_BOTH = (ACTION_LONG_HOLD_BOTH,)
 
 
 def press(button):
@@ -128,3 +131,26 @@ class TestHoldBoth:
         assert d.actions == []
         d.step(release(R))
         assert d.actions == [SINGLE_R]
+
+
+class TestLongHoldBoth:
+    def test_fires_after_hold_both(self):
+        d = Driver().step(press(L), press(R))
+        d.step(wait=SIMULTANEOUS_HOLD_THRESHOLD)
+        d.step(wait=LONG_HOLD_THRESHOLD - SIMULTANEOUS_HOLD_THRESHOLD)
+        assert d.actions == [HOLD_BOTH, LONG_HOLD_BOTH]
+        d.step(release(L), release(R))
+        assert d.actions == [HOLD_BOTH, LONG_HOLD_BOTH]
+        assert d.machine.is_idle
+
+    def test_not_before_threshold(self):
+        d = Driver().step(press(L), press(R))
+        d.step(wait=LONG_HOLD_THRESHOLD - 0.1)
+        assert d.actions == [HOLD_BOTH]
+
+    def test_release_before_threshold_cancels(self):
+        d = Driver().step(press(L), press(R))
+        d.step(wait=SIMULTANEOUS_HOLD_THRESHOLD)
+        d.step(release(L)).step(press(L)).step(wait=LONG_HOLD_THRESHOLD)
+        d.step(release(L), release(R))
+        assert d.actions == [HOLD_BOTH]

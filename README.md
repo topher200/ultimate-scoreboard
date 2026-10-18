@@ -11,10 +11,19 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 | Both held ~1s | Reset scores to 0-0 (undoable) |
 | Hold Left, tap Right | Toggle gender matchup and retry joining Wi-Fi |
 | Hold Right, tap Left | Undo last point |
+| Both held ~5s | Restart into the legibility lab, or back to the scoreboard |
 
 - **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page. Scan it with a phone on the same network, then enter the names and tap Save. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
 - **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
+
+## Legibility Lab
+
+The lab shows test screens with different colors, fonts, and layouts, so you can find the screens that are easiest to read from across the field. To start the lab, hold both buttons for about 5 seconds. The scores reset at 1 second, and then the board restarts into the lab. Hold both buttons for 5 seconds again to restart into the scoreboard. The board joins Wi-Fi and shows a QR code for the lab page. Scan it, then walk away from the board and use the page to step through the screens and vote Good, OK, or Bad on each. A vote moves to the next screen. The page lists all votes, and the board keeps them across reboots.
+
+The board shows each screen's ID in the top-left corner for a few seconds. Without Wi-Fi, use the left and right buttons to step through the screens, and hold both to turn auto-advance on or off.
+
+The custom screen (Z1) shows a font, colors, and layout that you pick on the page. Run the lab in the simulator with `just sim-lab`.
 
 ## Board Setup
 

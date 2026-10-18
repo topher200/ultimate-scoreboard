@@ -1,12 +1,14 @@
 """Local development entry point with visual display simulator."""
 
 import asyncio
+import sys
 
 from fakes.fake_keypad import FakeKeys
 from simulator.display_window import DisplayWindow
 from simulator.simulator_matrixportal import SimulatorMatrixPortal
 from simulator.simulator_web_server import SimulatorNetwork, SimulatorWebServer
 from src.app_setup import create_managers, initialize_application, run_tasks
+from src.lab import run_lab
 
 SIMULATOR_NVM_SIZE = 8192
 
@@ -27,17 +29,16 @@ async def local_main():
         pull=True,
     )
 
-    # Initialize managers using shared setup
-    managers = create_managers(
-        matrixportal,
-        keys,
-        bytearray(SIMULATOR_NVM_SIZE),
-        SimulatorNetwork(),
-        SimulatorWebServer(),
-    )
-
-    # Initialize application state
-    initialize_application(managers)
+    nvm = bytearray(SIMULATOR_NVM_SIZE)
+    lab_mode = "--lab" in sys.argv
+    managers = None
+    if not lab_mode:
+        # Initialize managers using shared setup
+        managers = create_managers(
+            matrixportal, keys, nvm, SimulatorNetwork(), SimulatorWebServer()
+        )
+        # Initialize application state
+        initialize_application(managers)
 
     # Initialize Pygame display window (simulator-specific)
     # Pass keys instance to enable keyboard button simulation
@@ -57,7 +58,17 @@ async def local_main():
                 task.cancel()
 
     try:
-        await run_tasks(managers, run_display_updates())
+        if managers is None:
+            await run_lab(
+                matrixportal,
+                keys,
+                nvm,
+                SimulatorNetwork(),
+                SimulatorWebServer(),
+                run_display_updates(),
+            )
+        else:
+            await run_tasks(managers, run_display_updates())
     except (KeyboardInterrupt, asyncio.CancelledError):
         print("\nShutting down...")
     finally:

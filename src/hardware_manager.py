@@ -7,6 +7,7 @@ import keypad
 
 from src.button_state_machine import (
     ACTION_CHORD,
+    ACTION_HOLD_BOTH,
     ACTION_SINGLE,
     ButtonStateMachine,
 )
@@ -77,6 +78,7 @@ class HardwareManager:
         callbacks: dict[str, Callable],
         hold_both_callback: Callable | None = None,
         chord_callbacks: dict[tuple[str, str], Callable] | None = None,
+        long_hold_both_callback: Callable | None = None,
     ) -> None:
         """Monitor button presses and call registered callbacks.
 
@@ -87,6 +89,8 @@ class HardwareManager:
         :param hold_both_callback: Optional async callback for holding both buttons.
         :param chord_callbacks: Optional dictionary mapping (held_button, tapped_button)
             tuples to async callbacks.
+        :param long_hold_both_callback: Optional async callback for holding both
+            buttons longer.
         """
         if chord_callbacks is None:
             chord_callbacks = {}
@@ -99,8 +103,10 @@ class HardwareManager:
                     callback = callbacks.get(action[1])
                 elif action[0] == ACTION_CHORD:
                     callback = chord_callbacks.get((action[1], action[2]))
-                else:
+                elif action[0] == ACTION_HOLD_BOTH:
                     callback = hold_both_callback
+                else:
+                    callback = long_hold_both_callback
                 if callback is not None:
                     await callback()
 
