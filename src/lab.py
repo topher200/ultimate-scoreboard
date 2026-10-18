@@ -8,9 +8,6 @@ import asyncio
 import json
 import time
 
-import terminalio
-from adafruit_display_text import label
-
 from src.compat import Callable
 from src.display_manager import DisplayManager
 from src.hardware_manager import BUTTON_LEFT, BUTTON_RIGHT, HardwareManager
@@ -24,7 +21,7 @@ from src.lab_screens import (
     DrawnScreen,
     Pair,
     Screen,
-    round_five_screens,
+    round_seven_screens,
 )
 from src.network_manager import NetworkManager
 from src.settings_page import _escape
@@ -55,10 +52,8 @@ VOTES = (
     "cannot",
 )
 MAX_NOTE_LENGTH = 40
-ID_OVERLAY_SECONDS = 3.0
 AUTO_ADVANCE_SECONDS = 8.0
 LAB_POLL_INTERVAL = 0.1
-ID_OVERLAY_COLOR = 0x555555
 CUSTOM_SCREEN_ID = "Z1"
 
 _PAGE = """<!doctype html>
@@ -181,7 +176,6 @@ class Lab:
         self._index = 0
         self._showing_b = False
         self._drawn: DrawnScreen | None = None
-        self._overlay: label.Label | None = None
         self._shown_at = 0.0
         self.auto_advance = False
 
@@ -209,7 +203,7 @@ class Lab:
         return drawn is not None and self._display.root_group is drawn.group
 
     def show(self, index: int, showing_b: bool = False) -> None:
-        """Show the item at `index`, with its ID in the corner for a few seconds.
+        """Show the item at `index`.
 
         :param index: Position of the item, which wraps around
         :param showing_b: Whether a Pair shows its B screen
@@ -218,20 +212,9 @@ class Lab:
         self._showing_b = showing_b
         item = self.item
         drawn = DrawnScreen(self.screen)
-        group = drawn.group
         side = (" B" if showing_b else " A") if isinstance(item, Pair) else ""
-        overlay = label.Label(
-            terminalio.FONT,
-            text=item.screen_id + side,
-            color=ID_OVERLAY_COLOR,
-            background_color=0x000000,
-            anchor_point=(0.0, 0.0),
-            anchored_position=(0, 0),
-        )
-        group.append(overlay)
-        self._overlay = overlay
         self._drawn = drawn
-        self._display.root_group = group
+        self._display.root_group = drawn.group
         self._shown_at = self._get_time()
         print(f"Lab screen {item.screen_id}{side}: {self.screen.title}")
 
@@ -246,7 +229,7 @@ class Lab:
         self.show(self._index)
 
     def tick(self) -> None:
-        """Animate the screen, hide the ID overlay, and advance when auto-advance is on."""
+        """Animate the screen, and advance when auto-advance is on."""
         drawn = self._drawn
         if drawn is None or not self.shown:
             return
@@ -255,8 +238,6 @@ class Lab:
             self.show(self._index + 1)
             return
         drawn.animate(elapsed)
-        if self._overlay is not None and elapsed >= ID_OVERLAY_SECONDS:
-            self._overlay.hidden = True
 
     async def run(self) -> None:
         """Run tick forever."""
@@ -363,7 +344,7 @@ class Lab:
         )
 
         if isinstance(item, Pair):
-            votes = PAIR_VOTES
+            votes = RATING_VOTES if item.rating else PAIR_VOTES
             pair_buttons = (
                 '<div class="row">'
                 + "".join(
@@ -422,7 +403,7 @@ async def run_lab(
         which restarts into the scoreboard
     """
     display_manager = DisplayManager(matrixportal)
-    lab = Lab(matrixportal.display, round_five_screens(), VoteStore(nvm))
+    lab = Lab(matrixportal.display, round_seven_screens(), VoteStore(nvm))
     network_manager = NetworkManager(network, display_manager, web_server, lab.respond)
     network_manager.connect()
     if not display_manager.qr_code_shown:
