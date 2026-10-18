@@ -5,7 +5,9 @@ import pytest
 from src.settings_store import (
     DEFAULT_SETTINGS,
     LEFT_TEAM_NAME,
+    MARCH_WMP_FRAME,
     RIGHT_TEAM_NAME,
+    SHOW_WMP_FRAME,
     SettingsStore,
 )
 
@@ -20,20 +22,28 @@ class TestSettingsStore:
         assert store.load() == DEFAULT_SETTINGS
 
     def test_save_then_load(self, settings_store):
-        settings_store.save({LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"})
-
-        assert settings_store.load() == {
+        saved = {
             LEFT_TEAM_NAME: "Phoenix",
             RIGHT_TEAM_NAME: "Tigers",
+            SHOW_WMP_FRAME: False,
+            MARCH_WMP_FRAME: False,
         }
+        settings_store.save(saved)
+
+        assert settings_store.load() == saved
 
     def test_missing_and_unknown_keys(self, settings_store):
         settings_store.save({LEFT_TEAM_NAME: "Phoenix", "unknown": "x"})
 
         assert settings_store.load() == {
+            **DEFAULT_SETTINGS,
             LEFT_TEAM_NAME: "Phoenix",
-            RIGHT_TEAM_NAME: DEFAULT_SETTINGS[RIGHT_TEAM_NAME],
         }
+
+    def test_values_of_the_wrong_type_load_defaults(self, settings_store):
+        settings_store.save({LEFT_TEAM_NAME: 5, SHOW_WMP_FRAME: "no"})
+
+        assert settings_store.load() == DEFAULT_SETTINGS
 
     def test_corrupt_json_loads_defaults(self):
         nvm = bytearray(64)

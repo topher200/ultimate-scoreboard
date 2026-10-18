@@ -10,7 +10,13 @@ from src.settings_page import (
     decode_form,
     decode_form_value,
 )
-from src.settings_store import DEFAULT_SETTINGS, LEFT_TEAM_NAME, RIGHT_TEAM_NAME
+from src.settings_store import (
+    DEFAULT_SETTINGS,
+    LEFT_TEAM_NAME,
+    MARCH_WMP_FRAME,
+    RIGHT_TEAM_NAME,
+    SHOW_WMP_FRAME,
+)
 
 
 @pytest.fixture
@@ -43,7 +49,11 @@ class TestSettingsPage:
     ):
         settings_page.save({LEFT_TEAM_NAME: " Phoenix ", RIGHT_TEAM_NAME: "Tigers"})
 
-        expected = {LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"}
+        expected = {
+            **DEFAULT_SETTINGS,
+            LEFT_TEAM_NAME: "Phoenix",
+            RIGHT_TEAM_NAME: "Tigers",
+        }
         assert settings_store.load() == expected
         on_save.assert_called_once_with(expected)
 
@@ -64,14 +74,41 @@ class TestSettingsPage:
     def test_fields_missing_from_the_form_keep_their_saved_values(
         self, settings_page, settings_store
     ):
-        settings_store.save({LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"})
+        saved = {
+            LEFT_TEAM_NAME: "Phoenix",
+            RIGHT_TEAM_NAME: "Tigers",
+            SHOW_WMP_FRAME: False,
+            MARCH_WMP_FRAME: False,
+        }
+        settings_store.save(saved)
 
         settings_page.save({})
 
-        assert settings_store.load() == {
-            LEFT_TEAM_NAME: "Phoenix",
-            RIGHT_TEAM_NAME: "Tigers",
-        }
+        assert settings_store.load() == saved
+
+    def test_checkboxes_default_to_checked(self, settings_page):
+        html = settings_page.render()
+
+        for key in (SHOW_WMP_FRAME, MARCH_WMP_FRAME):
+            assert f'name="{key}" value="1" checked>' in html
+
+    def test_unchecked_boxes_save_false(self, settings_page, settings_store):
+        settings_page.save({SHOW_WMP_FRAME: "0", MARCH_WMP_FRAME: "0"})
+        html = settings_page.render()
+
+        settings = settings_store.load()
+        assert settings[SHOW_WMP_FRAME] is False
+        assert settings[MARCH_WMP_FRAME] is False
+        assert 'value="1" checked' not in html
+
+    def test_checked_boxes_save_true(self, settings_page, settings_store):
+        settings_store.save({SHOW_WMP_FRAME: False, MARCH_WMP_FRAME: False})
+
+        settings_page.save({SHOW_WMP_FRAME: "1", MARCH_WMP_FRAME: "1"})
+
+        settings = settings_store.load()
+        assert settings[SHOW_WMP_FRAME] is True
+        assert settings[MARCH_WMP_FRAME] is True
 
     def test_long_names_are_cut_to_max_length(self, settings_page, settings_store):
         settings_page.save({LEFT_TEAM_NAME: "x" * 100})

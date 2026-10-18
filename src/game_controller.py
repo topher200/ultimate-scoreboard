@@ -5,7 +5,12 @@ from src.gender_manager import GenderManager
 from src.log import log
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreEvent, ScoreManager
-from src.settings_store import LEFT_TEAM_NAME, RIGHT_TEAM_NAME
+from src.settings_store import (
+    LEFT_TEAM_NAME,
+    MARCH_WMP_FRAME,
+    RIGHT_TEAM_NAME,
+    SHOW_WMP_FRAME,
+)
 from src.timing_indicator import TimingIndicatorManager
 
 
@@ -105,11 +110,14 @@ class GameController:
         self._display_manager.set_team_names(left_team, right_team)
 
     def apply_settings(self, settings: dict) -> None:
-        """Show the team names from `settings`."""
+        """Show the team names and frames from `settings`."""
         left_team = settings[LEFT_TEAM_NAME]
         right_team = settings[RIGHT_TEAM_NAME]
         log(f"Team names: {left_team} vs {right_team}")
         self.set_team_names(left_team, right_team)
+        self._display_manager.set_frame_options(
+            settings[SHOW_WMP_FRAME], settings[MARCH_WMP_FRAME]
+        )
 
     def take_points_scored(self) -> int:
         """Return the number of points added since the last call."""

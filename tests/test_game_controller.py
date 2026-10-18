@@ -8,7 +8,12 @@ from src.display_manager import (
     RIGHT_TEAM,
     RIGHT_TEAM_SCORE,
 )
-from src.settings_store import DEFAULT_SETTINGS, LEFT_TEAM_NAME, RIGHT_TEAM_NAME
+from src.settings_store import (
+    DEFAULT_SETTINGS,
+    LEFT_TEAM_NAME,
+    RIGHT_TEAM_NAME,
+    SHOW_WMP_FRAME,
+)
 
 
 class TestGenderMatchupDisplay:
@@ -227,11 +232,19 @@ class TestGameControllerKeepsScore:
     def test_apply_settings_updates_display(self, display_manager, game_controller):
         """Test that apply_settings shows the team names from settings."""
         game_controller.apply_settings(
-            {LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"}
+            {**DEFAULT_SETTINGS, LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"}
         )
 
         assert display_manager._labels[LEFT_TEAM].text == "Phoenix"
         assert display_manager._labels[RIGHT_TEAM].text == "Tigers"
+
+    def test_apply_settings_hides_frame(self, display_manager, game_controller):
+        """Test that apply_settings hides the frame when SHOW_WMP_FRAME is off."""
+        game_controller.initialize_scores()
+
+        game_controller.apply_settings({**DEFAULT_SETTINGS, SHOW_WMP_FRAME: False})
+
+        assert display_manager._wmp_frame.hidden
 
     async def test_toggle_gender_retries_joining_wifi(
         self, fake_network, game_controller, network_manager

@@ -218,6 +218,9 @@ class DisplayManager:
 
     def __init__(self, matrixportal: MatrixPortalLike):
         self._labels: dict[str, label.Label] = {}
+        self._show_wmp_frame = True
+        self._march_wmp_frame_enabled = True
+        self._is_wmp = False
         self._main_group = displayio.Group()
 
         for (
@@ -270,7 +273,8 @@ class DisplayManager:
         """
         is_wmp = gender == GenderManager.GENDER_WMP
         color = WMP_GENDER_MATCHUP_COLOR if is_wmp else MMP_GENDER_MATCHUP_COLOR
-        self._wmp_frame.hidden = not is_wmp
+        self._is_wmp = is_wmp
+        self._update_frame_visibility()
         self._timing_indicator.y = (
             TIMING_INDICATOR_Y_POSITION if is_wmp else MMP_TIMING_INDICATOR_Y_POSITION
         )
@@ -281,6 +285,17 @@ class DisplayManager:
         ):
             self._labels[element_id].text = text
             self._labels[element_id].color = color
+
+    def set_frame_options(self, show_wmp_frame: bool, march_wmp_frame: bool) -> None:
+        """Choose whether the WMP frame shows and whether its dashes march."""
+        self._show_wmp_frame = show_wmp_frame
+        self._march_wmp_frame_enabled = march_wmp_frame
+        if not march_wmp_frame:
+            self._wmp_frame_march_start = -WMP_FRAME_MARCH_SECONDS
+        self._update_frame_visibility()
+
+    def _update_frame_visibility(self) -> None:
+        self._wmp_frame.hidden = not (self._show_wmp_frame and self._is_wmp)
 
     def _setup_wifi_search(self) -> None:
         """Initialize a hidden, full-screen Wi-Fi icon and "Searching" that cover the scoreboard."""
@@ -395,7 +410,9 @@ class DisplayManager:
             bitmap[pixels[i]] = 1 if lit else 0
 
     def march_wmp_frame(self) -> None:
-        """March dashes around the WMP frame for WMP_FRAME_MARCH_SECONDS."""
+        """March dashes around the WMP frame for WMP_FRAME_MARCH_SECONDS, if enabled."""
+        if not self._march_wmp_frame_enabled:
+            return
         self._wmp_frame_march_start = time.monotonic()
 
     def animate_wmp_frame(self) -> None:

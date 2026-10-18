@@ -6,10 +6,14 @@ from src.log import WARNING, log
 
 LEFT_TEAM_NAME = "left_team_name"
 RIGHT_TEAM_NAME = "right_team_name"
+SHOW_WMP_FRAME = "show_wmp_frame"
+MARCH_WMP_FRAME = "march_wmp_frame"
 
 DEFAULT_SETTINGS = {
     LEFT_TEAM_NAME: "AWAY",
     RIGHT_TEAM_NAME: "HOME",
+    SHOW_WMP_FRAME: True,
+    MARCH_WMP_FRAME: True,
 }
 
 # Bytes at the start of the memory that hold the length of the JSON after them
@@ -40,8 +44,8 @@ class SettingsStore:
             log(f"Failed to load settings: {e}", WARNING)
             return settings
         if isinstance(saved, dict):
-            for key in DEFAULT_SETTINGS:
-                if isinstance(saved.get(key), str):
+            for key, default in DEFAULT_SETTINGS.items():
+                if isinstance(saved.get(key), type(default)):
                     settings[key] = saved[key]
         return settings
 
