@@ -31,9 +31,13 @@ monitor:
     @echo "Monitoring serial output. Press Ctrl+] to exit."
     uv run python -m serial.tools.miniterm hwgrep://MatrixPortal 115200
 
+# Mount the board's CIRCUITPY drive (Linux)
+mount:
+    @test -f "{{circuitpy}}/boot_out.txt" && echo "Already mounted at {{circuitpy}}" || udisksctl mount -b /dev/disk/by-label/CIRCUITPY
+
 # Deploy project files to CircuitPython board
 deploy:
-    @test -f "{{circuitpy}}/boot_out.txt" || { echo "No CircuitPython board found; mount it or set CIRCUITPY to its path" >&2; exit 1; }
+    @test -f "{{circuitpy}}/boot_out.txt" || { echo "No CircuitPython board found; mount it (just mount on Linux) or set CIRCUITPY to its path" >&2; exit 1; }
     cp main.py "{{circuitpy}}/"
     cp -r src "{{circuitpy}}/"
     @echo "Deployed to {{circuitpy}}"
