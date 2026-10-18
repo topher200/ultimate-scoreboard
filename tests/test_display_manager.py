@@ -85,13 +85,14 @@ class TestDisplayManager:
                     if not on_edge:
                         assert frame.bitmap[x, y] == 0
 
-    def test_show_and_hide_message(self, display_manager):
-        display_manager.show_message("Hello")
-        assert display_manager._message_label.text == "Hello"
-        assert not display_manager._message.hidden
+    def test_show_and_hide_wifi_search(self, display_manager):
+        assert not display_manager.wifi_search_shown
 
-        display_manager.hide_message()
-        assert display_manager._message.hidden
+        display_manager.show_wifi_search()
+        assert display_manager.wifi_search_shown
+
+        display_manager.hide_wifi_search()
+        assert not display_manager.wifi_search_shown
 
     def test_timing_indicator_above_bottom_row(
         self, display_manager, fake_matrix_portal
