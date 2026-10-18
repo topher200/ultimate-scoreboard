@@ -2,6 +2,8 @@
 
 import json
 
+from src.log import WARNING, log
+
 LEFT_TEAM_NAME = "left_team_name"
 RIGHT_TEAM_NAME = "right_team_name"
 
@@ -35,7 +37,7 @@ class SettingsStore:
                 bytes(self._nvm[_LENGTH_BYTES : _LENGTH_BYTES + length]).decode()
             )
         except (ValueError, UnicodeError) as e:
-            print(f"Failed to load settings: {e}")
+            log(f"Failed to load settings: {e}", WARNING)
             return settings
         if isinstance(saved, dict):
             for key in DEFAULT_SETTINGS:

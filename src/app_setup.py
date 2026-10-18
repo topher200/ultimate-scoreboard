@@ -85,17 +85,24 @@ def create_managers(matrixportal, keys, nvm, network, web_server) -> Managers:
     )
 
 
-def initialize_application(managers: Managers, ota_manager=None) -> None:
-    """Show the saved team names and the scores, join Wi-Fi, then install any update.
+def initialize_application(
+    managers: Managers, ota_manager=None, telemetry=None
+) -> None:
+    """Show the saved team names and the scores, join Wi-Fi, then report and install any update.
 
     :param managers: Managers from create_managers
     :param ota_manager: OtaManager that checks for an update once Wi-Fi joins,
         or None to skip the check
+    :param telemetry: Telemetry that uploads once Wi-Fi joins, or None to skip the upload
     """
     managers.game_controller.apply_settings(managers.settings_store.load())
     managers.game_controller.initialize_scores()
     managers.network_manager.connect()
-    if ota_manager is not None and managers.network_manager.url is not None:
+    if managers.network_manager.url is None:
+        return
+    if telemetry is not None:
+        telemetry.flush()
+    if ota_manager is not None:
         ota_manager.check_and_install()
 
 

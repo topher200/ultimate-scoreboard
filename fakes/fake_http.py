@@ -28,10 +28,19 @@ class FakeHttp:
         """Initialize a session with no responses set."""
         self.responses: dict[str, FakeResponse] = {}
         self.requests: list[tuple[str, dict | None]] = []
+        self.posts: list[tuple[str, dict | None, bytes]] = []
 
     def get(self, url, headers=None):
         """Record the request and return the response for the URL."""
         self.requests.append((url, headers))
+        return self._respond(url)
+
+    def post(self, url, data=b"", headers=None, timeout=None):
+        """Record the post and return the response for the URL."""
+        self.posts.append((url, headers, data))
+        return self._respond(url)
+
+    def _respond(self, url):
         for prefix, response in self.responses.items():
             if url.startswith(prefix):
                 return response

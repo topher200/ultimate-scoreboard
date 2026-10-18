@@ -289,3 +289,12 @@ class TestGameControllerKeepsScore:
         # sum=4 → WMP2
         assert matchup_label.text == "WMP"
         assert counter_label.text == "2"
+
+
+class TestPointsScored:
+    async def test_counts_points_since_the_last_take(self, game_controller):
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_right_score_button()
+
+        assert game_controller.take_points_scored() == 2
+        assert game_controller.take_points_scored() == 0
