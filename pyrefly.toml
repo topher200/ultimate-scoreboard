@@ -1,4 +1,0 @@
-# pyrefly.toml
-project-includes = ["lib", "tests", "fakes", "main.py"]
-search-path = [".", "stubs"]
-
