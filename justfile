@@ -41,7 +41,12 @@ deploy:
     rsync -r --delete --delete-excluded --checksum --exclude __pycache__ --exclude .DS_Store src/ "{{circuitpy}}/src/"
     cp main.py "{{circuitpy}}/"
     sync
+    @just reboot
     @echo "Deployed to {{circuitpy}}"
+
+# Stop the running code and soft reboot the board over serial
+reboot:
+    uv run python -c 'import serial, time; port = serial.serial_for_url("hwgrep://MatrixPortal", 115200); port.write(b"\x03"); time.sleep(0.5); port.write(b"\x04"); port.close()'
 
 # Watch for changes and auto-deploy to CircuitPython board
 watch-deploy:
