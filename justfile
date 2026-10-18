@@ -33,6 +33,7 @@ monitor:
 
 # Deploy project files to CircuitPython board
 deploy:
+    @test -f "{{circuitpy}}/boot_out.txt" || { echo "No CircuitPython board found; mount it or set CIRCUITPY to its path" >&2; exit 1; }
     cp main.py "{{circuitpy}}/"
     cp -r src "{{circuitpy}}/"
     @echo "Deployed to {{circuitpy}}"
