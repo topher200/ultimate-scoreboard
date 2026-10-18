@@ -5,7 +5,10 @@ import asyncio
 from fakes.fake_keypad import FakeKeys
 from simulator.display_window import DisplayWindow
 from simulator.simulator_matrixportal import SimulatorMatrixPortal
+from simulator.simulator_web_server import SimulatorNetwork, SimulatorWebServer
 from src.app_setup import create_managers, initialize_application, run_tasks
+
+SIMULATOR_NVM_SIZE = 8192
 
 
 async def local_main():
@@ -25,10 +28,16 @@ async def local_main():
     )
 
     # Initialize managers using shared setup
-    managers = create_managers(matrixportal, keys)
+    managers = create_managers(
+        matrixportal,
+        keys,
+        bytearray(SIMULATOR_NVM_SIZE),
+        SimulatorNetwork(),
+        SimulatorWebServer(),
+    )
 
     # Initialize application state
-    initialize_application(managers.game_controller)
+    initialize_application(managers)
 
     # Initialize Pygame display window (simulator-specific)
     # Pass keys instance to enable keyboard button simulation

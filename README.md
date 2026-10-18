@@ -9,10 +9,10 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 | Left | +1 left score |
 | Right | +1 right score |
 | Both held ~1s | Reset scores to 0-0 (undoable) |
-| Hold Left, tap Right | Toggle gender matchup and refresh team names |
+| Hold Left, tap Right | Toggle gender matchup and retry joining Wi-Fi |
 | Hold Right, tap Left | Undo last point |
 
-- **Team names** are set via [Adafruit IO](https://io.adafruit.com) feeds (`scores-group.left-team-name` and `scores-group.right-team-name`). They load on boot and refresh when toggling gender.
+- **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page. Scan it with a phone on the same network, then enter the names and tap Save. If the board cannot join the Wi-Fi in `settings.toml`, it hosts an open "Scoreboard" network: the QR code joins your phone to it, then changes to the page URL. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
 - **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
 
@@ -30,10 +30,9 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 ```toml
 CIRCUITPY_WIFI_SSID =  ""
 CIRCUITPY_WIFI_PASSWORD = ""
-
-ADAFRUIT_AIO_USERNAME = ""
-ADAFRUIT_AIO_KEY      = "aio_..."
 ```
+
+The settings page uses port 8080, so it does not conflict with the CircuitPython web workflow on port 80.
 
 ## Development Setup
 
@@ -92,7 +91,8 @@ uv run pytest tests/test_score_manager.py
 The `fakes/` directory contains mock implementations of CircuitPython hardware
 components that allow testing without physical hardware:
 
-- **`fakes/fake_matrixportal.py`** - Fake `MatrixPortal` and `Display` classes that mimic the hardware display interface, including `get_io_feed()` for Adafruit IO feed access
+- **`fakes/fake_matrixportal.py`** - Fake `MatrixPortal` and `Display` classes that mimic the hardware display interface
+- **`fakes/fake_network.py`** - Fake Wi-Fi network and settings page server
 - **`fakes/fake_displayio.py`** - Fake `displayio.Group` class for managing display elements
 - **`fakes/fake_label.py`** - Fake `Label` class that mimics `adafruit_display_text.label.Label`
 - **`fakes/__init__.py`** - Package exports for easy importing
@@ -121,6 +121,7 @@ This command will automatically install simulator dependencies if needed and the
 2. Run the full application with fake hardware
 3. Update the display in real-time as the application runs
 4. Allow you to test all features without physical hardware
+5. Serve the settings page from your laptop on port 8080, and show its QR code
 
 ## Development Commands
 

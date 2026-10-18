@@ -13,6 +13,8 @@ from src.hardware_manager import (
 )
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
+from src.settings_page import SettingsPage
+from src.settings_store import SettingsStore
 from src.timing_indicator import (
     TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
@@ -30,17 +32,32 @@ class Managers(NamedTuple):
     timing_indicator_manager: TimingIndicatorManager
     hardware_manager: HardwareManager
     game_controller: GameController
+    settings_store: SettingsStore
 
 
-def create_managers(matrixportal, keys) -> Managers:
+def create_managers(matrixportal, keys, nvm, network, web_server) -> Managers:
     """Initialize all application managers.
 
     :param matrixportal: MatrixPortal instance (real or simulator)
     :param keys: Keys instance (real or fake) for button input
+    :param nvm: Byte buffer that keeps settings across reboots
+    :param network: Network that joins Wi-Fi or hosts an access point (real or simulator)
+    :param web_server: Server for the settings page (real or simulator)
     :return: Managers named tuple containing all initialized managers
     """
     display_manager = DisplayManager(matrixportal)
-    network_manager = NetworkManager(matrixportal, display_manager)
+    settings_store = SettingsStore(nvm)
+
+    def on_settings_saved(settings: dict) -> None:
+        game_controller.apply_settings(settings)
+        display_manager.hide_qr_code()
+
+    network_manager = NetworkManager(
+        network,
+        display_manager,
+        web_server,
+        SettingsPage(settings_store, on_settings_saved).respond,
+    )
     score_manager = ScoreManager()
     gender_manager = GenderManager()
     timing_indicator_manager = TimingIndicatorManager(
@@ -64,16 +81,18 @@ def create_managers(matrixportal, keys) -> Managers:
         timing_indicator_manager=timing_indicator_manager,
         hardware_manager=hardware_manager,
         game_controller=game_controller,
+        settings_store=settings_store,
     )
 
 
-def initialize_application(game_controller: GameController) -> None:
-    """Initialize application state (team names and scores).
+def initialize_application(managers: Managers) -> None:
+    """Show the saved team names and the scores, then join Wi-Fi.
 
-    :param game_controller: GameController instance
+    :param managers: Managers from create_managers
     """
-    game_controller.update_team_names()
-    game_controller.initialize_scores()
+    managers.game_controller.apply_settings(managers.settings_store.load())
+    managers.game_controller.initialize_scores()
+    managers.network_manager.connect()
 
 
 def create_button_callbacks(game_controller: GameController) -> dict[str, Callable]:
@@ -96,7 +115,7 @@ def create_chord_callbacks(
     """Create chord callback mapping for hardware manager.
 
     Chords fire when one button is held and the other is tapped:
-    - Hold LEFT, tap RIGHT → toggle gender matchup
+    - Hold LEFT, tap RIGHT → toggle gender matchup and retry joining Wi-Fi
     - Hold RIGHT, tap LEFT → undo last point
 
     :param game_controller: GameController instance
@@ -108,18 +127,46 @@ def create_chord_callbacks(
     }
 
 
+def dismiss_qr_code_first(display_manager: DisplayManager, callback: Callable):
+    """Wrap a button callback so that, while the QR code shows, it only hides the QR code.
+
+    :param display_manager: DisplayManager that shows the QR code
+    :param callback: Async button callback to wrap
+    :return: The wrapped callback
+    """
+
+    async def wrapped() -> None:
+        if display_manager.qr_code_shown:
+            display_manager.hide_qr_code()
+            return
+        await callback()
+
+    return wrapped
+
+
 async def run_tasks(managers: Managers, *extra_tasks) -> None:
-    """Run the button monitor, the timing indicator, and any extra tasks.
+    """Run the button monitor, the timing indicator, the settings page, and any extra tasks.
 
     :param managers: Managers from create_managers
     :param extra_tasks: Additional coroutines to run alongside
     """
+    display_manager = managers.display_manager
+    game_controller = managers.game_controller
     await asyncio.gather(
         managers.hardware_manager.monitor_buttons(
-            create_button_callbacks(managers.game_controller),
-            hold_both_callback=managers.game_controller.handle_reset_button,
-            chord_callbacks=create_chord_callbacks(managers.game_controller),
+            {
+                button: dismiss_qr_code_first(display_manager, callback)
+                for button, callback in create_button_callbacks(game_controller).items()
+            },
+            hold_both_callback=dismiss_qr_code_first(
+                display_manager, game_controller.handle_reset_button
+            ),
+            chord_callbacks={
+                chord: dismiss_qr_code_first(display_manager, callback)
+                for chord, callback in create_chord_callbacks(game_controller).items()
+            },
         ),
+        managers.network_manager.serve(),
         create_timing_indicator_task(
             managers.timing_indicator_manager, managers.display_manager
         ),

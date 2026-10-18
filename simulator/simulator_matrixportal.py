@@ -18,4 +18,3 @@ class SimulatorMatrixPortal(FakeMatrixPortal):
         but doesn't use them since this is a simulator.
         """
         self._display = RenderableDisplay()
-        self._feed_data = {}

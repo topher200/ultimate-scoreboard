@@ -26,8 +26,8 @@ class TestDisplayManager:
     def test_root_group_holds_labels_and_timing_indicator(
         self, display_manager, fake_matrix_portal
     ):
-        """Test that the root group holds 7 labels, the two frames, and the timing indicator."""
-        assert len(_root_group(fake_matrix_portal)) == 10
+        """Test that the root group holds labels, frames, timing indicator, and QR code."""
+        assert len(_root_group(fake_matrix_portal)) == 11
 
     def test_set_team_names(self, display_manager):
         display_manager.set_team_names("Red Team", "Blue Team")
@@ -99,7 +99,7 @@ class TestDisplayManager:
         from src.display_manager import LEFT_BORDER_MARGIN_WIDTH
         from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
-        tile_grid = _root_group(fake_matrix_portal)[-1]
+        tile_grid = _root_group(fake_matrix_portal)[-2]
         assert tile_grid.y == DISPLAY_HEIGHT - 2
         assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == (
             DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH
