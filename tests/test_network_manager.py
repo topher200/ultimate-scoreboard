@@ -1,74 +1,137 @@
 """Tests for NetworkManager using fake implementations."""
 
+import asyncio
 from unittest.mock import MagicMock
 
-from src.network_manager import NetworkManager
+import pytest
+
+from fakes import FakeNetwork
+from src.network_manager import (
+    ACCESS_POINT_QR_CODE_TEXT,
+    ACCESS_POINT_SSID,
+    SETTINGS_PAGE_PORT,
+)
+from tests.qr_code import shows_qr_code
+
+URL = f"http://{FakeNetwork.IP_ADDRESS}:{SETTINGS_PAGE_PORT}/"
+ACCESS_POINT_URL = f"http://{FakeNetwork.ACCESS_POINT_IP_ADDRESS}:{SETTINGS_PAGE_PORT}/"
 
 
-class TestNetworkManager:
-    """Test NetworkManager with fake hardware."""
-
-    def test_initialization(self, network_manager):
-        """Test that NetworkManager initializes without errors."""
-        assert network_manager is not None
-
-    def test_feed_key_constants_defined(self):
-        """Test that all feed key constants are defined."""
-        assert NetworkManager.TEAM_LEFT_TEAM_FEED
-        assert NetworkManager.TEAM_RIGHT_TEAM_FEED
+async def _serve_briefly(network_manager):
+    task = asyncio.create_task(network_manager.serve())
+    await asyncio.sleep(0.25)
+    task.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await task
 
 
-class TestNetworkManagerTeamNames:
-    def test_get_left_team_name_with_valid_data(
-        self, network_manager, fake_matrix_portal
+class TestNetworkManagerConnect:
+    def test_connect_starts_settings_page_and_shows_its_qr_code(
+        self, network_manager, display_manager, fake_web_server
     ):
-        """Test getting left team name with valid data."""
-        fake_matrix_portal.set_feed_value(
-            NetworkManager.TEAM_LEFT_TEAM_FEED, "Red Team"
-        )
+        network_manager.connect()
 
-        result = network_manager.get_left_team_name()
+        assert fake_web_server.host == FakeNetwork.IP_ADDRESS
+        assert network_manager.url == URL
+        assert shows_qr_code(display_manager, URL)
 
-        assert result == "Red Team"
-
-    def test_get_right_team_name_with_valid_data(
-        self, network_manager, fake_matrix_portal
+    def test_connect_does_nothing_once_settings_page_is_up(
+        self, network_manager, fake_network
     ):
-        """Test getting right team name with valid data."""
-        fake_matrix_portal.set_feed_value(
-            NetworkManager.TEAM_RIGHT_TEAM_FEED, "Blue Team"
-        )
+        network_manager.connect()
+        network_manager.connect()
 
-        result = network_manager.get_right_team_name()
+        assert fake_network.connect_count == 1
 
-        assert result == "Blue Team"
+    def test_show_connecting_brackets_connect(self, network_manager, display_manager):
+        display_manager.show_connecting = MagicMock()
 
-    def test_show_connecting_called_on_successful_fetch(
-        self, network_manager, display_manager, fake_matrix_portal
+        network_manager.connect()
+
+        assert [c.args for c in display_manager.show_connecting.call_args_list] == [
+            (True,),
+            (False,),
+        ]
+
+    def test_failed_server_start_shows_no_qr_code_and_can_retry(
+        self, network_manager, display_manager, fake_web_server
     ):
-        """Test that show_connecting is called with True before fetch and False after."""
-        fake_matrix_portal.set_feed_value(
-            NetworkManager.TEAM_LEFT_TEAM_FEED, "Red Team"
-        )
-        mock_show_connecting = MagicMock()
-        display_manager.show_connecting = mock_show_connecting
+        start = fake_web_server.start
+        fake_web_server.start = MagicMock(side_effect=OSError("in use"))
 
-        network_manager.get_left_team_name()
+        network_manager.connect()
 
-        assert mock_show_connecting.call_count == 2
-        mock_show_connecting.assert_any_call(True)
-        mock_show_connecting.assert_any_call(False)
+        assert network_manager.url is None
+        assert not display_manager.qr_code_shown
 
-    def test_show_connecting_called_on_exception(
-        self, network_manager, display_manager, fake_matrix_portal
+        fake_web_server.start = start
+        network_manager.connect()
+
+        assert network_manager.url == URL
+
+
+class TestNetworkManagerAccessPoint:
+    @pytest.fixture(autouse=True)
+    def no_wifi(self, fake_network):
+        fake_network.connect_error = OSError("no Wi-Fi")
+
+    def test_failed_join_hosts_access_point(
+        self, network_manager, fake_network, fake_web_server
     ):
-        """Test that show_connecting(False) is called even when an exception occurs."""
-        mock_show_connecting = MagicMock()
-        display_manager.show_connecting = mock_show_connecting
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, None)
+        network_manager.connect()
 
-        network_manager.get_left_team_name()
+        assert fake_network.access_point_ssid == ACCESS_POINT_SSID
+        assert fake_web_server.host == FakeNetwork.ACCESS_POINT_IP_ADDRESS
+        assert network_manager.url == ACCESS_POINT_URL
 
-        assert mock_show_connecting.call_count == 2
-        mock_show_connecting.assert_any_call(True)
-        mock_show_connecting.assert_any_call(False)
+    def test_shows_wifi_qr_code_until_a_device_joins(
+        self, network_manager, display_manager
+    ):
+        network_manager.connect()
+
+        assert shows_qr_code(display_manager, ACCESS_POINT_QR_CODE_TEXT)
+
+    async def test_shows_url_qr_code_after_a_device_joins(
+        self, network_manager, display_manager, fake_network
+    ):
+        network_manager.connect()
+        await _serve_briefly(network_manager)
+        assert shows_qr_code(display_manager, ACCESS_POINT_QR_CODE_TEXT)
+
+        fake_network.access_point_clients = 1
+        await _serve_briefly(network_manager)
+
+        assert shows_qr_code(display_manager, ACCESS_POINT_URL)
+
+    async def test_dismissed_qr_code_stays_hidden_after_a_device_joins(
+        self, network_manager, display_manager, fake_network
+    ):
+        network_manager.connect()
+        display_manager.hide_qr_code()
+
+        fake_network.access_point_clients = 1
+        await _serve_briefly(network_manager)
+
+        assert not display_manager.qr_code_shown
+
+
+class TestNetworkManagerServe:
+    async def test_serve_polls_only_after_connect(
+        self, network_manager, fake_web_server
+    ):
+        await _serve_briefly(network_manager)
+        assert fake_web_server.poll_count == 0
+
+        network_manager.connect()
+        await _serve_briefly(network_manager)
+        assert fake_web_server.poll_count > 0
+
+    async def test_serve_survives_a_failed_request(
+        self, network_manager, fake_web_server
+    ):
+        fake_web_server.poll = MagicMock(side_effect=OSError("reset"))
+        network_manager.connect()
+
+        await _serve_briefly(network_manager)
+
+        assert fake_web_server.poll.call_count > 1

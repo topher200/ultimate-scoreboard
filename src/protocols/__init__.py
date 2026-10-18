@@ -7,6 +7,7 @@ to be used interchangeably in type-checked code.
 from src.protocols.board import BoardLike
 from src.protocols.keypad import EventLike, EventQueueLike, KeysLike
 from src.protocols.matrixportal import MatrixPortalLike
+from src.protocols.network import NetworkLike, WebServerLike
 
 __all__ = [
     "BoardLike",
@@ -14,4 +15,6 @@ __all__ = [
     "EventQueueLike",
     "KeysLike",
     "MatrixPortalLike",
+    "NetworkLike",
+    "WebServerLike",
 ]

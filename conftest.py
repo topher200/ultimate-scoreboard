@@ -11,9 +11,11 @@ from fakes import (
     FakeKeys,
     FakeLabel,
     FakeMatrixPortal,
+    FakeNetwork,
     FakePalette,
     FakeTerminalio,
     FakeTileGrid,
+    FakeWebServer,
 )
 
 # Mock CircuitPython-specific modules that don't exist in regular Python
@@ -51,6 +53,7 @@ from src.game_controller import GameController
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreManager
+from src.settings_store import SettingsStore
 from src.timing_indicator import (
     TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
@@ -65,9 +68,32 @@ def fake_matrix_portal():
 
 
 @pytest.fixture
-def network_manager(fake_matrix_portal, display_manager):
+def fake_web_server():
+    """Create FakeWebServer instance for testing."""
+    return FakeWebServer()
+
+
+@pytest.fixture
+def settings_store():
+    """Create SettingsStore instance over blank memory."""
+    return SettingsStore(bytearray(256))
+
+
+@pytest.fixture
+def fake_network():
+    """Create FakeNetwork instance for testing."""
+    return FakeNetwork()
+
+
+@pytest.fixture
+def network_manager(fake_network, display_manager, fake_web_server):
     """Create NetworkManager instance with fake hardware."""
-    return NetworkManager(fake_matrix_portal, display_manager)
+    return NetworkManager(
+        fake_network,
+        display_manager,
+        fake_web_server,
+        MagicMock(return_value=""),
+    )
 
 
 @pytest.fixture

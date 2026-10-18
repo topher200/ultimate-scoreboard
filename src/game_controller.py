@@ -4,6 +4,7 @@ from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreEvent, ScoreManager
+from src.settings_store import LEFT_TEAM_NAME, RIGHT_TEAM_NAME
 from src.timing_indicator import TimingIndicatorManager
 
 
@@ -25,7 +26,7 @@ class GameController:
 
         :param score_manager: ScoreManager instance for managing scores
         :param display_manager: DisplayManager instance for display updates
-        :param network_manager: NetworkManager instance for all network calls
+        :param network_manager: NetworkManager instance for joining Wi-Fi
         :param gender_manager: GenderManager instance for keeping track of gender matchups
         :param timing_indicator_manager: TimingIndicatorManager instance for on-screen timing dots
         """
@@ -90,9 +91,8 @@ class GameController:
 
         self._update_gender_matchup_display()
 
-        # Semi-hack: we're using this button as a shortcut to re-check team
-        # names
-        self.update_team_names()
+        # Semi-hack: this chord also retries joining Wi-Fi
+        self._network_manager.connect()
 
     def set_team_names(self, left_team: str, right_team: str) -> None:
         """Set team names on the display.
@@ -102,14 +102,10 @@ class GameController:
         """
         self._display_manager.set_team_names(left_team, right_team)
 
-    def update_team_names(self) -> None:
-        """Update team names from network.
-
-        Fetches team names from the network, blocking until it finishes, and
-        updates the display.
-        """
-        left_team = self._network_manager.get_left_team_name()
-        right_team = self._network_manager.get_right_team_name()
+    def apply_settings(self, settings: dict) -> None:
+        """Show the team names from `settings`."""
+        left_team = settings[LEFT_TEAM_NAME]
+        right_team = settings[RIGHT_TEAM_NAME]
         print(f"Team names: {left_team} vs {right_team}")
         self.set_team_names(left_team, right_team)
 

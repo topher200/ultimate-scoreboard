@@ -1,5 +1,6 @@
 import time
 
+import adafruit_miniqr
 import displayio
 import terminalio
 from adafruit_display_text import label
@@ -59,6 +60,10 @@ TIMING_INDICATOR_X_POSITION = (
 TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 2
 TIMING_INDICATOR_COLOR = 0xFFFFFF
 
+# QR code constants
+QR_CODE_LIGHT_COLOR = 0x808080
+QR_CODE_QUIET_ZONE_WIDTH = 2
+
 
 # (element ID, initial text, scale, color, anchor point, anchored position)
 _ANCHORED_LABELS = (
@@ -116,6 +121,16 @@ _ANCHORED_LABELS = (
 )
 
 
+def make_qr_matrix(text: str) -> adafruit_miniqr.QRBitMatrix:
+    """Return the QR code modules for `text`, truthy where a module is dark."""
+    qr = adafruit_miniqr.QRCode()
+    qr.add_data(text.encode())
+    qr.make()
+    matrix = qr.matrix
+    assert matrix is not None
+    return matrix
+
+
 class DisplayManager:
     """Lays out the scoreboard and updates what it shows."""
 
@@ -143,6 +158,7 @@ class DisplayManager:
 
         self._setup_frames()
         self._setup_timing_indicator()
+        self._setup_qr_code()
         matrixportal.display.root_group = self._main_group
 
     def _add_label(self, element_id: str, label_obj: label.Label) -> None:
@@ -269,3 +285,41 @@ class DisplayManager:
         first_lit = TIMING_INDICATOR_PIXEL_COUNT - count
         for i in range(TIMING_INDICATOR_PIXEL_COUNT):
             self._timing_indicator_bitmap[i, 0] = 1 if i >= first_lit else 0
+
+    def _setup_qr_code(self) -> None:
+        """Initialize a hidden, full-screen QR code that covers everything else."""
+        palette = displayio.Palette(2)
+        palette[0] = 0x000000
+        palette[1] = QR_CODE_LIGHT_COLOR
+        self._qr_code = displayio.TileGrid(
+            displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 2), pixel_shader=palette
+        )
+        self._qr_code.hidden = True
+        self._main_group.append(self._qr_code)
+
+    @property
+    def qr_code_shown(self) -> bool:
+        return not self._qr_code.hidden
+
+    def show_qr_code(self, text: str) -> None:
+        """Cover the screen with a centered QR code for `text`."""
+        matrix = make_qr_matrix(text)
+        left = (DISPLAY_WIDTH - matrix.width) // 2
+        top = (DISPLAY_HEIGHT - matrix.height) // 2
+        margin = QR_CODE_QUIET_ZONE_WIDTH
+        bitmap = self._qr_code.bitmap
+        for y in range(DISPLAY_HEIGHT):
+            qr_y = y - top
+            for x in range(DISPLAY_WIDTH):
+                qr_x = x - left
+                in_quiet_zone = (
+                    -margin <= qr_x < matrix.width + margin
+                    and -margin <= qr_y < matrix.height + margin
+                )
+                in_code = 0 <= qr_x < matrix.width and 0 <= qr_y < matrix.height
+                dark = in_code and matrix[qr_x, qr_y]
+                bitmap[x, y] = 1 if in_quiet_zone and not dark else 0
+        self._qr_code.hidden = False
+
+    def hide_qr_code(self) -> None:
+        self._qr_code.hidden = True

@@ -4,6 +4,7 @@ from .fake_displayio import FakeBitmap, FakeGroup, FakePalette, FakeTileGrid
 from .fake_keypad import FakeKeys
 from .fake_label import FakeLabel
 from .fake_matrixportal import FakeDisplay, FakeMatrixPortal
+from .fake_network import FakeNetwork, FakeWebServer
 
 # Provide a fake FONT constant for terminalio.FONT
 FakeTerminalio = type("FakeTerminalio", (), {"FONT": object()})()
@@ -18,4 +19,6 @@ __all__ = [
     "FakeLabel",
     "FakeTerminalio",
     "FakeKeys",
+    "FakeNetwork",
+    "FakeWebServer",
 ]

@@ -8,7 +8,7 @@ from src.display_manager import (
     RIGHT_TEAM,
     RIGHT_TEAM_SCORE,
 )
-from src.network_manager import NetworkManager
+from src.settings_store import DEFAULT_SETTINGS, LEFT_TEAM_NAME, RIGHT_TEAM_NAME
 
 
 class TestGenderMatchupDisplay:
@@ -18,7 +18,7 @@ class TestGenderMatchupDisplay:
         self, game_controller, display_manager
     ):
         """Test that gender matchup cycles correctly through multiple button presses."""
-        game_controller.update_team_names()
+        game_controller.apply_settings(DEFAULT_SETTINGS)
         game_controller.initialize_scores()
 
         label = display_manager._labels[GENDER_MATCHUP]
@@ -224,60 +224,33 @@ class TestGameControllerKeepsScore:
         assert score_manager.left_score == 3
         assert score_manager.right_score == 2
 
-    def test_update_team_names_with_custom_names(
-        self, fake_matrix_portal, game_controller, network_manager
+    def test_apply_settings_updates_display(self, display_manager, game_controller):
+        """Test that apply_settings shows the team names from settings."""
+        game_controller.apply_settings(
+            {LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"}
+        )
+
+        assert display_manager._labels[LEFT_TEAM].text == "Phoenix"
+        assert display_manager._labels[RIGHT_TEAM].text == "Tigers"
+
+    async def test_toggle_gender_retries_joining_wifi(
+        self, fake_network, game_controller, network_manager
     ):
-        """Test that update_team_names fetches and uses custom team names."""
-        # Set team names in network
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "Phoenix")
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Tigers")
+        """Test that the toggle gender chord retries joining Wi-Fi."""
+        fake_network.connect_error = OSError("no Wi-Fi")
+        network_manager.connect()
+        fake_network.connect_error = None
 
-        # Update team names
-        game_controller.update_team_names()
+        await game_controller.handle_toggle_gender_button()
 
-        # Verify team names were fetched
-        assert network_manager.get_left_team_name() == "Phoenix"
-        assert network_manager.get_right_team_name() == "Tigers"
-
-    def test_update_team_names_uses_defaults_when_not_set(
-        self, game_controller, network_manager
-    ):
-        """Test that update_team_names uses defaults when network has no values."""
-        # Don't set any team names in network (they'll be None)
-
-        # Update team names
-        game_controller.update_team_names()
-
-        # Verify defaults are used
-        assert network_manager.get_left_team_name() == "AWAY"
-        assert network_manager.get_right_team_name() == "HOME"
-
-    def test_update_team_names_updates_display(
-        self, display_manager, fake_matrix_portal, game_controller
-    ):
-        """Test that update_team_names updates the display with fetched team names."""
-        # Set team names in network
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "Phoenix")
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "Tigers")
-
-        # Update team names
-        game_controller.update_team_names()
-
-        # Verify display is updated
-        left_label = display_manager._labels[LEFT_TEAM]
-        right_label = display_manager._labels[RIGHT_TEAM]
-
-        assert left_label.text == "Phoenix"
-        assert right_label.text == "Tigers"
+        assert network_manager.url is not None
 
     async def test_full_game_workflow(
         self, display_manager, fake_matrix_portal, game_controller, score_manager
     ):
         """Test a complete game workflow."""
         # Initialize with team names
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_LEFT_TEAM_FEED, "AWAY")
-        fake_matrix_portal.set_feed_value(NetworkManager.TEAM_RIGHT_TEAM_FEED, "HOME")
-        game_controller.update_team_names()
+        game_controller.apply_settings(DEFAULT_SETTINGS)
         game_controller.initialize_scores()
 
         # Get label references
