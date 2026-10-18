@@ -86,3 +86,4 @@ class FakeTileGrid:
         self.pixel_shader = pixel_shader
         self.x = x
         self.y = y
+        self.hidden = False

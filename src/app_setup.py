@@ -123,6 +123,7 @@ async def run_tasks(managers: Managers, *extra_tasks) -> None:
         create_timing_indicator_task(
             managers.timing_indicator_manager, managers.display_manager
         ),
+        animate_wmp_frame(managers.display_manager),
         *extra_tasks,
     )
 
@@ -144,3 +145,10 @@ async def create_timing_indicator_task(
                 timing_indicator_manager.get_dot_count()
             )
         await asyncio.sleep(POLLING_INTERVAL)
+
+
+async def animate_wmp_frame(display_manager: DisplayManager) -> None:
+    """Animate the WMP frame."""
+    while True:
+        display_manager.animate_wmp_frame()
+        await asyncio.sleep(0.05)
