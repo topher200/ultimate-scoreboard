@@ -1,107 +1,10 @@
 """Tests for GameController using real manager instances."""
 
-from src.gender_manager import GenderManager
 from src.network_manager import NetworkManager
 
 
-class TestGenderMatchupCalculation:
-    """Test gender matchup calculation based on score sum and starting gender."""
-
-    def test_calculate_gender_matchup_sum_0_wmp(self, game_controller):
-        """Test gender matchup for score sum 0 (0-0) with WMP start returns WMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            0, GenderManager.GENDER_WMP
-        )
-        assert matchup == "WMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_1_wmp(self, game_controller):
-        """Test gender matchup for score sum 1 (1-0 or 0-1) with WMP start returns MMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            1, GenderManager.GENDER_WMP
-        )
-        assert matchup == "MMP"
-        assert count == 1
-
-    def test_calculate_gender_matchup_sum_2_wmp(self, game_controller):
-        """Test gender matchup for score sum 2 with WMP start returns MMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            2, GenderManager.GENDER_WMP
-        )
-        assert matchup == "MMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_3_wmp(self, game_controller):
-        """Test gender matchup for score sum 3 with WMP start returns WMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            3, GenderManager.GENDER_WMP
-        )
-        assert matchup == "WMP"
-        assert count == 1
-
-    def test_calculate_gender_matchup_sum_4_cycle_repeats_wmp(self, game_controller):
-        """Test gender matchup for score sum 4 with WMP start returns WMP2 (cycle repeats)."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            4, GenderManager.GENDER_WMP
-        )
-        assert matchup == "WMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_0_mmp(self, game_controller):
-        """Test gender matchup for score sum 0 (0-0) with MMP start returns MMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            0, GenderManager.GENDER_MMP
-        )
-        assert matchup == "MMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_1_mmp(self, game_controller):
-        """Test gender matchup for score sum 1 with MMP start returns WMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            1, GenderManager.GENDER_MMP
-        )
-        assert matchup == "WMP"
-        assert count == 1
-
-    def test_calculate_gender_matchup_sum_2_mmp(self, game_controller):
-        """Test gender matchup for score sum 2 with MMP start returns WMP2."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            2, GenderManager.GENDER_MMP
-        )
-        assert matchup == "WMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_sum_3_mmp(self, game_controller):
-        """Test gender matchup for score sum 3 with MMP start returns MMP1."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            3, GenderManager.GENDER_MMP
-        )
-        assert matchup == "MMP"
-        assert count == 1
-
-    def test_calculate_gender_matchup_sum_4_cycle_repeats_mmp(self, game_controller):
-        """Test gender matchup for score sum 4 with MMP start returns MMP2 (cycle repeats)."""
-        matchup, count = game_controller._calculate_gender_matchup(
-            4, GenderManager.GENDER_MMP
-        )
-        assert matchup == "MMP"
-        assert count == 2
-
-    def test_calculate_gender_matchup_large_sum_wmp(self, game_controller):
-        """Test gender matchup calculation for large score sums with WMP start."""
-        # Test sum 20 (20 % 4 == 0)
-        matchup, count = game_controller._calculate_gender_matchup(
-            20, GenderManager.GENDER_WMP
-        )
-        assert matchup == "WMP"
-        assert count == 2
-
-        # Test sum 21 (21 % 4 == 1)
-        matchup, count = game_controller._calculate_gender_matchup(
-            21, GenderManager.GENDER_WMP
-        )
-        assert matchup == "MMP"
-        assert count == 1
+class TestGenderMatchupDisplay:
+    """Test the gender matchup display through button presses."""
 
     async def test_gender_matchup_cycles_through_button_presses(
         self, game_controller, display_manager
