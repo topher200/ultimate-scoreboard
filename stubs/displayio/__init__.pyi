@@ -32,6 +32,8 @@ class TileGrid(_Layer):
 
     x: int
     y: int
+    hidden: bool
+    bitmap: Bitmap
     def __init__(
         self, bitmap: Bitmap, *, pixel_shader: Palette, x: int = 0, y: int = 0
     ) -> None: ...
