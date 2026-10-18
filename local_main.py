@@ -5,13 +5,7 @@ import asyncio
 from fakes.fake_keypad import FakeKeys
 from simulator.display_window import DisplayWindow
 from simulator.simulator_matrixportal import SimulatorMatrixPortal
-from src.app_setup import (
-    create_button_callbacks,
-    create_chord_callbacks,
-    create_managers,
-    create_timing_indicator_task,
-    initialize_application,
-)
+from src.app_setup import create_managers, initialize_application, run_tasks
 
 
 async def local_main():
@@ -53,20 +47,8 @@ async def local_main():
             if task != current_task:
                 task.cancel()
 
-    # Run all tasks concurrently
     try:
-        await asyncio.gather(
-            managers.hardware_manager.monitor_buttons(
-                create_button_callbacks(managers.game_controller),
-                hold_both_callback=managers.game_controller.handle_reset_button,
-                chord_callbacks=create_chord_callbacks(managers.game_controller),
-            ),
-            create_timing_indicator_task(
-                managers.timing_indicator_manager, managers.display_manager
-            ),
-            run_display_updates(),  # Simulator-specific
-            return_exceptions=True,
-        )
+        await run_tasks(managers, run_display_updates())
     except (KeyboardInterrupt, asyncio.CancelledError):
         print("\nShutting down...")
     finally:
