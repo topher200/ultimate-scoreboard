@@ -41,10 +41,13 @@ addopts = [
 
 [tool.pyrefly]
 project-includes = [
+    "boot.py",
     "conftest.py",
     "fakes",
     "local_main.py",
     "main.py",
+    "ota_loader.py",
+    "safe_mode.py",
     "scripts",
     "simulator",
     "src",

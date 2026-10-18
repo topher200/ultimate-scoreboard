@@ -9,3 +9,10 @@ __pycache__/
 
 # Cursor
 .cursor/debug.log
+
+# Build output
+build/
+src/version.py
+
+# Memfault credentials for just release
+.env

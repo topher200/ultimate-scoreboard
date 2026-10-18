@@ -1,7 +1,7 @@
 """Tests for app_setup helpers."""
 
 import asyncio
-from unittest.mock import AsyncMock
+from unittest.mock import AsyncMock, Mock
 
 import pytest
 
@@ -33,6 +33,33 @@ class TestDismissQrCodeFirst:
         await dismiss_qr_code_first(display_manager, callback)()
 
         callback.assert_awaited_once()
+
+
+class TestInitializeApplication:
+    def test_checks_for_update_after_wifi_joins(
+        self, fake_matrix_portal, fake_keys, fake_network, fake_web_server
+    ):
+        managers = create_managers(
+            fake_matrix_portal, fake_keys, bytearray(256), fake_network, fake_web_server
+        )
+        ota_manager = Mock()
+
+        initialize_application(managers, ota_manager)
+
+        ota_manager.check_and_install.assert_called_once()
+
+    def test_skips_update_check_without_wifi(
+        self, fake_matrix_portal, fake_keys, fake_network, fake_web_server
+    ):
+        fake_network.connect_error = OSError("no network")
+        managers = create_managers(
+            fake_matrix_portal, fake_keys, bytearray(256), fake_network, fake_web_server
+        )
+        ota_manager = Mock()
+
+        initialize_application(managers, ota_manager)
+
+        ota_manager.check_and_install.assert_not_called()
 
 
 class TestCreateManagers:

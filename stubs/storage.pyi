@@ -1,0 +1,3 @@
+"""Type stubs for CircuitPython storage module."""
+
+def remount(mount_path: str, readonly: bool = False) -> None: ...
