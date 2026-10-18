@@ -95,3 +95,10 @@ simulator:
     uv run python local_main.py
 
 alias sim := simulator
+
+# Run the legibility lab in the local simulator
+simulator-lab:
+    uv sync --group simulator
+    uv run python local_main.py --lab
+
+alias sim-lab := simulator-lab

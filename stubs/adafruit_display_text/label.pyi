@@ -12,6 +12,7 @@ class Label(_Layer):
     text: str
     color: int | None
     scale: int
+    hidden: bool
 
     def __init__(
         self,

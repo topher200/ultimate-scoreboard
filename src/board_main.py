@@ -12,6 +12,7 @@ from adafruit_matrixportal.matrixportal import MatrixPortal
 from src.app_setup import create_managers, initialize_application, run_tasks
 from src.board_network import BoardNetwork
 from src.hardware_manager import create_keys_from_board
+from src.lab import request_lab, run_lab, take_lab_request
 from src.network_patches import apply_network_patches
 from src.ota_manager import DeviceInfo, OtaManager
 from src.web_server import WebServer
@@ -46,9 +47,19 @@ def create_ota_manager(display_manager) -> OtaManager | None:
     )
 
 
+async def enter_lab() -> None:
+    request_lab(microcontroller.nvm)
+    microcontroller.reset()
+
+
+async def leave_lab() -> None:
+    microcontroller.reset()
+
+
 async def main():
     """Main application entry point with asyncio tasks."""
     print(f"Scoreboard {VERSION}")
+    lab_mode = take_lab_request(microcontroller.nvm)
 
     # Initialize hardware
     matrixportal = MatrixPortal(status_neopixel=board.NEOPIXEL, debug=True)
@@ -58,6 +69,17 @@ async def main():
 
     # Create keys from board
     keys = create_keys_from_board(board)
+
+    if lab_mode:
+        await run_lab(
+            matrixportal,
+            keys,
+            microcontroller.nvm,
+            BoardNetwork(matrixportal.network),
+            WebServer(),
+            restart=leave_lab,
+        )
+        return
 
     # Initialize managers
     managers = create_managers(
@@ -71,7 +93,7 @@ async def main():
     # Initialize application state
     initialize_application(managers, create_ota_manager(managers.display_manager))
 
-    await run_tasks(managers)
+    await run_tasks(managers, enter_lab=enter_lab)
 
 
 def run():
