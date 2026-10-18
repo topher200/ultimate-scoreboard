@@ -244,11 +244,16 @@ class DisplayManager:
         return tile_grid
 
     def _draw_frame(self, bitmap: displayio.Bitmap, dash_offset: int) -> None:
-        """Draw the frame as dashes shifted along the edge by `dash_offset`."""
+        """Draw the frame as dashes shifted along the edge by `dash_offset`.
+
+        Runs without allocating, so marching dashes don't trigger garbage
+        collection pauses.
+        """
         period = FRAME_DASH_LENGTH + FRAME_GAP_LENGTH
-        for i, pixel in enumerate(self._frame_pixels):
+        pixels = self._frame_pixels
+        for i in range(len(pixels)):
             lit = (i - dash_offset) % period < FRAME_DASH_LENGTH
-            bitmap[pixel] = 1 if lit else 0
+            bitmap[pixels[i]] = 1 if lit else 0
 
     def _draw_mmp_frame(self, include_bottom: bool) -> None:
         """Draw the MMP frame, leaving its bottom edge dark unless `include_bottom`."""
