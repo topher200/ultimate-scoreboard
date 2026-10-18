@@ -158,12 +158,15 @@ class DisplayManager:
         self._labels[RIGHT_TEAM_SCORE].text = str(right_score)
 
     def set_gender_matchup(self, gender: str, count: int) -> None:
-        """Show the gender matchup and frame the screen, both colored by gender."""
+        """Show the gender matchup and frame the screen, both colored by gender.
+
+        The WMP frame's dashes hold still.
+        """
         is_wmp = gender == GenderManager.GENDER_WMP
         color = WMP_GENDER_MATCHUP_COLOR if is_wmp else MMP_GENDER_MATCHUP_COLOR
         self._wmp_frame.hidden = not is_wmp
         self._mmp_frame.hidden = is_wmp
-        self._wmp_frame_march_start = time.monotonic()
+        self._wmp_frame_march_start = -WMP_FRAME_MARCH_SECONDS
         for element_id, text in (
             (GENDER_MATCHUP, gender),
             (GENDER_MATCHUP_COUNTER, str(count)),
@@ -219,8 +222,12 @@ class DisplayManager:
             for x in range(DISPLAY_WIDTH):
                 bitmap[x, DISPLAY_HEIGHT - 1] = 0
 
+    def march_wmp_frame(self) -> None:
+        """March dashes around the WMP frame for WMP_FRAME_MARCH_SECONDS."""
+        self._wmp_frame_march_start = time.monotonic()
+
     def animate_wmp_frame(self) -> None:
-        """March dashes around the WMP frame after each matchup update, then hold them still."""
+        """Advance the WMP frame's dashes while they march, then hold them still."""
         elapsed = time.monotonic() - self._wmp_frame_march_start
         offset = (
             int(elapsed / WMP_FRAME_MARCH_STEP_SECONDS)

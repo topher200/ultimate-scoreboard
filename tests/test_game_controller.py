@@ -48,6 +48,44 @@ class TestGenderMatchupDisplay:
         assert counter_label.text == "1"
 
 
+class TestWmpFrameMarch:
+    """Test which actions march the WMP frame's dashes."""
+
+    @staticmethod
+    def _marching(display_manager):
+        return display_manager._wmp_frame_march_start > 0
+
+    def test_boot_holds_dashes_still(self, game_controller, display_manager):
+        game_controller.initialize_scores()
+
+        assert not self._marching(display_manager)
+
+    async def test_point_marches_dashes(self, game_controller, display_manager):
+        await game_controller.handle_left_score_button()
+
+        assert self._marching(display_manager)
+
+    async def test_undo_holds_dashes_still(self, game_controller, display_manager):
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_undo_button()
+
+        assert not self._marching(display_manager)
+
+    async def test_reset_holds_dashes_still(self, game_controller, display_manager):
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_reset_button()
+
+        assert not self._marching(display_manager)
+
+    async def test_toggle_gender_holds_dashes_still(
+        self, game_controller, display_manager
+    ):
+        await game_controller.handle_left_score_button()
+        await game_controller.handle_toggle_gender_button()
+
+        assert not self._marching(display_manager)
+
+
 class TestGameControllerDisplayMethods:
     """Test GameController display update methods."""
 
