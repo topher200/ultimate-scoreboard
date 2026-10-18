@@ -100,7 +100,12 @@ class _FakeFormData:
         self._raw = raw
         self.fields = list(raw)
 
+    def __getitem__(self, field_name):
+        return self._raw[field_name]
+
     def get(self, field_name, default=None, *, safe=True):
+        if not safe:
+            print("WARNING: Setting safe to False makes XSS vulnerabilities possible")
         value = self._raw.get(field_name, default)
         return value.replace("&", "&amp;") if safe and value else value
 
@@ -111,3 +116,9 @@ def test_decode_form_decodes_raw_values():
     )
 
     assert form == {LEFT_TEAM_NAME: "Red Team", RIGHT_TEAM_NAME: "A&B"}
+
+
+def test_decode_form_prints_no_xss_warning(capsys):
+    decode_form(_FakeFormData({LEFT_TEAM_NAME: "Red+Team"}))
+
+    assert not capsys.readouterr().out

@@ -14,6 +14,7 @@ class FormData:
     def get(
         self, field_name: str, default: str | None = None, *, safe: bool = True
     ) -> str | None: ...
+    def __getitem__(self, field_name: str) -> str: ...
 
 class Request:
     method: str
