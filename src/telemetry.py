@@ -37,6 +37,7 @@ if TYPE_CHECKING:
 CHUNKS_URL = "https://chunks.memfault.com/api/v0/chunks/"
 # Memfault keeps at most 100 heartbeats per device per day
 HEARTBEAT_INTERVAL_S = 900
+FIRST_HEARTBEAT_S = 60
 UPLOAD_TIMEOUT_S = 10
 REBOOT_REASON_FILE = "reboot_reason"
 CRASH_FILE = "crash.txt"
@@ -120,9 +121,11 @@ class Telemetry:
         self.flush()
 
     async def run(self, online: Callable) -> None:
-        """Send a heartbeat each HEARTBEAT_INTERVAL_S while online() is true."""
+        """Send a heartbeat soon after boot, then every HEARTBEAT_INTERVAL_S, while online."""
+        delay = FIRST_HEARTBEAT_S
         while True:
-            await asyncio.sleep(HEARTBEAT_INTERVAL_S)
+            await asyncio.sleep(delay)
+            delay = HEARTBEAT_INTERVAL_S
             if online():
                 self.send_heartbeat()
 

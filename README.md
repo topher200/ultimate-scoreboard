@@ -175,7 +175,7 @@ The board keeps two app slots, and installs each update into the slot that is no
 
 ### Telemetry
 
-With `MEMFAULT_PROJECT_KEY` set, the board reports to Memfault after it joins Wi-Fi, and then every 15 minutes:
+With `MEMFAULT_PROJECT_KEY` set, the board reports to Memfault after it joins Wi-Fi, again one minute after boot, and then every 15 minutes:
 
 - **Reboots,** with the reason from the hardware, or "firmware update" before an OTA restart.
 - **Crashes.** The app writes the traceback to `crash.txt`, and the next run uploads it as a Custom Data Recording.
