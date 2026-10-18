@@ -12,7 +12,7 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 | Hold Left, tap Right | Toggle gender matchup and retry joining Wi-Fi |
 | Hold Right, tap Left | Undo last point |
 
-- **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page. Scan it with a phone on the same network, then enter the names and tap Save. If the board cannot join the Wi-Fi in `settings.toml`, it hosts an open "Scoreboard" network: the QR code joins your phone to it, then changes to the page URL. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
+- **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page. Scan it with a phone on the same network, then enter the names and tap Save. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
 - **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
 

@@ -24,12 +24,6 @@ class SimulatorNetwork:
     def connect(self) -> str:
         return _lan_address()
 
-    def start_access_point(self, ssid: str) -> str:
-        raise NotImplementedError
-
-    def access_point_has_clients(self) -> bool:
-        return False
-
 
 class SimulatorWebServer:
     """Serves one page at "/" with http.server, for phones on the same LAN."""
