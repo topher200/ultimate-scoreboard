@@ -14,6 +14,9 @@ LEFT_TEAM = "left_team"
 RIGHT_TEAM = "right_team"
 LEFT_TEAM_SCORE = "left_team_score"
 RIGHT_TEAM_SCORE = "right_team_score"
+# Second copies of the scores, one column to the right, which make them bold
+LEFT_TEAM_SCORE_BOLD = "left_team_score_bold"
+RIGHT_TEAM_SCORE_BOLD = "right_team_score_bold"
 GENDER_MATCHUP = "gender_matchup"
 GENDER_MATCHUP_COUNTER = "gender_matchup_counter"
 
@@ -21,11 +24,15 @@ GENDER_MATCHUP_COUNTER = "gender_matchup_counter"
 WIFI_ICON_COLOR = 0x00FFFF
 WIFI_SEARCH_TEXT_COLOR = 0xFFFFFF
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
-RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
-MMP_GENDER_MATCHUP_COLOR = 0xFFFFFF  # white
-WMP_GENDER_MATCHUP_COLOR = 0xFF00FF  # magenta
+RIGHT_TEAM_COLOR = 0xFFFFFF  # HOME team color (white)
+# Team names at 2/3 brightness, so the scores stand out
+LEFT_TEAM_NAME_COLOR = 0xAAAA00
+RIGHT_TEAM_NAME_COLOR = 0xAAAAAA
+MMP_GENDER_MATCHUP_COLOR = 0xFF00FF  # magenta
+WMP_GENDER_MATCHUP_COLOR = 0x00FFFF  # cyan
 WMP_FRAME_MARCH_SECONDS = 30.0
 WMP_FRAME_MARCH_STEP_SECONDS = 0.1
+FRAME_WIDTH = 3
 FRAME_DASH_LENGTH = 5
 FRAME_GAP_LENGTH = 3
 
@@ -38,26 +45,30 @@ FONT_TYPE = terminalio.FONT
 # Display dimensions
 DISPLAY_HEIGHT = 32
 DISPLAY_WIDTH = 64
-LEFT_BORDER_MARGIN_WIDTH = 2
+# Columns between the screen edge and the text, one more than the frame
+TEXT_INSET = FRAME_WIDTH + 1
 
-# Position constants
-TEAM_NAME_Y_POSITION = 0
-SCORE_Y_POSITION = int(DISPLAY_HEIGHT * 0.25)
-# Past the screen edge by the blank column at the right of each glyph
-RIGHT_TEAM_SCORE_X_POSITION = DISPLAY_WIDTH + 1
-GENDER_MATCHUP_X_POSITION = int(DISPLAY_WIDTH * 0.5) + 2
-GENDER_MATCHUP_Y_POSITION = int(DISPLAY_HEIGHT * 0.35)
+# Position constants. The terminal font lights its first row 2 rows below a
+# label's top at scale 1 and 4 rows below at scale 2, and leaves blank columns
+# at the sides of each glyph.
+# Names light rows 3-10
+TEAM_NAME_Y_POSITION = 1
+# Scores light rows 12-27
+SCORE_Y_POSITION = 8
+LEFT_TEAM_SCORE_X_POSITION = TEXT_INSET - 2
+RIGHT_TEAM_SCORE_X_POSITION = DISPLAY_WIDTH - TEXT_INSET + 1
+RIGHT_TEAM_NAME_X_POSITION = DISPLAY_WIDTH - TEXT_INSET + 1
+GENDER_MATCHUP_X_POSITION = DISPLAY_WIDTH // 2
+GENDER_MATCHUP_Y_POSITION = 10
 GENDER_MATCHUP_COUNTER_Y_OFFSET = 8
 LEFT_JUSTIFY_ANCHOR_POINT = (0.0, 0.0)
 MIDDLE_JUSTIFY_ANCHOR_POINT = (0.5, 0.0)
 RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 
 # Timing indicator constants
-TIMING_INDICATOR_X_POSITION = (
-    DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH - TIMING_INDICATOR_PIXEL_COUNT
-)
-# The row above the frame's bottom edge
-TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 2
+TIMING_INDICATOR_X_POSITION = DISPLAY_WIDTH - TEXT_INSET - TIMING_INDICATOR_PIXEL_COUNT
+# The row between the scores and the frame's bottom edge
+TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - FRAME_WIDTH - 1
 TIMING_INDICATOR_COLOR = 0xFFFFFF
 
 # Update screen constants
@@ -90,17 +101,17 @@ _ANCHORED_LABELS = (
         LEFT_TEAM,
         "",
         TEAM_NAME_FONT_SCALE,
-        LEFT_TEAM_COLOR,
+        LEFT_TEAM_NAME_COLOR,
         LEFT_JUSTIFY_ANCHOR_POINT,
-        (LEFT_BORDER_MARGIN_WIDTH, TEAM_NAME_Y_POSITION),
+        (TEXT_INSET, TEAM_NAME_Y_POSITION),
     ),
     (
         RIGHT_TEAM,
         "",
         TEAM_NAME_FONT_SCALE,
-        RIGHT_TEAM_COLOR,
+        RIGHT_TEAM_NAME_COLOR,
         RIGHT_JUSTIFY_ANCHOR_POINT,
-        (DISPLAY_WIDTH - 1, TEAM_NAME_Y_POSITION),
+        (RIGHT_TEAM_NAME_X_POSITION, TEAM_NAME_Y_POSITION),
     ),
     (
         LEFT_TEAM_SCORE,
@@ -108,10 +119,26 @@ _ANCHORED_LABELS = (
         SCORE_FONT_SCALE,
         LEFT_TEAM_COLOR,
         LEFT_JUSTIFY_ANCHOR_POINT,
-        (LEFT_BORDER_MARGIN_WIDTH, SCORE_Y_POSITION),
+        (LEFT_TEAM_SCORE_X_POSITION, SCORE_Y_POSITION),
+    ),
+    (
+        LEFT_TEAM_SCORE_BOLD,
+        "",
+        SCORE_FONT_SCALE,
+        LEFT_TEAM_COLOR,
+        LEFT_JUSTIFY_ANCHOR_POINT,
+        (LEFT_TEAM_SCORE_X_POSITION + 1, SCORE_Y_POSITION),
     ),
     (
         RIGHT_TEAM_SCORE,
+        "",
+        SCORE_FONT_SCALE,
+        RIGHT_TEAM_COLOR,
+        RIGHT_JUSTIFY_ANCHOR_POINT,
+        (RIGHT_TEAM_SCORE_X_POSITION - 1, SCORE_Y_POSITION),
+    ),
+    (
+        RIGHT_TEAM_SCORE_BOLD,
         "",
         SCORE_FONT_SCALE,
         RIGHT_TEAM_COLOR,
@@ -138,6 +165,30 @@ _ANCHORED_LABELS = (
         ),
     ),
 )
+
+
+def frame_pixels(width: int) -> tuple[list, list]:
+    """Return the (x, y) pixels of a frame `width` thick around the screen, and
+    the distance of each along the outer edge, clockwise from the top-left corner."""
+    pixels = []
+    distances = []
+    right, bottom = DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1
+    for y in range(DISPLAY_HEIGHT):
+        for x in range(DISPLAY_WIDTH):
+            depth = min(x, y, right - x, bottom - y)
+            if depth >= width:
+                continue
+            if y == depth and x < right - depth:
+                distance = x
+            elif x == right - depth and y < bottom - depth:
+                distance = right + y
+            elif y == bottom - depth and x > depth:
+                distance = right + bottom + (right - x)
+            else:
+                distance = 2 * right + bottom + (bottom - y)
+            pixels.append((x, y))
+            distances.append(distance)
+    return pixels, distances
 
 
 def make_qr_matrix(text: str) -> adafruit_miniqr.QRBitMatrix:
@@ -186,21 +237,22 @@ class DisplayManager:
         self._labels[RIGHT_TEAM].text = right_team
 
     def set_scores(self, left_score: int, right_score: int) -> None:
-        self._labels[LEFT_TEAM_SCORE].text = str(left_score)
-        self._labels[RIGHT_TEAM_SCORE].text = str(right_score)
+        for element_id in (LEFT_TEAM_SCORE, LEFT_TEAM_SCORE_BOLD):
+            self._labels[element_id].text = str(left_score)
+        for element_id in (RIGHT_TEAM_SCORE, RIGHT_TEAM_SCORE_BOLD):
+            self._labels[element_id].text = str(right_score)
 
     def set_gender_matchup(self, gender: str, count: int) -> None:
-        """Show the gender matchup and frame the screen, both colored by gender.
+        """Show the gender's first letter over the count, colored by gender.
 
-        The WMP frame's dashes hold still.
+        A WMP point also frames the screen, with its dashes held still.
         """
         is_wmp = gender == GenderManager.GENDER_WMP
         color = WMP_GENDER_MATCHUP_COLOR if is_wmp else MMP_GENDER_MATCHUP_COLOR
         self._wmp_frame.hidden = not is_wmp
-        self._mmp_frame.hidden = is_wmp
         self._wmp_frame_march_start = -WMP_FRAME_MARCH_SECONDS
         for element_id, text in (
-            (GENDER_MATCHUP, gender),
+            (GENDER_MATCHUP, gender[:1]),
             (GENDER_MATCHUP_COUNTER, str(count)),
         ):
             self._labels[element_id].text = text
@@ -290,33 +342,20 @@ class DisplayManager:
         self._update_notice.hidden = True
 
     def _setup_frames(self) -> None:
-        """Initialize hidden WMP and MMP frames around the edge of the screen."""
-        right, bottom = DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1
-        self._frame_pixels = (
-            [(x, 0) for x in range(right)]
-            + [(right, y) for y in range(bottom)]
-            + [(x, bottom) for x in range(right, 0, -1)]
-            + [(0, y) for y in range(bottom, 0, -1)]
+        """Initialize a hidden WMP frame around the edge of the screen."""
+        self._frame_pixels, self._frame_distances = frame_pixels(FRAME_WIDTH)
+        palette = displayio.Palette(2)
+        palette[0] = 0x000000
+        palette[1] = WMP_GENDER_MATCHUP_COLOR
+        palette.make_transparent(0)
+        self._wmp_frame = displayio.TileGrid(
+            displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 2), pixel_shader=palette
         )
-        self._wmp_frame = self._add_frame(WMP_GENDER_MATCHUP_COLOR)
+        self._wmp_frame.hidden = True
+        self._main_group.append(self._wmp_frame)
         self._wmp_frame_march_start = -WMP_FRAME_MARCH_SECONDS
         self._wmp_frame_offset = -1
         self.animate_wmp_frame()
-        self._mmp_frame = self._add_frame(MMP_GENDER_MATCHUP_COLOR)
-        self._draw_mmp_frame(include_bottom=True)
-
-    def _add_frame(self, color: int) -> displayio.TileGrid:
-        """Add a hidden, full-screen TileGrid that lights its pixels in `color`."""
-        palette = displayio.Palette(2)
-        palette[0] = 0x000000
-        palette[1] = color
-        palette.make_transparent(0)
-        tile_grid = displayio.TileGrid(
-            displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 2), pixel_shader=palette
-        )
-        tile_grid.hidden = True
-        self._main_group.append(tile_grid)
-        return tile_grid
 
     def _draw_frame(self, bitmap: displayio.Bitmap, dash_offset: int) -> None:
         """Draw the frame as dashes shifted along the edge by `dash_offset`.
@@ -326,17 +365,10 @@ class DisplayManager:
         """
         period = FRAME_DASH_LENGTH + FRAME_GAP_LENGTH
         pixels = self._frame_pixels
+        distances = self._frame_distances
         for i in range(len(pixels)):
-            lit = (i - dash_offset) % period < FRAME_DASH_LENGTH
+            lit = (distances[i] - dash_offset) % period < FRAME_DASH_LENGTH
             bitmap[pixels[i]] = 1 if lit else 0
-
-    def _draw_mmp_frame(self, include_bottom: bool) -> None:
-        """Draw the MMP frame, leaving its bottom edge dark unless `include_bottom`."""
-        bitmap = self._mmp_frame.bitmap
-        self._draw_frame(bitmap, 0)
-        if not include_bottom:
-            for x in range(DISPLAY_WIDTH):
-                bitmap[x, DISPLAY_HEIGHT - 1] = 0
 
     def march_wmp_frame(self) -> None:
         """March dashes around the WMP frame for WMP_FRAME_MARCH_SECONDS."""
@@ -357,7 +389,7 @@ class DisplayManager:
         self._draw_frame(self._wmp_frame.bitmap, offset)
 
     def _setup_timing_indicator(self) -> None:
-        """Initialize the timing indicator bar just above the frame's bottom edge."""
+        """Initialize the timing indicator bar just inside the frame's bottom edge."""
         self._timing_indicator_bitmap = displayio.Bitmap(
             TIMING_INDICATOR_PIXEL_COUNT, 1, 2
         )
@@ -376,12 +408,9 @@ class DisplayManager:
     def update_timing_indicator(self, count: int) -> None:
         """Light the right-most `count` pixels of the timing indicator.
 
-        The MMP frame's bottom edge shows only while the indicator is empty.
-
         :param count: Number of pixels to light (0 to TIMING_INDICATOR_PIXEL_COUNT)
         """
         count = max(0, min(count, TIMING_INDICATOR_PIXEL_COUNT))
-        self._draw_mmp_frame(include_bottom=count == 0)
         first_lit = TIMING_INDICATOR_PIXEL_COUNT - count
         for i in range(TIMING_INDICATOR_PIXEL_COUNT):
             self._timing_indicator_bitmap[i, 0] = 1 if i >= first_lit else 0

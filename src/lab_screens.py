@@ -9,6 +9,7 @@ from src.display_manager import (
     DISPLAY_WIDTH,
     WMP_FRAME_MARCH_SECONDS,
     DisplayManager,
+    frame_pixels,
 )
 from src.lab_font import DIGITS_3X5, DIGITS_5X7, draw_glyph, draw_segments, fill_rect
 
@@ -312,30 +313,6 @@ def _scaled_color(color: int, level: int) -> int:
     )
 
 
-def _frame_pixels(width: int) -> tuple[list, list]:
-    """Return the (x, y) pixels of a frame `width` thick, and the distance of each
-    along the outer edge, clockwise from the top-left corner."""
-    pixels = []
-    distances = []
-    right, bottom = DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1
-    for y in range(DISPLAY_HEIGHT):
-        for x in range(DISPLAY_WIDTH):
-            depth = min(x, y, right - x, bottom - y)
-            if depth >= width:
-                continue
-            if y == depth and x < right - depth:
-                distance = x
-            elif x == right - depth and y < bottom - depth:
-                distance = right + y
-            elif y == bottom - depth and x > depth:
-                distance = right + bottom + (right - x)
-            else:
-                distance = 2 * right + bottom + (bottom - y)
-            pixels.append((x, y))
-            distances.append(distance)
-    return pixels, distances
-
-
 class DrawnScreen:
     """A screen drawn into a display group, which `animate` moves over time."""
 
@@ -494,9 +471,9 @@ class DrawnScreen:
         screen = self.screen
         bitmap = self._bitmap
         if screen.gender == GENDER_FRAME:
-            self._frame, self._frame_distances = _frame_pixels(1)
+            self._frame, self._frame_distances = frame_pixels(1)
         elif screen.gender == GENDER_THICK_FRAME:
-            self._frame, self._frame_distances = _frame_pixels(THICK_FRAME_WIDTH)
+            self._frame, self._frame_distances = frame_pixels(THICK_FRAME_WIDTH)
         self._draw_frame(0 if screen.motion in _DASHED_MOTIONS else None)
         if screen.gender == GENDER_CORNERS:
             right = DISPLAY_WIDTH - CORNER_SIZE
