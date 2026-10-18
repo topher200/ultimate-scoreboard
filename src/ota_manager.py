@@ -5,6 +5,7 @@ from __future__ import annotations
 import ota_loader
 from src.bundle import unpack, verify
 from src.compat import TYPE_CHECKING, Callable
+from src.log import WARNING, log
 from src.protocols import HttpLike
 
 if TYPE_CHECKING:
@@ -68,20 +69,20 @@ class OtaManager:
             release = self._latest_release()
             ota_loader.mark_healthy(self._root)
         except Exception as e:
-            print(f"Update check failed: {e}")
+            log(f"Update check failed: {e}", WARNING)
             return
         if release is None:
-            print(f"Software {self._device.software_version} is up to date")
+            log(f"Software {self._device.software_version} is up to date")
             return
         version, url = release
         if version == ota_loader.rolled_back_version(self._root):
-            print(f"Skipping {version}, which crashed during its trial")
+            log(f"Skipping {version}, which crashed during its trial")
             return
         self._display_manager.show_update_notice()
         try:
             self._install(version, url)
         except Exception as e:
-            print(f"Update failed: {e}")
+            log(f"Update failed: {e}", WARNING)
             self._display_manager.hide_update_notice()
             return
         self._reset()
@@ -117,7 +118,7 @@ class OtaManager:
         slot_dir = ota_loader.slot_path(self._root, slot)
         bundle_path = slot_dir + ".bundle"
         ota_loader.make_dirs(ota_loader.slot_path(self._root, ""))
-        print(f"Downloading the update into slot {slot}")
+        log(f"Downloading the update into slot {slot}")
         response = self._http.get(url)
         try:
             if response.status_code != 200:

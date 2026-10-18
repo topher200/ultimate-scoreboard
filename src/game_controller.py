@@ -2,6 +2,7 @@
 
 from src.display_manager import DisplayManager
 from src.gender_manager import GenderManager
+from src.log import log
 from src.network_manager import NetworkManager
 from src.score_manager import ScoreEvent, ScoreManager
 from src.settings_store import LEFT_TEAM_NAME, RIGHT_TEAM_NAME
@@ -35,6 +36,7 @@ class GameController:
         self._network_manager = network_manager
         self._gender_manager = gender_manager
         self._timing_indicator_manager = timing_indicator_manager
+        self._points_scored = 0
 
     def initialize_scores(self) -> None:
         """Initialize score display from current score manager state.
@@ -46,20 +48,20 @@ class GameController:
 
     async def handle_left_score_button(self) -> None:
         """Add a point for the left team."""
-        print("LEFT button pressed!")
+        log("LEFT button pressed!")
         self._add_point(ScoreEvent.LEFT)
 
     async def handle_right_score_button(self) -> None:
         """Add a point for the right team."""
-        print("RIGHT button pressed!")
+        log("RIGHT button pressed!")
         self._add_point(ScoreEvent.RIGHT)
 
     async def handle_undo_button(self) -> None:
         """Undo the most recent point or reset and update the display."""
-        print("UNDO pressed! Undoing last score...")
+        log("UNDO pressed! Undoing last score...")
         entry = self._score_manager.undo_last_score()
         if entry is None:
-            print("No score history to undo")
+            log("No score history to undo")
             return
 
         if entry == ScoreEvent.LEFT:
@@ -73,7 +75,7 @@ class GameController:
 
     async def handle_reset_button(self) -> None:
         """Reset scores to 0-0, clear the timing indicator, and update the display."""
-        print("RESET pressed! Resetting scores to 0-0...")
+        log("RESET pressed! Resetting scores to 0-0...")
         self._score_manager.reset()
         self._redraw_scores()
         self._clear_timing_indicator()
@@ -84,10 +86,10 @@ class GameController:
 
         Toggles the starting gender between MMP and WMP and recalculates matchup.
         """
-        print("TOGGLE GENDER pressed! Toggling starting gender...")
+        log("TOGGLE GENDER pressed! Toggling starting gender...")
         self._gender_manager.toggle_first_point_gender()
         starting_gender = self._gender_manager.get_first_point_gender()
-        print(f"Starting gender updated: {starting_gender}")
+        log(f"Starting gender updated: {starting_gender}")
 
         self._update_gender_matchup_display()
 
@@ -106,10 +108,17 @@ class GameController:
         """Show the team names from `settings`."""
         left_team = settings[LEFT_TEAM_NAME]
         right_team = settings[RIGHT_TEAM_NAME]
-        print(f"Team names: {left_team} vs {right_team}")
+        log(f"Team names: {left_team} vs {right_team}")
         self.set_team_names(left_team, right_team)
 
+    def take_points_scored(self) -> int:
+        """Return the number of points added since the last call."""
+        points = self._points_scored
+        self._points_scored = 0
+        return points
+
     def _add_point(self, team: ScoreEvent) -> None:
+        self._points_scored += 1
         if team == ScoreEvent.LEFT:
             self._score_manager.increment_left_score()
         else:
@@ -124,7 +133,7 @@ class GameController:
     def _print_score(self, prefix: str) -> None:
         left = self._score_manager.left_score
         right = self._score_manager.right_score
-        print(f"{prefix}: {left}-{right}")
+        log(f"{prefix}: {left}-{right}")
 
     def _redraw_scores(self) -> None:
         self._display_manager.set_scores(

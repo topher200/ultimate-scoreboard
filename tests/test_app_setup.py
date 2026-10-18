@@ -61,6 +61,34 @@ class TestInitializeApplication:
 
         ota_manager.check_and_install.assert_not_called()
 
+    def test_uploads_telemetry_before_the_update_check(
+        self, fake_matrix_portal, fake_keys, fake_network, fake_web_server
+    ):
+        managers = create_managers(
+            fake_matrix_portal, fake_keys, bytearray(256), fake_network, fake_web_server
+        )
+        calls = Mock()
+
+        initialize_application(managers, calls.ota_manager, calls.telemetry)
+
+        assert [c[0] for c in calls.mock_calls] == [
+            "telemetry.flush",
+            "ota_manager.check_and_install",
+        ]
+
+    def test_skips_telemetry_upload_without_wifi(
+        self, fake_matrix_portal, fake_keys, fake_network, fake_web_server
+    ):
+        fake_network.connect_error = OSError("no network")
+        managers = create_managers(
+            fake_matrix_portal, fake_keys, bytearray(256), fake_network, fake_web_server
+        )
+        telemetry = Mock()
+
+        initialize_application(managers, None, telemetry)
+
+        telemetry.flush.assert_not_called()
+
 
 class TestCreateManagers:
     def test_boot_shows_saved_names_and_saving_applies_new_ones(

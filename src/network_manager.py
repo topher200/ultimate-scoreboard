@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 
 from src.compat import TYPE_CHECKING, Callable
+from src.log import WARNING, log
 from src.protocols import NetworkLike, WebServerLike
 
 if TYPE_CHECKING:
@@ -57,11 +58,11 @@ class NetworkManager:
             host = self._network.connect()
             self._url = self._web_server.start(host, SETTINGS_PAGE_PORT, self._respond)
         except Exception as e:
-            print(f"Failed to start the settings page: {e}")
+            log(f"Failed to start the settings page: {e}", WARNING)
             return
         finally:
             self._display_manager.hide_wifi_search()
-        print(f"Settings page: {self._url}")
+        log(f"Settings page: {self._url}")
         self._display_manager.show_qr_code(self._url)
 
     async def serve(self) -> None:
@@ -71,5 +72,5 @@ class NetworkManager:
                 try:
                     self._web_server.poll()
                 except Exception as e:
-                    print(f"Settings page request failed: {e}")
+                    log(f"Settings page request failed: {e}", WARNING)
             await asyncio.sleep(SERVER_POLL_INTERVAL)

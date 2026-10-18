@@ -175,6 +175,15 @@ Then activate it for the default cohort with `just activate 1.2.0`, or in the Me
 
 The board keeps two app slots, and installs each update into the slot that is not running. The new release is on trial until it checks in with Memfault. If it crashes during its trial, the board goes back to the previous slot and skips that release from then on. Updates over Wi-Fi never change `boot.py`, `main.py`, `ota_loader.py`, or `safe_mode.py`; deploy those over USB.
 
+### Telemetry
+
+With `MEMFAULT_PROJECT_KEY` set, the board reports to Memfault after it joins Wi-Fi, and then every 15 minutes:
+
+- **Reboots,** with the reason from the hardware, or "firmware update" before an OTA restart.
+- **Crashes.** The app writes the traceback to `crash.txt`, and the next run uploads it as a Custom Data Recording.
+- **Logs.** `src/log.py` prints each line and keeps the newest 100 for upload. Use `log()` in place of `print()` in `src/`.
+- **Heartbeats,** with metrics such as `free_memory`, `wifi_rssi` and `points_scored`. Memfault keeps at most 100 heartbeats per device per day.
+
 ## Resources
 
 The base of this project is
