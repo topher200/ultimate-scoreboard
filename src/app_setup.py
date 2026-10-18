@@ -67,22 +67,12 @@ def create_managers(matrixportal, keys) -> Managers:
     )
 
 
-async def initialize_application(
-    game_controller: GameController, network_manager: NetworkManager
-) -> None:
+async def initialize_application(game_controller: GameController) -> None:
     """Initialize application state (team names and scores).
 
     :param game_controller: GameController instance
-    :param network_manager: NetworkManager instance
     """
-    try:
-        await game_controller.update_team_names()
-    except Exception as e:
-        print(f"Network unavailable during initialization: {e}")
-        game_controller.set_team_names(
-            network_manager.DEFAULT_LEFT_TEAM_NAME,
-            network_manager.DEFAULT_RIGHT_TEAM_NAME,
-        )
+    await game_controller.update_team_names()
     game_controller.initialize_scores()
 
 

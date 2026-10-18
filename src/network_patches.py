@@ -6,30 +6,36 @@ for faster failure when network is unavailable.
 
 from src.compat import Any
 
-# Track which requests objects have been patched to avoid double-patching
-_patched_requests = set()
+NETWORK_TIMEOUT_SECONDS = 2
+
+_PATCHED_MARKER = "_scoreboard_short_timeout"
+
+
+def _mark_patched(obj: Any) -> bool:
+    """Mark obj as patched.
+
+    :return: False if obj was already patched
+    """
+    if getattr(obj, _PATCHED_MARKER, False):
+        return False
+    setattr(obj, _PATCHED_MARKER, True)
+    return True
 
 
 def _patch_requests_get(requests_obj: Any) -> None:
-    """Patch requests.get with shorter timeout if not already patched."""
-    if requests_obj is None:
+    """Patch requests.get with a shorter timeout if not already patched."""
+    if requests_obj is None or not hasattr(requests_obj, "get"):
+        return
+    if not _mark_patched(requests_obj):
         return
 
-    # Use id() to track unique requests objects
-    requests_id = id(requests_obj)
-    if requests_id in _patched_requests:
-        return
+    original_requests_get = requests_obj.get
 
-    if hasattr(requests_obj, "get"):
-        original_requests_get = requests_obj.get
+    def requests_get_with_short_timeout(*args, **kwargs):
+        kwargs["timeout"] = NETWORK_TIMEOUT_SECONDS
+        return original_requests_get(*args, **kwargs)
 
-        def requests_get_with_short_timeout(*args, **kwargs):
-            """Wrapper that forces timeout=2 for faster failure."""
-            kwargs["timeout"] = 2
-            return original_requests_get(*args, **kwargs)
-
-        requests_obj.get = requests_get_with_short_timeout
-        _patched_requests.add(requests_id)
+    requests_obj.get = requests_get_with_short_timeout
 
 
 def apply_network_patches(matrixportal: Any) -> None:
@@ -37,36 +43,34 @@ def apply_network_patches(matrixportal: Any) -> None:
 
     Patches:
     - network.connect: Forces max_attempts=1 (no retries)
-    - network.fetch: Forces timeout=2 seconds (instead of 10)
-    - requests.get: Forces timeout=2 seconds for direct HTTP calls
+    - network.fetch: Forces timeout=NETWORK_TIMEOUT_SECONDS
+    - requests.get: Forces timeout=NETWORK_TIMEOUT_SECONDS for direct HTTP calls
+
+    Applying the patches more than once has no further effect.
 
     :param matrixportal: MatrixPortal instance to patch
     """
-    # Monkey-patch network.fetch to use shorter timeout (2 seconds instead of 10)
-    original_fetch = matrixportal.network.fetch
+    network = matrixportal.network
+    if not _mark_patched(network):
+        return
+
+    original_fetch = network.fetch
 
     def fetch_with_short_timeout(*args, **kwargs):
-        """Wrapper that forces timeout=2 for faster failure."""
-        kwargs["timeout"] = 2
+        kwargs["timeout"] = NETWORK_TIMEOUT_SECONDS
         return original_fetch(*args, **kwargs)
 
-    matrixportal.network.fetch = fetch_with_short_timeout
+    network.fetch = fetch_with_short_timeout
 
-    # Monkey-patch network.connect to fail immediately (no retries)
-    # Also patch requests.get lazily when connect is called
-    original_connect = matrixportal.network.connect
+    original_connect = network.connect
 
     def connect_with_no_retries(*args, **kwargs):
-        """Wrapper that forces max_attempts=1 for immediate failure."""
         kwargs["max_attempts"] = 1
         result = original_connect(*args, **kwargs)
-
-        # Patch requests.get after connection is established (requests is now set)
-        _patch_requests_get(matrixportal.network._wifi.requests)
-
+        # requests exists only after the first connect
+        _patch_requests_get(network._wifi.requests)
         return result
 
-    matrixportal.network.connect = connect_with_no_retries
+    network.connect = connect_with_no_retries
 
-    # Patch requests.get immediately if it already exists (e.g., from previous connection)
-    _patch_requests_get(matrixportal.network._wifi.requests)
+    _patch_requests_get(network._wifi.requests)
