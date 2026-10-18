@@ -18,7 +18,8 @@ GENDER_MATCHUP = "gender_matchup"
 GENDER_MATCHUP_COUNTER = "gender_matchup_counter"
 
 # Color constants
-MESSAGE_COLOR = 0xFFFF00
+WIFI_ICON_COLOR = 0x00FFFF
+WIFI_SEARCH_TEXT_COLOR = 0xFFFFFF
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
 RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
 MMP_GENDER_MATCHUP_COLOR = 0xFFFFFF  # white
@@ -58,6 +59,21 @@ TIMING_INDICATOR_X_POSITION = (
 # The row above the frame's bottom edge
 TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 2
 TIMING_INDICATOR_COLOR = 0xFFFFFF
+
+# Wi-Fi search screen constants
+WIFI_SEARCH_TEXT = "Searching"
+WIFI_ICON_Y_POSITION = 3
+WIFI_SEARCH_TEXT_Y_POSITION = 22
+WIFI_ICON = (
+    "..XXXXXXX..",
+    ".X.......X.",
+    "X..XXXXX..X",
+    "..X.....X..",
+    ".X..XXX..X.",
+    "...X...X...",
+    "...........",
+    ".....X.....",
+)
 
 # QR code constants
 QR_CODE_LIGHT_COLOR = 0x808080
@@ -152,7 +168,7 @@ class DisplayManager:
 
         self._setup_frames()
         self._setup_timing_indicator()
-        self._setup_message()
+        self._setup_wifi_search()
         self._setup_qr_code()
         matrixportal.display.root_group = self._main_group
 
@@ -185,34 +201,55 @@ class DisplayManager:
             self._labels[element_id].text = text
             self._labels[element_id].color = color
 
-    def _setup_message(self) -> None:
-        """Initialize a hidden, full-screen message that covers the scoreboard."""
-        palette = displayio.Palette(1)
-        palette[0] = 0x000000
-        self._message_label = label.Label(
-            FONT_TYPE,
-            text=" ",
-            color=MESSAGE_COLOR,
-            anchor_point=(0.5, 0.5),
-            anchored_position=(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2),
-        )
-        self._message = displayio.Group()
-        self._message.append(
+    def _setup_wifi_search(self) -> None:
+        """Initialize a hidden, full-screen Wi-Fi icon and "Searching" that cover the scoreboard."""
+        background_palette = displayio.Palette(1)
+        background_palette[0] = 0x000000
+        icon_bitmap = displayio.Bitmap(len(WIFI_ICON[0]), len(WIFI_ICON), 2)
+        for y, row in enumerate(WIFI_ICON):
+            for x, char in enumerate(row):
+                icon_bitmap[x, y] = 1 if char == "X" else 0
+        icon_palette = displayio.Palette(2)
+        icon_palette[0] = 0x000000
+        icon_palette[1] = WIFI_ICON_COLOR
+        icon_palette.make_transparent(0)
+
+        self._wifi_search = displayio.Group()
+        self._wifi_search.append(
             displayio.TileGrid(
-                displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 1), pixel_shader=palette
+                displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 1),
+                pixel_shader=background_palette,
             )
         )
-        self._message.append(self._message_label)
-        self._message.hidden = True
-        self._main_group.append(self._message)
+        self._wifi_search.append(
+            displayio.TileGrid(
+                icon_bitmap,
+                pixel_shader=icon_palette,
+                x=(DISPLAY_WIDTH - len(WIFI_ICON[0])) // 2,
+                y=WIFI_ICON_Y_POSITION,
+            )
+        )
+        self._wifi_search.append(
+            label.Label(
+                FONT_TYPE,
+                text=WIFI_SEARCH_TEXT,
+                color=WIFI_SEARCH_TEXT_COLOR,
+                anchor_point=(0.5, 0.5),
+                anchored_position=(DISPLAY_WIDTH // 2, WIFI_SEARCH_TEXT_Y_POSITION),
+            )
+        )
+        self._wifi_search.hidden = True
+        self._main_group.append(self._wifi_search)
 
-    def show_message(self, text: str) -> None:
-        """Cover the scoreboard with centered text."""
-        self._message_label.text = text
-        self._message.hidden = False
+    @property
+    def wifi_search_shown(self) -> bool:
+        return not self._wifi_search.hidden
 
-    def hide_message(self) -> None:
-        self._message.hidden = True
+    def show_wifi_search(self) -> None:
+        self._wifi_search.hidden = False
+
+    def hide_wifi_search(self) -> None:
+        self._wifi_search.hidden = True
 
     def _setup_frames(self) -> None:
         """Initialize hidden WMP and MMP frames around the edge of the screen."""

@@ -38,14 +38,14 @@ class TestNetworkManagerConnect:
 
         assert fake_network.connect_count == 1
 
-    def test_searching_message_shows_only_while_joining(
+    def test_wifi_search_shows_only_while_joining(
         self, network_manager, display_manager, fake_network
     ):
         shown_while_joining = []
         connect = fake_network.connect
 
         def connect_and_record():
-            shown_while_joining.append(not display_manager._message.hidden)
+            shown_while_joining.append(display_manager.wifi_search_shown)
             return connect()
 
         fake_network.connect = connect_and_record
@@ -53,7 +53,7 @@ class TestNetworkManagerConnect:
         network_manager.connect()
 
         assert shown_while_joining == [True]
-        assert display_manager._message.hidden
+        assert not display_manager.wifi_search_shown
 
     def test_failed_join_shows_no_qr_code_and_can_retry(
         self, network_manager, display_manager, fake_network

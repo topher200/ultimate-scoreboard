@@ -12,7 +12,6 @@ if TYPE_CHECKING:
 
 SETTINGS_PAGE_PORT = 8080
 SERVER_POLL_INTERVAL = 0.1
-SEARCHING_MESSAGE = "Searching\nfor wifi"
 
 
 class NetworkManager:
@@ -31,7 +30,7 @@ class NetworkManager:
         """Initialize NetworkManager.
 
         :param network: Network that joins the Wi-Fi in settings.toml
-        :param display_manager: DisplayManager for the searching message and QR code
+        :param display_manager: DisplayManager for the Wi-Fi search screen and QR code
         :param web_server: Server for the settings page
         :param respond: Request handler for the settings page; see WebServerLike.start
         """
@@ -53,7 +52,7 @@ class NetworkManager:
         """
         if self._url is not None:
             return
-        self._display_manager.show_message(SEARCHING_MESSAGE)
+        self._display_manager.show_wifi_search()
         try:
             host = self._network.connect()
             self._url = self._web_server.start(host, SETTINGS_PAGE_PORT, self._respond)
@@ -61,7 +60,7 @@ class NetworkManager:
             print(f"Failed to start the settings page: {e}")
             return
         finally:
-            self._display_manager.hide_message()
+            self._display_manager.hide_wifi_search()
         print(f"Settings page: {self._url}")
         self._display_manager.show_qr_code(self._url)
 
