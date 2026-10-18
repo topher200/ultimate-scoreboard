@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Linter to detect typing module imports in CircuitPython code.
 
-This script builds a dependency graph from entry points (main.py, src/app_setup.py)
+This script builds a dependency graph from the board's entry points
 and checks all files in that chain for imports unavailable to CircuitPython,
 such as the 'typing' module. If these are left in the code the board will fail
 to run.
@@ -204,8 +204,11 @@ def main() -> int:
 
     # Entry points to check
     entry_points = [
+        root_dir / "boot.py",
         root_dir / "main.py",
-        root_dir / "src" / "app_setup.py",
+        root_dir / "ota_loader.py",
+        root_dir / "safe_mode.py",
+        root_dir / "src" / "board_main.py",
     ]
 
     # Directories to exclude

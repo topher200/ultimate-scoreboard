@@ -25,11 +25,9 @@ def _root_group(fake_matrix_portal):
 class TestDisplayManager:
     """Test DisplayManager with fake hardware."""
 
-    def test_root_group_holds_labels_and_timing_indicator(
-        self, display_manager, fake_matrix_portal
-    ):
-        """Test that the root group holds labels, frames, timing indicator, and QR code."""
-        assert len(_root_group(fake_matrix_portal)) == 11
+    def test_root_group_holds_every_element(self, display_manager, fake_matrix_portal):
+        """Test that the root group holds every screen element."""
+        assert len(_root_group(fake_matrix_portal)) == 12
 
     def test_set_team_names(self, display_manager):
         display_manager.set_team_names("Red Team", "Blue Team")
@@ -96,6 +94,16 @@ class TestDisplayManager:
 
         display_manager.hide_wifi_search()
         assert not display_manager.wifi_search_shown
+
+    def test_update_notice_covers_the_screen_while_shown(self, display_manager):
+        assert not display_manager.update_notice_shown
+
+        display_manager.show_update_notice()
+        assert display_manager.update_notice_shown
+        assert display_manager._main_group[-1] is display_manager._update_notice
+
+        display_manager.hide_update_notice()
+        assert not display_manager.update_notice_shown
 
     def test_timing_indicator_above_bottom_row(self, display_manager):
         """Test that the timing indicator sits above the bottom row, right-aligned."""

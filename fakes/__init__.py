@@ -1,6 +1,7 @@
 """Fake implementations for testing without hardware."""
 
 from .fake_displayio import FakeBitmap, FakeGroup, FakePalette, FakeTileGrid
+from .fake_http import FakeHttp, FakeResponse
 from .fake_keypad import FakeKeys
 from .fake_label import FakeLabel
 from .fake_matrixportal import FakeDisplay, FakeMatrixPortal
@@ -21,4 +22,6 @@ __all__ = [
     "FakeKeys",
     "FakeNetwork",
     "FakeWebServer",
+    "FakeHttp",
+    "FakeResponse",
 ]

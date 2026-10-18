@@ -15,8 +15,8 @@ class TestDisplayQrCode:
     def test_qr_code_starts_hidden(self, display_manager):
         assert not display_manager.qr_code_shown
 
-    def test_qr_code_is_drawn_on_top(self, display_manager):
-        assert display_manager._main_group[-1] is display_manager._qr_code
+    def test_qr_code_is_drawn_under_only_the_update_notice(self, display_manager):
+        assert display_manager._main_group[-2] is display_manager._qr_code
 
     def test_show_and_hide(self, display_manager):
         display_manager.show_qr_code(URL)

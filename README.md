@@ -25,12 +25,17 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 - `just deploy` to copy project files to the board
 - `just monitor` to see the serial output
 
+After the first deploy, the board can write its own files, and the CIRCUITPY drive is read-only over USB. `just deploy` restarts the board in USB mode over serial, which keeps the drive writable over USB for one boot. If serial does not respond, start CircuitPython safe mode: press reset, then press it again while the status LED blinks yellow.
+
 ### settings.toml
 
 ```toml
 CIRCUITPY_WIFI_SSID =  ""
 CIRCUITPY_WIFI_PASSWORD = ""
+MEMFAULT_PROJECT_KEY = ""
 ```
+
+Leave out `MEMFAULT_PROJECT_KEY` to turn off updates over Wi-Fi.
 
 The settings page uses port 8080, so it does not conflict with the CircuitPython web workflow on port 80.
 
@@ -144,6 +149,22 @@ Or watch for changes and auto-deploy:
 ```bash
 just watch-deploy
 ```
+
+A USB deploy puts the app in the board's root directory. A board with a dev build does not update over Wi-Fi. To set up a board that does, deploy a released version: `just deploy 1.2.0`.
+
+### Updates over Wi-Fi (OTA)
+
+The board gets app updates from Memfault releases. Each time the board joins Wi-Fi at power-on, it asks Memfault for a newer release. If there is one, the board shows "Updating", installs the release, and restarts. Updates change only the files in `src/`. To update CircuitPython or the libraries in `lib/`, use USB.
+
+To publish a release, put `MEMFAULT_ORG_TOKEN`, `MEMFAULT_ORG`, and `MEMFAULT_PROJECT` in a `.env` file at the root of this repo, then run:
+
+```bash
+just release 1.2.0
+```
+
+Then activate it for the default cohort with `just activate 1.2.0`, or in the Memfault UI. Use a version that is newer than the last release. A new Memfault project rejects the board's update check until its first release exists.
+
+The board keeps two app slots, and installs each update into the slot that is not running. The new release is on trial until it checks in with Memfault. If it crashes during its trial, the board goes back to the previous slot and skips that release from then on. Updates over Wi-Fi never change `boot.py`, `main.py`, `ota_loader.py`, or `safe_mode.py`; deploy those over USB.
 
 ## Resources
 

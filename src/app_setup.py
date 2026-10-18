@@ -1,4 +1,4 @@
-"""Shared application setup functions for main.py and local_main.py."""
+"""Shared application setup functions for src/board_main.py and local_main.py."""
 
 import asyncio
 
@@ -85,14 +85,18 @@ def create_managers(matrixportal, keys, nvm, network, web_server) -> Managers:
     )
 
 
-def initialize_application(managers: Managers) -> None:
-    """Show the saved team names and the scores, then join Wi-Fi.
+def initialize_application(managers: Managers, ota_manager=None) -> None:
+    """Show the saved team names and the scores, join Wi-Fi, then install any update.
 
     :param managers: Managers from create_managers
+    :param ota_manager: OtaManager that checks for an update once Wi-Fi joins,
+        or None to skip the check
     """
     managers.game_controller.apply_settings(managers.settings_store.load())
     managers.game_controller.initialize_scores()
     managers.network_manager.connect()
+    if ota_manager is not None and managers.network_manager.url is not None:
+        ota_manager.check_and_install()
 
 
 def create_button_callbacks(game_controller: GameController) -> dict[str, Callable]:

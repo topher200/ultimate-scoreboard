@@ -60,6 +60,10 @@ TIMING_INDICATOR_X_POSITION = (
 TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 2
 TIMING_INDICATOR_COLOR = 0xFFFFFF
 
+# Update screen constants
+UPDATE_NOTICE_TEXT = "Updating"
+UPDATE_NOTICE_TEXT_COLOR = 0xFFFFFF
+
 # Wi-Fi search screen constants
 WIFI_SEARCH_TEXT = "Searching"
 WIFI_ICON_Y_POSITION = 3
@@ -170,6 +174,7 @@ class DisplayManager:
         self._setup_timing_indicator()
         self._setup_wifi_search()
         self._setup_qr_code()
+        self._setup_update_notice()
         matrixportal.display.root_group = self._main_group
 
     def _add_label(self, element_id: str, label_obj: label.Label) -> None:
@@ -250,6 +255,39 @@ class DisplayManager:
 
     def hide_wifi_search(self) -> None:
         self._wifi_search.hidden = True
+
+    def _setup_update_notice(self) -> None:
+        """Initialize a hidden, full-screen "Updating" that covers everything else."""
+        background_palette = displayio.Palette(1)
+        background_palette[0] = 0x000000
+        self._update_notice = displayio.Group()
+        self._update_notice.append(
+            displayio.TileGrid(
+                displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 1),
+                pixel_shader=background_palette,
+            )
+        )
+        self._update_notice.append(
+            label.Label(
+                FONT_TYPE,
+                text=UPDATE_NOTICE_TEXT,
+                color=UPDATE_NOTICE_TEXT_COLOR,
+                anchor_point=(0.5, 0.5),
+                anchored_position=(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2),
+            )
+        )
+        self._update_notice.hidden = True
+        self._main_group.append(self._update_notice)
+
+    @property
+    def update_notice_shown(self) -> bool:
+        return not self._update_notice.hidden
+
+    def show_update_notice(self) -> None:
+        self._update_notice.hidden = False
+
+    def hide_update_notice(self) -> None:
+        self._update_notice.hidden = True
 
     def _setup_frames(self) -> None:
         """Initialize hidden WMP and MMP frames around the edge of the screen."""
