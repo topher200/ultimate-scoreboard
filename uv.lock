@@ -749,6 +749,7 @@ dependencies = [
 dev = [
     { name = "circup" },
     { name = "pyrefly" },
+    { name = "pyserial" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-mock" },
@@ -767,6 +768,7 @@ requires-dist = [{ name = "adafruit-circuitpython-matrixportal", specifier = ">=
 dev = [
     { name = "circup", specifier = ">=2.2.5" },
     { name = "pyrefly", specifier = ">=0.40.0" },
+    { name = "pyserial", specifier = ">=3.5" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-asyncio", specifier = ">=0.25.2" },
     { name = "pytest-mock", specifier = ">=3.15.1" },
