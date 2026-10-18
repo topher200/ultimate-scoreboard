@@ -3,8 +3,9 @@ set shell := ['bash', '-uc']
 set dotenv-load
 set dotenv-override
 
-# Mount point of the board's CIRCUITPY drive; override with the CIRCUITPY env var
-circuitpy := env("CIRCUITPY", `for d in /Volumes /run/media/$(id -un) /media/$(id -un); do [ -f "$d/CIRCUITPY/boot_out.txt" ] && { echo "$d/CIRCUITPY"; exit; }; done; echo /media/CIRCUITPY`)
+# Command that prints the mount point of the board's CIRCUITPY drive; set the
+# CIRCUITPY env var to override it
+circuitpy := "'" + just_executable() + "' --justfile '" + justfile() + "' _circuitpy"
 
 # List available commands
 default:
@@ -33,25 +34,31 @@ monitor:
     @echo "Monitoring serial output. Press Ctrl+] to exit."
     uv run python -m serial.tools.miniterm hwgrep://MatrixPortal 115200
 
+_circuitpy:
+    @echo "${CIRCUITPY:-$(for d in /Volumes /run/media/$(id -un) /media/$(id -un); do [ -f "$d/CIRCUITPY/boot_out.txt" ] && { echo "$d/CIRCUITPY"; exit; }; done; echo /media/CIRCUITPY)}"
+
 # Mount the board's CIRCUITPY drive (Linux)
 mount:
-    @test -f "{{circuitpy}}/boot_out.txt" && echo "Already mounted at {{circuitpy}}" || udisksctl mount -b /dev/disk/by-label/CIRCUITPY
+    @d=$({{circuitpy}}); test -f "$d/boot_out.txt" && echo "Already mounted at $d" || udisksctl mount -b /dev/disk/by-label/CIRCUITPY
 
 # Deploy project files to CircuitPython board; give a release version to let it update over Wi-Fi
 deploy version="dev": usb-mode
-    rsync -r --delete --delete-excluded --checksum --exclude __pycache__ --exclude .DS_Store --exclude version.py src/ "{{circuitpy}}/src/"
-    cp boot.py main.py ota_loader.py safe_mode.py "{{circuitpy}}/"
-    rm -f "{{circuitpy}}/ota_state.json" "{{circuitpy}}/ota_state.tmp"
-    if [ "{{version}}" != dev ]; then echo 'VERSION = "{{version}}"' > "{{circuitpy}}/src/version.py"; fi
+    #!/usr/bin/env bash
+    set -euo pipefail
+    d=$({{circuitpy}})
+    rsync -r --delete --delete-excluded --checksum --exclude __pycache__ --exclude .DS_Store --exclude version.py src/ "$d/src/"
+    cp boot.py main.py ota_loader.py safe_mode.py "$d/"
+    rm -f "$d/ota_state.json" "$d/ota_state.tmp"
+    if [ "{{version}}" != dev ]; then echo 'VERSION = "{{version}}"' > "$d/src/version.py"; fi
     sync
     uv run python scripts/board_serial.py reset
-    @echo "Deployed to {{circuitpy}}"
+    echo "Deployed to $d"
 
 # Restart the board with CIRCUITPY writable over USB, and wait until it is
 usb-mode:
     #!/usr/bin/env bash
     set -euo pipefail
-    writable() { touch "{{circuitpy}}/.write_test" 2>/dev/null && rm -f "{{circuitpy}}/.write_test"; }
+    writable() { local d; d=$({{circuitpy}}); touch "$d/.write_test" 2>/dev/null && rm -f "$d/.write_test"; }
     writable && exit 0
     echo "Restarting the board in USB mode"
     uv run python scripts/board_serial.py usb-mode
