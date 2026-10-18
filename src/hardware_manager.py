@@ -13,10 +13,9 @@ BUTTON_LEFT = "left"
 BUTTON_RIGHT = "right"
 
 # Key number constants (from keypad events)
-# Pin order: (board.BUTTON_UP, board.BUTTON_DOWN, board.A1, board.A3)
-# means UP=0, DOWN=1, LEFT=2, RIGHT=3
-KEY_NUMBER_BUTTON_LEFT = 2
-KEY_NUMBER_BUTTON_RIGHT = 3
+# Pin order: (board.A1, board.A3) means LEFT=0, RIGHT=1
+KEY_NUMBER_BUTTON_LEFT = 0
+KEY_NUMBER_BUTTON_RIGHT = 1
 
 # Polling rates for button monitoring loop
 BUTTON_POLLING_RATE_IDLE = 0.1
@@ -45,7 +44,7 @@ def create_keys_from_board(board: BoardLike) -> KeysLike:
     :return: Configured keypad.Keys object
     """
     return keypad.Keys(
-        (board.BUTTON_UP, board.BUTTON_DOWN, board.A1, board.A3),
+        (board.A1, board.A3),
         value_when_pressed=False,  # Active-low (button connects to ground)
         pull=True,  # Enable internal pull-ups
     )

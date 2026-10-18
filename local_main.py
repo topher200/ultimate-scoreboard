@@ -21,13 +21,11 @@ async def local_main():
 
     # Use test fakes for other hardware
     mock_board = type("Board", (), {})()
-    mock_board.BUTTON_UP = object()
-    mock_board.BUTTON_DOWN = object()
     mock_board.A1 = object()
     mock_board.A3 = object()
 
     keys = FakeKeys(
-        (mock_board.BUTTON_UP, mock_board.BUTTON_DOWN, mock_board.A1, mock_board.A3),
+        (mock_board.A1, mock_board.A3),
         value_when_pressed=False,
         pull=True,
     )
