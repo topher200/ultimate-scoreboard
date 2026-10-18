@@ -33,7 +33,7 @@ KEY_NUMBER_TO_BUTTON = {
 # State machine states
 _STATE_IDLE = "idle"
 _STATE_SINGLE_HELD = "single_held"
-_STATE_BOTH_HELD = "both_held"
+_STATE_BOTH_DOWN = "both_down"
 _STATE_WAIT_RELEASE = "wait_release"
 
 
@@ -134,19 +134,23 @@ class HardwareManager:
         """Monitor button presses and call registered callbacks.
 
         Uses a state machine to distinguish between individual presses, chords
-        (hold one button then press the other), and simultaneous holds:
+        (hold one button and tap the other), and holding both. Every action
+        fires on a release, except holding both:
 
         - Individual press: fires on release if no chord was detected
-        - Chord (hold A, press B): fires the chord_callbacks[(A, B)] entry
-        - Both held ~1s: fires hold_both_callback (e.g. reset)
+        - Chord (hold A, tap B): fires chord_callbacks[(A, B)] when either
+          button is released, if both were down for less than
+          SIMULTANEOUS_HOLD_THRESHOLD
+        - Both down for SIMULTANEOUS_HOLD_THRESHOLD: fires hold_both_callback
+          (e.g. reset), whichever button went down first
 
         :param callbacks: Dictionary mapping button names to async callback functions.
             Individual callbacks fire on button release if no chord was detected.
         :param hold_both_callback: Optional async callback for when both buttons
-            are held simultaneously for SIMULTANEOUS_HOLD_THRESHOLD seconds.
-        :param chord_callbacks: Optional dictionary mapping (held_button, pressed_button)
-            tuples to async callback functions. Fires when one button is held and
-            the other is pressed in a subsequent update cycle.
+            are down for SIMULTANEOUS_HOLD_THRESHOLD seconds.
+        :param chord_callbacks: Optional dictionary mapping (held_button, tapped_button)
+            tuples to async callback functions. Both buttons pressed in the same
+            update cycle have no order, so a quick release of both fires nothing.
         """
         if chord_callbacks is None:
             chord_callbacks = {}
@@ -154,7 +158,7 @@ class HardwareManager:
         state = _STATE_IDLE
         held_button: str | None = None
         chord_used = False  # True if a chord fired during this hold
-        press_time = 0.0
+        both_down_since = 0.0
         button_names = list(callbacks.keys())
 
         while True:
@@ -167,17 +171,17 @@ class HardwareManager:
                 ]
 
                 if len(new_presses) >= 2:
-                    # Both pressed in same update cycle → simultaneous hold
+                    # Both pressed in same update cycle → no press order
                     for b in new_presses:
                         self.consume_button_events(b)
-                    state = _STATE_BOTH_HELD
-                    press_time = self._get_time()
+                    held_button = None
+                    state = _STATE_BOTH_DOWN
+                    both_down_since = self._get_time()
                 elif len(new_presses) == 1:
                     held_button = new_presses[0]
                     chord_used = False
                     self.consume_button_events(held_button)
                     state = _STATE_SINGLE_HELD
-                    press_time = self._get_time()
 
             elif state == _STATE_SINGLE_HELD:
                 assert held_button is not None
@@ -190,14 +194,8 @@ class HardwareManager:
 
                 if other_pressed is not None:
                     self.consume_button_events(other_pressed)
-                    chord_cb = chord_callbacks.get((held_button, other_pressed))
-                    if chord_cb is not None:
-                        await chord_cb()
-                    chord_used = True
-                    # Keep held_button so WAIT_RELEASE can return to
-                    # SINGLE_HELD for repeated chords (e.g. hold RIGHT,
-                    # tap LEFT multiple times to undo)
-                    state = _STATE_WAIT_RELEASE
+                    state = _STATE_BOTH_DOWN
+                    both_down_since = self._get_time()
                 elif not self._button_is_down.get(held_button, True):
                     # Held button is physically up
                     if not chord_used:
@@ -208,18 +206,26 @@ class HardwareManager:
                     state = _STATE_IDLE
                     held_button = None
 
-            elif state == _STATE_BOTH_HELD:
-                elapsed = self._get_time() - press_time
+            elif state == _STATE_BOTH_DOWN:
+                elapsed = self._get_time() - both_down_since
                 any_released = any(
                     not self._button_is_down.get(b, True) for b in button_names
                 )
 
                 if any_released:
-                    # Aborted hold — no action
-                    state = _STATE_IDLE
+                    if held_button is not None:
+                        tapped = [b for b in button_names if b != held_button][0]
+                        chord_cb = chord_callbacks.get((held_button, tapped))
+                        if chord_cb is not None:
+                            await chord_cb()
+                        chord_used = True
+                    # WAIT_RELEASE returns to SINGLE_HELD while held_button
+                    # stays down, so hold RIGHT and tap LEFT repeats the chord
+                    state = _STATE_WAIT_RELEASE
                 elif elapsed >= SIMULTANEOUS_HOLD_THRESHOLD:
                     if hold_both_callback is not None:
                         await hold_both_callback()
+                    held_button = None
                     state = _STATE_WAIT_RELEASE
 
             elif state == _STATE_WAIT_RELEASE:

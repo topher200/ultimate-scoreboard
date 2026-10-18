@@ -95,12 +95,12 @@ def create_chord_callbacks(
 ) -> dict[tuple[str, str], Callable]:
     """Create chord callback mapping for hardware manager.
 
-    Chords fire when one button is held and the other is pressed:
-    - Hold LEFT, press RIGHT → toggle gender matchup
-    - Hold RIGHT, press LEFT → undo last point
+    Chords fire when one button is held and the other is tapped:
+    - Hold LEFT, tap RIGHT → toggle gender matchup
+    - Hold RIGHT, tap LEFT → undo last point
 
     :param game_controller: GameController instance
-    :return: Dictionary mapping (held_button, pressed_button) to callback functions
+    :return: Dictionary mapping (held_button, tapped_button) to callback functions
     """
     return {
         (BUTTON_LEFT, BUTTON_RIGHT): game_controller.handle_toggle_gender_button,
