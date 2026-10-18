@@ -39,3 +39,39 @@ print(json.dumps(gaps))
 """
     )
     assert min(gaps) >= 1
+
+
+def test_wifi_search_fits_the_screen():
+    """Test that the Wi-Fi icon and "Searching" stay on screen and apart."""
+    bounds = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from simulator.simulator_matrixportal import SimulatorMatrixPortal
+from src.display_manager import DisplayManager
+
+matrixportal = SimulatorMatrixPortal()
+display_manager = DisplayManager(matrixportal)
+search = display_manager._wifi_search
+background, icon, text = search[0], search[1], search[2]
+root = matrixportal.display.root_group
+
+def ink(layer):
+    for item in root:
+        item.hidden = item is not search
+    for item in search:
+        item.hidden = item is not layer
+    lit = [i for i, color in enumerate(render_pixels(root)) if color]
+    columns = [i % 64 for i in lit]
+    rows = [i // 64 for i in lit]
+    return [min(columns), max(columns), min(rows), max(rows)]
+
+print(json.dumps({"icon": ink(icon), "text": ink(text)}))
+"""
+    )
+    icon_left, icon_right, icon_top, icon_bottom = bounds["icon"]
+    text_left, text_right, text_top, text_bottom = bounds["text"]
+    assert icon_top > 0
+    assert text_left > 0 and text_right < 63
+    assert text_bottom < 31
+    assert icon_bottom < text_top

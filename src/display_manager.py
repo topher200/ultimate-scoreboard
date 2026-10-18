@@ -327,13 +327,13 @@ class DisplayManager:
         palette[0] = 0x000000
         palette[1] = TIMING_INDICATOR_COLOR
         palette.make_transparent(0)
-        tile_grid = displayio.TileGrid(
+        self._timing_indicator = displayio.TileGrid(
             self._timing_indicator_bitmap,
             pixel_shader=palette,
             x=TIMING_INDICATOR_X_POSITION,
             y=TIMING_INDICATOR_Y_POSITION,
         )
-        self._main_group.append(tile_grid)
+        self._main_group.append(self._timing_indicator)
 
     def update_timing_indicator(self, count: int) -> None:
         """Light the right-most `count` pixels of the timing indicator.

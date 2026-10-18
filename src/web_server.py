@@ -5,7 +5,7 @@ from adafruit_connection_manager import get_radio_socketpool
 from adafruit_httpserver import GET, POST, Request, Response, Server
 
 from src.compat import Callable
-from src.settings_page import decode_form_value
+from src.settings_page import decode_form
 
 # Seconds the server waits on a connection that sends nothing
 SOCKET_TIMEOUT = 0.2
@@ -33,10 +33,7 @@ class WebServer:
         def page(request: Request) -> Response:
             form = None
             if request.method == POST and request.form_data is not None:
-                form = {
-                    key: decode_form_value(request.form_data.get(key, safe=False) or "")
-                    for key in request.form_data.fields
-                }
+                form = decode_form(request.form_data)
             return Response(request, respond(form), content_type="text/html")
 
         server.start(host, port)

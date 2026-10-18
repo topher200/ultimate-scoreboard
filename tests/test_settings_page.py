@@ -4,7 +4,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from src.settings_page import MAX_NAME_LENGTH, SettingsPage, decode_form_value
+from src.settings_page import (
+    MAX_NAME_LENGTH,
+    SettingsPage,
+    decode_form,
+    decode_form_value,
+)
 from src.settings_store import DEFAULT_SETTINGS, LEFT_TEAM_NAME, RIGHT_TEAM_NAME
 
 
@@ -86,3 +91,23 @@ class TestSettingsPage:
 )
 def test_decode_form_value(encoded, decoded):
     assert decode_form_value(encoded) == decoded
+
+
+class _FakeFormData:
+    """Stands in for adafruit_httpserver FormData, which keeps values urlencoded."""
+
+    def __init__(self, raw):
+        self._raw = raw
+        self.fields = list(raw)
+
+    def get(self, field_name, default=None, *, safe=True):
+        value = self._raw.get(field_name, default)
+        return value.replace("&", "&amp;") if safe and value else value
+
+
+def test_decode_form_decodes_raw_values():
+    form = decode_form(
+        _FakeFormData({LEFT_TEAM_NAME: "Red+Team", RIGHT_TEAM_NAME: "A%26B"})
+    )
+
+    assert form == {LEFT_TEAM_NAME: "Red Team", RIGHT_TEAM_NAME: "A&B"}
