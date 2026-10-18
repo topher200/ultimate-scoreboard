@@ -18,11 +18,10 @@ from src.lab_screens import (
     MOTION_BLINK,
     MOTION_MARCH,
     MOTION_MARCH_THEN_HOLD,
-    PAIR_DISTINCT,
     DrawnScreen,
     Pair,
     Screen,
-    round_four_screens,
+    round_five_screens,
 )
 from src.settings_store import LEFT_TEAM_NAME, SettingsStore
 from tests.test_display_renderer import _run
@@ -201,7 +200,13 @@ class TestLab:
 class TestPairs:
     @pytest.fixture
     def pair_lab(self, display, nvm, clock):
-        pair = Pair("G1", "thin vs thick", Screen("", "thin"), Screen("", "thick"))
+        pair = Pair(
+            "G1",
+            "thin vs thick",
+            "Which reads?",
+            Screen("", "thin"),
+            Screen("", "thick"),
+        )
         compare = Screen("F1", "terminal vs seg3", compare=True)
         return Lab(display, [pair, compare], VoteStore(nvm), get_time=clock)
 
@@ -209,6 +214,7 @@ class TestPairs:
         html = pair_lab.respond(None)
         assert pair_lab.screen.title == "thin"
         assert "A better" in html
+        assert "Which reads?" in html
 
         pair_lab.respond({"action": "show_b"})
 
@@ -223,18 +229,6 @@ class TestPairs:
         assert pair_lab.votes == {"G1": ["b", ""]}
         assert pair_lab.item.screen_id == "F1"
         assert "Right better" in html
-
-    def test_distinct_pair_asks_how_easily_they_tell_apart(self, display, nvm, clock):
-        pair = Pair(
-            "M1", "W vs M", Screen("", "W"), Screen("", "M"), kind=PAIR_DISTINCT
-        )
-        lab = Lab(display, [pair], VoteStore(nvm), get_time=clock)
-
-        html = lab.respond(None)
-        lab.respond({"action": "hard", "note": ""})
-
-        assert "Easy to tell apart" in html
-        assert lab.votes == {"M1": ["hard", ""]}
 
     def test_next_pair_starts_on_a(self, pair_lab):
         pair_lab.respond({"action": "show_b"})
@@ -289,22 +283,22 @@ class TestMotion:
         assert palette[5] == 0
 
 
-def test_round_four_ids_are_unique():
-    ids = [item.screen_id for item in round_four_screens()]
+def test_round_five_ids_are_unique():
+    ids = [item.screen_id for item in round_five_screens()]
 
     assert len(ids) == len(set(ids))
 
 
-def test_round_four_text_overlaps_nothing():
+def test_round_five_text_overlaps_nothing():
     """Test that no label lights a pixel that the frame or another label lights."""
     result = _run(
         """
 import json
 from simulator.display_renderer import render_pixels
-from src.lab_screens import LAYOUT_CURRENT, DrawnScreen, Pair, round_four_screens
+from src.lab_screens import LAYOUT_CURRENT, DrawnScreen, Pair, round_five_screens
 
 screens = []
-for item in round_four_screens():
+for item in round_five_screens():
     screens += [item.a, item.b] if isinstance(item, Pair) else [item]
 bad = []
 for screen in screens:

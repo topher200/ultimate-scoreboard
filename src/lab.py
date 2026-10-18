@@ -21,11 +21,10 @@ from src.lab_screens import (
     GENDERS,
     LABELS,
     MOTIONS,
-    PAIR_DISTINCT,
     DrawnScreen,
     Pair,
     Screen,
-    round_four_screens,
+    round_five_screens,
 )
 from src.network_manager import NetworkManager
 from src.settings_page import _escape
@@ -75,7 +74,7 @@ button,select,input{{font-size:1.3em;padding:.4em;margin:.2em 0}}
 h1{{font-size:1.4em}}pre{{white-space:pre-wrap;background:#222;padding:.5em}}
 label{{display:block}}.note{{width:100%;box-sizing:border-box}}
 </style></head><body>
-<h1>{screen_id} ({position}/{count}): {title}</h1>
+<h1>{screen_id} ({position}/{count}): {title}</h1>{question}
 <form method="post" action="/">
 <div class="row"><button name="action" value="prev">&larr; Prev</button>
 <button name="action" value="next">Next &rarr;</button></div>
@@ -364,7 +363,7 @@ class Lab:
         )
 
         if isinstance(item, Pair):
-            votes = DISTINCT_VOTES if item.kind == PAIR_DISTINCT else PAIR_VOTES
+            votes = PAIR_VOTES
             pair_buttons = (
                 '<div class="row">'
                 + "".join(
@@ -387,6 +386,9 @@ class Lab:
             title=_escape(item.title),
             max_note=MAX_NOTE_LENGTH,
             pair_buttons=pair_buttons,
+            question=f"<p><b>{_escape(item.question)}</b></p>"
+            if isinstance(item, Pair)
+            else "",
             vote_buttons="".join(
                 f'<button class="{v}" name="action" value="{v}">{text}</button>'
                 for v, text in votes
@@ -420,7 +422,7 @@ async def run_lab(
         which restarts into the scoreboard
     """
     display_manager = DisplayManager(matrixportal)
-    lab = Lab(matrixportal.display, round_four_screens(), VoteStore(nvm))
+    lab = Lab(matrixportal.display, round_five_screens(), VoteStore(nvm))
     network_manager = NetworkManager(network, display_manager, web_server, lab.respond)
     network_manager.connect()
     if not display_manager.qr_code_shown:
