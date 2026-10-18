@@ -23,7 +23,7 @@ async def main():
     managers = create_managers(matrixportal, keys)
 
     # Initialize application state
-    await initialize_application(managers.game_controller)
+    initialize_application(managers.game_controller)
 
     await run_tasks(managers)
 

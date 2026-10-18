@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import asyncio
-
 from src.compat import TYPE_CHECKING
 from src.protocols import MatrixPortalLike
 
@@ -12,7 +10,10 @@ if TYPE_CHECKING:
 
 
 class NetworkManager:
-    """Manages fetching data from Adafruit IO feeds."""
+    """Manages fetching data from Adafruit IO feeds.
+
+    Fetches are synchronous and block the event loop until they finish.
+    """
 
     # Feed key constants
     TEAM_LEFT_TEAM_FEED = "scores-group.left-team-name"
@@ -30,13 +31,12 @@ class NetworkManager:
         self._matrixportal = matrixportal
         self._display_manager = display_manager
 
-    async def _get_feed_value(self, feed_key: str) -> None | str:
+    def _get_feed_value(self, feed_key: str) -> None | str:
         """Fetch the last value from an Adafruit IO feed.
 
         :param feed_key: The feed key to fetch from
         :return: The last value from the feed, or None if not available
         """
-        await asyncio.sleep(0)
         try:
             self._display_manager.show_connecting(True)
             feed = self._matrixportal.get_io_feed(feed_key, detailed=True)
@@ -50,12 +50,12 @@ class NetworkManager:
         finally:
             self._display_manager.show_connecting(False)
 
-    async def get_left_team_name(self) -> str:
-        if value := await self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
+    def get_left_team_name(self) -> str:
+        if value := self._get_feed_value(self.TEAM_LEFT_TEAM_FEED):
             return value
         return self.DEFAULT_LEFT_TEAM_NAME
 
-    async def get_right_team_name(self) -> str:
-        if value := await self._get_feed_value(self.TEAM_RIGHT_TEAM_FEED):
+    def get_right_team_name(self) -> str:
+        if value := self._get_feed_value(self.TEAM_RIGHT_TEAM_FEED):
             return value
         return self.DEFAULT_RIGHT_TEAM_NAME
