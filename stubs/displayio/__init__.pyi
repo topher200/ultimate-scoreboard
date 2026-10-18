@@ -10,6 +10,10 @@ class _Layer(Protocol):
 
 class Group:
     """Display group that can contain layers."""
+
+    x: int
+    y: int
+    hidden: bool
     def __init__(self, **kwargs: Any) -> None: ...
     def append(self, layer: _Layer) -> None: ...
     def __getitem__(self, index: int) -> _Layer: ...

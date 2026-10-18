@@ -38,15 +38,22 @@ class TestNetworkManagerConnect:
 
         assert fake_network.connect_count == 1
 
-    def test_show_connecting_brackets_connect(self, network_manager, display_manager):
-        display_manager.show_connecting = MagicMock()
+    def test_searching_message_shows_only_while_joining(
+        self, network_manager, display_manager, fake_network
+    ):
+        shown_while_joining = []
+        connect = fake_network.connect
+
+        def connect_and_record():
+            shown_while_joining.append(not display_manager._message.hidden)
+            return connect()
+
+        fake_network.connect = connect_and_record
 
         network_manager.connect()
 
-        assert [c.args for c in display_manager.show_connecting.call_args_list] == [
-            (True,),
-            (False,),
-        ]
+        assert shown_while_joining == [True]
+        assert display_manager._message.hidden
 
     def test_failed_join_shows_no_qr_code_and_can_retry(
         self, network_manager, display_manager, fake_network

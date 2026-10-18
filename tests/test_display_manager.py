@@ -1,7 +1,6 @@
 """Basic tests for display_manager using fake implementations."""
 
 from src.display_manager import (
-    CONNECTING,
     DISPLAY_HEIGHT,
     DISPLAY_WIDTH,
     GENDER_MATCHUP,
@@ -86,11 +85,13 @@ class TestDisplayManager:
                     if not on_edge:
                         assert frame.bitmap[x, y] == 0
 
-    def test_show_connecting(self, display_manager):
-        display_manager.show_connecting(True)
-        assert display_manager._labels[CONNECTING].text == "."
-        display_manager.show_connecting(False)
-        assert display_manager._labels[CONNECTING].text == " "
+    def test_show_and_hide_message(self, display_manager):
+        display_manager.show_message("Hello")
+        assert display_manager._message_label.text == "Hello"
+        assert not display_manager._message.hidden
+
+        display_manager.hide_message()
+        assert display_manager._message.hidden
 
     def test_timing_indicator_above_bottom_row(
         self, display_manager, fake_matrix_portal
@@ -99,7 +100,7 @@ class TestDisplayManager:
         from src.display_manager import LEFT_BORDER_MARGIN_WIDTH
         from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
-        tile_grid = _root_group(fake_matrix_portal)[-2]
+        tile_grid = _root_group(fake_matrix_portal)[-3]
         assert tile_grid.y == DISPLAY_HEIGHT - 2
         assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == (
             DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH

@@ -16,10 +16,9 @@ LEFT_TEAM_SCORE = "left_team_score"
 RIGHT_TEAM_SCORE = "right_team_score"
 GENDER_MATCHUP = "gender_matchup"
 GENDER_MATCHUP_COUNTER = "gender_matchup_counter"
-CONNECTING = "connecting"
 
 # Color constants
-CONNECTING_COLOR = 0xFFFF00
+MESSAGE_COLOR = 0xFFFF00
 LEFT_TEAM_COLOR = 0xFFFF00  # AWAY team color (yellow)
 RIGHT_TEAM_COLOR = 0x00FFFF  # HOME team color (cyan)
 MMP_GENDER_MATCHUP_COLOR = 0xFFFFFF  # white
@@ -151,13 +150,9 @@ class DisplayManager:
                 ),
             )
 
-        connecting_label = label.Label(FONT_TYPE, text=" ", color=CONNECTING_COLOR)
-        connecting_label.x = DISPLAY_WIDTH - 5
-        connecting_label.y = DISPLAY_HEIGHT - 5
-        self._add_label(CONNECTING, connecting_label)
-
         self._setup_frames()
         self._setup_timing_indicator()
+        self._setup_message()
         self._setup_qr_code()
         matrixportal.display.root_group = self._main_group
 
@@ -190,9 +185,34 @@ class DisplayManager:
             self._labels[element_id].text = text
             self._labels[element_id].color = color
 
-    def show_connecting(self, show: bool) -> None:
-        """Show or hide the connecting indicator."""
-        self._labels[CONNECTING].text = "." if show else " "
+    def _setup_message(self) -> None:
+        """Initialize a hidden, full-screen message that covers the scoreboard."""
+        palette = displayio.Palette(1)
+        palette[0] = 0x000000
+        self._message_label = label.Label(
+            FONT_TYPE,
+            text=" ",
+            color=MESSAGE_COLOR,
+            anchor_point=(0.5, 0.5),
+            anchored_position=(DISPLAY_WIDTH // 2, DISPLAY_HEIGHT // 2),
+        )
+        self._message = displayio.Group()
+        self._message.append(
+            displayio.TileGrid(
+                displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 1), pixel_shader=palette
+            )
+        )
+        self._message.append(self._message_label)
+        self._message.hidden = True
+        self._main_group.append(self._message)
+
+    def show_message(self, text: str) -> None:
+        """Cover the scoreboard with centered text."""
+        self._message_label.text = text
+        self._message.hidden = False
+
+    def hide_message(self) -> None:
+        self._message.hidden = True
 
     def _setup_frames(self) -> None:
         """Initialize hidden WMP and MMP frames around the edge of the screen."""
