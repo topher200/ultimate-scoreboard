@@ -122,6 +122,7 @@ class GameController:
         self._redraw_scores()
         self._print_score("Score")
         self._update_gender_matchup_display()
+        self._display_manager.march_wmp_frame()
         self._refresh_timing_indicator()
 
     def _print_score(self, prefix: str) -> None:
