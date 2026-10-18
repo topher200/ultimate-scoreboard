@@ -40,6 +40,7 @@ deploy:
     @test -f "{{circuitpy}}/boot_out.txt" || { echo "No CircuitPython board found; mount it (just mount on Linux) or set CIRCUITPY to its path" >&2; exit 1; }
     cp main.py "{{circuitpy}}/"
     cp -r src "{{circuitpy}}/"
+    sync
     @echo "Deployed to {{circuitpy}}"
 
 # Watch for changes and auto-deploy to CircuitPython board
