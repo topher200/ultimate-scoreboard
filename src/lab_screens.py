@@ -93,8 +93,6 @@ LABELS = (LABEL_NONE, LABEL_STACKED, LABEL_UNDER)
 LAYOUT_LAB = "lab"
 LAYOUT_CURRENT = "current"
 
-PAIR_BETTER = "better"
-PAIR_DISTINCT = "distinct"
 
 SCORES = (13, 18)
 
@@ -179,94 +177,86 @@ class Screen:
 
 
 class Pair:
-    """Two full screens that the viewer switches between.
+    """Two full screens that the viewer switches between to answer `question`."""
 
-    The viewer picks the better one, or with `kind` PAIR_DISTINCT, says how
-    easily the two tell apart.
-    """
-
-    def __init__(
-        self, screen_id: str, title: str, a: Screen, b: Screen, kind: str = PAIR_BETTER
-    ):
+    def __init__(self, screen_id: str, title: str, question: str, a: Screen, b: Screen):
         self.screen_id = screen_id
         self.title = title
+        self.question = question
         self.a = a
         self.b = b
-        self.kind = kind
 
 
 def _scoreboard(
     title: str,
-    screen_id: str = "",
     gender: str = "W",
     gender_color: str = "cyan",
-    left: str = "white",
-    right: str = "yellow",
-    **options,
 ) -> Screen:
-    """Return the round 3 winner: names, a W/1 label between the scores, and a
-    3 px dashed frame. A gender_color of "none" leaves out the frame."""
+    """Return the design that earlier rounds picked, with a given gender frame.
+
+    A gender_color of "none" leaves out the frame.
+    """
     framed = gender_color != "none"
     return Screen(
-        screen_id,
+        "",
         title,
         font=FONT_TERMINAL,
-        left=left,
-        right=right,
+        left="yellow",
+        right="white",
         names=True,
+        names_level=2,
+        bold=True,
         gender=GENDER_THICK_FRAME if framed else GENDER_NONE,
         gender_color=gender_color if framed else "white",
         motion=MOTION_MARCH_THEN_HOLD if gender == "W" else MOTION_DASHES,
         label=f"{gender}1",
         label_style=LABEL_STACKED,
-        **options,
     )
 
 
-def _wmp_color_screens() -> list:
-    colors = ("magenta", "cyan", "sky", "orange", "amber", "lime", "spring", "red")
-    return [
-        _scoreboard(f"WMP {color}", f"W{i + 1}", gender_color=color)
-        for i, color in enumerate(colors)
-    ]
+def _round_robin(prefix: str, question: str, screens: tuple) -> list:
+    """Return a Pair for every two of `screens`."""
+    pairs = []
+    for i in range(len(screens)):
+        for j in range(i + 1, len(screens)):
+            a, b = screens[i], screens[j]
+            pairs.append(
+                Pair(
+                    f"{prefix}{len(pairs) + 1}",
+                    f"{a.title} vs {b.title}",
+                    question,
+                    a,
+                    b,
+                )
+            )
+    return pairs
 
 
-def _distinct_pairs() -> list:
-    combos = (
-        ("cyan", "white"),
-        ("orange", "white"),
-        ("cyan", "amber"),
-        ("orange", "cyan"),
-        ("cyan", "none"),
+def round_five_screens() -> list:
+    """Return the fifth round of pairs, in the order the lab shows them."""
+    wmp = tuple(
+        _scoreboard(f"WMP {c}", gender_color=c) for c in ("cyan", "sky", "lime")
     )
-    return [
-        Pair(
-            f"M{i + 1}",
-            f"WMP {wmp} vs MMP {mmp}",
-            _scoreboard(f"WMP {wmp}", gender_color=wmp),
-            _scoreboard(f"MMP {mmp}", gender="M", gender_color=mmp),
-            kind=PAIR_DISTINCT,
+    mmp = tuple(
+        _scoreboard(f"MMP {c} frame" if c != "none" else "MMP no frame", "M", c)
+        for c in ("white", "amber", "none")
+    )
+    question = "From the far end zone, which score can you read?"
+    current = (
+        Screen("", "current scoreboard, WMP", layout=LAYOUT_CURRENT, label="W1"),
+        Screen("", "current scoreboard, MMP", layout=LAYOUT_CURRENT, label="M1"),
+    )
+    final = (
+        Pair("F1", "current vs new, WMP", question, current[0], wmp[0]),
+        Pair("F2", "current vs new, MMP", question, current[1], mmp[0]),
+    )
+    return (
+        _round_robin(
+            "W", "From the far end zone, which WMP frame do you notice faster?", wmp
         )
-        for i, (wmp, mmp) in enumerate(combos)
-    ]
-
-
-def _tweak_pairs() -> list:
-    plain = _scoreboard("plain")
-    tweaks = (
-        _scoreboard("bold scores", bold=True),
-        _scoreboard("names at 2/3 brightness", names_level=2),
-        _scoreboard("frame at 2/3 brightness", gender_level=2),
-        _scoreboard("white/yellow swapped", left="yellow", right="white"),
+        + _round_robin("M", "For MMP points, which would you rather see all game?", mmp)
+        + list(final)
     )
-    return [
-        Pair(f"X{i + 1}", f"plain vs {b.title}", plain, b) for i, b in enumerate(tweaks)
-    ]
-
-
-def round_four_screens() -> list:
-    """Return the fourth round of screens and pairs, in the order the lab shows them."""
-    return _wmp_color_screens() + _distinct_pairs() + _tweak_pairs()
 
 
 class _Capture:
@@ -277,13 +267,16 @@ class _Capture:
         self.root_group = None
 
 
-def _current_scoreboard() -> tuple:
-    """Return a DisplayManager that shows a WMP point, and its root group."""
+def _current_scoreboard(gender: str) -> tuple:
+    """Return a DisplayManager that shows a point for `gender`, and its root group.
+
+    :param gender: "W" or "M"
+    """
     capture = _Capture()
     display_manager = DisplayManager(capture)
     display_manager.set_team_names("AWAY", "HOME")
     display_manager.set_scores(*SCORES)
-    display_manager.set_gender_matchup("WMP", 1)
+    display_manager.set_gender_matchup(f"{gender}MP", 1)
     display_manager.march_wmp_frame()
     return display_manager, capture.root_group
 
@@ -361,7 +354,7 @@ class DrawnScreen:
         ]
         self._current: DisplayManager | None = None
         if screen.layout == LAYOUT_CURRENT:
-            self._current, self.group = _current_scoreboard()
+            self._current, self.group = _current_scoreboard(screen.label[:1] or "W")
         else:
             self.group = displayio.Group()
             self._draw()

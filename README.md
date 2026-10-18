@@ -19,11 +19,9 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 
 ## Legibility Lab
 
-The lab shows test screens with different colors, fonts, and layouts, so you can find the screens that are easiest to read from across the field. To start the lab, hold both buttons for about 5 seconds. The scores reset at 1 second, and then the board restarts into the lab. Hold both buttons for 5 seconds again to restart into the scoreboard. The board joins Wi-Fi and shows a QR code for the lab page. Scan it, then walk away from the board and use the page to step through the screens and vote Good, OK, or Bad on each. A vote moves to the next screen. The page lists all votes, and the board keeps them across reboots.
+The lab shows test screens on the board and records votes from a phone, so you can find the colors, font, and layout that read best from across the field. Hold both buttons for about 5 seconds to restart into the lab, and again to go back. Run it in the simulator with `just sim-lab`.
 
-The board shows each screen's ID in the top-left corner for a few seconds. Without Wi-Fi, use the left and right buttons to step through the screens, and hold both to turn auto-advance on or off.
-
-The custom screen (Z1) shows a font, colors, and layout that you pick on the page. Run the lab in the simulator with `just sim-lab`.
+[docs/legibility-lab.md](docs/legibility-lab.md) has the results of every round so far, and how to run and write a round.
 
 ## Board Setup
 
