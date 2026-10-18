@@ -6,7 +6,8 @@ from src.compat import Callable
 
 # Time from a goal to the pull, per USA Ultimate rules
 TIMING_INDICATOR_DURATION_SECONDS = 80
-TIMING_INDICATOR_PIXEL_COUNT = 60
+# The width inside the scoreboard frame
+TIMING_INDICATOR_PIXEL_COUNT = 56
 TIMING_INDICATOR_REMOVAL_INTERVAL = (
     TIMING_INDICATOR_DURATION_SECONDS / TIMING_INDICATOR_PIXEL_COUNT
 )

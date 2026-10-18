@@ -6,13 +6,17 @@ import src.display_manager as display_manager_module
 from src.display_manager import (
     DISPLAY_HEIGHT,
     DISPLAY_WIDTH,
+    FRAME_WIDTH,
     GENDER_MATCHUP,
     GENDER_MATCHUP_COUNTER,
     LEFT_TEAM,
     LEFT_TEAM_SCORE,
+    LEFT_TEAM_SCORE_BOLD,
     MMP_GENDER_MATCHUP_COLOR,
     RIGHT_TEAM,
     RIGHT_TEAM_SCORE,
+    RIGHT_TEAM_SCORE_BOLD,
+    TEXT_INSET,
     WMP_GENDER_MATCHUP_COLOR,
 )
 from src.gender_manager import GenderManager
@@ -27,7 +31,7 @@ class TestDisplayManager:
 
     def test_root_group_holds_every_element(self, display_manager, fake_matrix_portal):
         """Test that the root group holds every screen element."""
-        assert len(_root_group(fake_matrix_portal)) == 12
+        assert len(_root_group(fake_matrix_portal)) == 13
 
     def test_set_team_names(self, display_manager):
         display_manager.set_team_names("Red Team", "Blue Team")
@@ -36,55 +40,41 @@ class TestDisplayManager:
 
     def test_set_scores(self, display_manager):
         display_manager.set_scores(42, 3)
-        assert display_manager._labels[LEFT_TEAM_SCORE].text == "42"
-        assert display_manager._labels[RIGHT_TEAM_SCORE].text == "3"
+        labels = display_manager._labels
+        assert labels[LEFT_TEAM_SCORE].text == labels[LEFT_TEAM_SCORE_BOLD].text == "42"
+        assert (
+            labels[RIGHT_TEAM_SCORE].text == labels[RIGHT_TEAM_SCORE_BOLD].text == "3"
+        )
 
     def test_set_gender_matchup_wmp(self, display_manager):
         display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 2)
         matchup = display_manager._labels[GENDER_MATCHUP]
         counter = display_manager._labels[GENDER_MATCHUP_COUNTER]
-        assert (matchup.text, counter.text) == ("WMP", "2")
+        assert (matchup.text, counter.text) == ("W", "2")
         assert matchup.color == counter.color == WMP_GENDER_MATCHUP_COLOR
         assert not display_manager._wmp_frame.hidden
-        assert display_manager._mmp_frame.hidden
 
     def test_set_gender_matchup_mmp(self, display_manager):
         display_manager.set_gender_matchup(GenderManager.GENDER_MMP, 1)
         matchup = display_manager._labels[GENDER_MATCHUP]
         counter = display_manager._labels[GENDER_MATCHUP_COUNTER]
-        assert (matchup.text, counter.text) == ("MMP", "1")
+        assert (matchup.text, counter.text) == ("M", "1")
         assert matchup.color == counter.color == MMP_GENDER_MATCHUP_COLOR
         assert display_manager._wmp_frame.hidden
-        assert not display_manager._mmp_frame.hidden
 
-    def test_frames_are_dashed_at_rest(self, display_manager):
-        for frame in (display_manager._wmp_frame, display_manager._mmp_frame):
-            top_row = [frame.bitmap[x, 0] for x in range(16)]
+    def test_frame_is_dashed_at_rest(self, display_manager):
+        bitmap = display_manager._wmp_frame.bitmap
+        for y in range(FRAME_WIDTH):
+            top_row = [bitmap[x, y] for x in range(16)]
             assert top_row == [1, 1, 1, 1, 1, 0, 0, 0] * 2
 
-    def test_mmp_frame_bottom_shows_only_when_timing_indicator_is_empty(
-        self, display_manager
-    ):
-        bitmap = display_manager._mmp_frame.bitmap
-        bottom_row = [bitmap[x, DISPLAY_HEIGHT - 1] for x in range(DISPLAY_WIDTH)]
-        assert any(bottom_row)
-        display_manager.update_timing_indicator(5)
-        assert not any(bitmap[x, DISPLAY_HEIGHT - 1] for x in range(DISPLAY_WIDTH))
-        display_manager.update_timing_indicator(0)
-        assert [bitmap[x, DISPLAY_HEIGHT - 1] for x in range(DISPLAY_WIDTH)] == (
-            bottom_row
-        )
-
-    def test_frames_light_only_the_screen_edge(self, display_manager):
-        for frame in (display_manager._wmp_frame, display_manager._mmp_frame):
-            for y in range(DISPLAY_HEIGHT):
-                for x in range(DISPLAY_WIDTH):
-                    on_edge = x in {0, DISPLAY_WIDTH - 1} or y in {
-                        0,
-                        DISPLAY_HEIGHT - 1,
-                    }
-                    if not on_edge:
-                        assert frame.bitmap[x, y] == 0
+    def test_frame_lights_only_the_screen_edge(self, display_manager):
+        bitmap = display_manager._wmp_frame.bitmap
+        right, bottom = DISPLAY_WIDTH - 1, DISPLAY_HEIGHT - 1
+        for y in range(DISPLAY_HEIGHT):
+            for x in range(DISPLAY_WIDTH):
+                if min(x, y, right - x, bottom - y) >= FRAME_WIDTH:
+                    assert bitmap[x, y] == 0
 
     def test_show_and_hide_wifi_search(self, display_manager):
         assert not display_manager.wifi_search_shown
@@ -105,16 +95,14 @@ class TestDisplayManager:
         display_manager.hide_update_notice()
         assert not display_manager.update_notice_shown
 
-    def test_timing_indicator_above_bottom_row(self, display_manager):
-        """Test that the timing indicator sits above the bottom row, right-aligned."""
-        from src.display_manager import LEFT_BORDER_MARGIN_WIDTH
+    def test_timing_indicator_inside_the_frame(self, display_manager):
+        """Test that the timing indicator sits just inside the frame, right-aligned."""
         from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
         tile_grid = display_manager._timing_indicator
-        assert tile_grid.y == DISPLAY_HEIGHT - 2
-        assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == (
-            DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH
-        )
+        assert tile_grid.y == DISPLAY_HEIGHT - FRAME_WIDTH - 1
+        assert tile_grid.x == TEXT_INSET
+        assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == DISPLAY_WIDTH - TEXT_INSET
         assert tile_grid.bitmap.width == TIMING_INDICATOR_PIXEL_COUNT
 
     def _lit_pixels(self, display_manager):

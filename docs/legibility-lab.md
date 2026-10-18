@@ -10,9 +10,11 @@ We ran the legibility lab on a real field to find the colors, font, and layout t
 | Layout | Team names on top, the matchup label ("W"/"1") stacked between the scores | 3 |
 | Team colors | Yellow left, white right, on black | 3, 4 |
 | Team name brightness | 2/3 | 4 |
-| Gender indicator | 3 px dashed frame at full brightness that marches for 30 s after each point | 2, 3, 4 |
-| WMP frame color | Cyan, sky, or lime (round 5 picks one) | 4 |
-| MMP indicator | White frame, amber frame, or no frame (round 5 picks one) | 4 |
+| WMP indicator | 3 px cyan dashed frame at full brightness that marches for 30 s after each point | 2, 3, 4, 5 |
+| MMP indicator | No frame | 5 |
+| Matchup label color | Cyan for WMP, magenta for MMP | 5 |
+
+The scoreboard uses all of these. Its colors are yellow and white for the teams, cyan for WMP, and magenta for the MMP label: yellow, cyan, and magenta are the three printer primaries, and each looks unlike the others. The timing dots are white, like the right team; that is a known compromise.
 
 ## What we learned
 
@@ -56,11 +58,15 @@ Each round showed "13" and "18" as the scores.
 - **A full-brightness frame** beat a frame at 2/3 brightness.
 - **Yellow left, white right** beat white left, yellow right.
 
-### Round 5: settle the design (in progress)
+### Round 5: settle the design
 
-- **WMP color**: cyan, sky, and lime, as a round-robin. The question: "From the far end zone, which WMP frame do you notice faster?"
-- **MMP indicator**: a white frame, an amber frame, and no frame, as a round-robin. The question: "For MMP points, which would you rather see all game?"
-- **New against old**: today's scoreboard against the new design, for a WMP point and for an MMP point. The question: "From the far end zone, which score can you read?"
+Each pair asked one question.
+
+- **WMP color** ("From the far end zone, which WMP frame do you notice faster?"): cyan beat sky and lime, and lime beat sky. Magenta and pink looked best but were harder to see; white was easiest to see but looked plainer than cyan.
+- **MMP indicator** ("For MMP points, which would you rather see all game?"): no frame beat a white frame and an amber frame, and white beat amber.
+- **New against old** ("From the far end zone, which score can you read?"): the new design beat the old scoreboard for a WMP point. For an MMP point, the old scoreboard beat the new design with a white frame, which had already lost to no frame.
+
+After round 5, we picked the MMP label color in the simulator: white matched the right team, so the label is magenta.
 
 ## Run a round
 

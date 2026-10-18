@@ -11,7 +11,7 @@ from src.settings_store import (
 # (setting key, form label, label color)
 _FIELDS = (
     (LEFT_TEAM_NAME, "Left team", "#cc0"),
-    (RIGHT_TEAM_NAME, "Right team", "#0cc"),
+    (RIGHT_TEAM_NAME, "Right team", "#ccc"),
 )
 
 _PAGE = """<!doctype html>

@@ -24,27 +24,27 @@ class TestGenderMatchupDisplay:
         label = display_manager._labels[GENDER_MATCHUP]
         counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
 
-        assert label.text == "WMP"
+        assert label.text == "W"
         assert counter_label.text == "2"
 
         await game_controller.handle_left_score_button()
-        assert label.text == "MMP"
+        assert label.text == "M"
         assert counter_label.text == "1"
 
         await game_controller.handle_right_score_button()
-        assert label.text == "MMP"
+        assert label.text == "M"
         assert counter_label.text == "2"
 
         await game_controller.handle_left_score_button()
-        assert label.text == "WMP"
+        assert label.text == "W"
         assert counter_label.text == "1"
 
         await game_controller.handle_right_score_button()
-        assert label.text == "WMP"
+        assert label.text == "W"
         assert counter_label.text == "2"
 
         await game_controller.handle_left_score_button()
-        assert label.text == "MMP"
+        assert label.text == "M"
         assert counter_label.text == "1"
 
 
@@ -119,7 +119,7 @@ class TestGameControllerDisplayMethods:
         matchup_label = display_manager._labels[GENDER_MATCHUP]
         counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
 
-        assert matchup_label.text == "MMP"
+        assert matchup_label.text == "M"
         assert counter_label.text == "1"
 
 
@@ -166,7 +166,7 @@ class TestHandleResetButton:
 
         matchup_label = display_manager._labels[GENDER_MATCHUP]
         counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
-        assert matchup_label.text == "WMP"
+        assert matchup_label.text == "W"
         assert counter_label.text == "2"
 
 
@@ -258,7 +258,7 @@ class TestGameControllerKeepsScore:
         counter_label = display_manager._labels[GENDER_MATCHUP_COUNTER]
 
         # Verify initial state (0-0, sum=0) → WMP2
-        assert matchup_label.text == "WMP"
+        assert matchup_label.text == "W"
         assert counter_label.text == "2"
 
         # Simulate a game with button presses
@@ -266,28 +266,28 @@ class TestGameControllerKeepsScore:
         assert score_manager.left_score == 1
         assert score_manager.right_score == 0
         # sum=1 → MMP1
-        assert matchup_label.text == "MMP"
+        assert matchup_label.text == "M"
         assert counter_label.text == "1"
 
         await game_controller.handle_right_score_button()  # AWAY: 1, HOME: 1
         assert score_manager.left_score == 1
         assert score_manager.right_score == 1
         # sum=2 → MMP2
-        assert matchup_label.text == "MMP"
+        assert matchup_label.text == "M"
         assert counter_label.text == "2"
 
         await game_controller.handle_left_score_button()  # AWAY: 2, HOME: 1
         assert score_manager.left_score == 2
         assert score_manager.right_score == 1
         # sum=3 → WMP1
-        assert matchup_label.text == "WMP"
+        assert matchup_label.text == "W"
         assert counter_label.text == "1"
 
         await game_controller.handle_left_score_button()  # AWAY: 3, HOME: 1
         assert score_manager.left_score == 3
         assert score_manager.right_score == 1
         # sum=4 → WMP2
-        assert matchup_label.text == "WMP"
+        assert matchup_label.text == "W"
         assert counter_label.text == "2"
 
 
