@@ -57,10 +57,7 @@ def decode_form_value(text: str) -> str:
 
 def decode_form(form_data) -> dict:
     """Decode the fields of a urlencoded adafruit_httpserver FormData into a dict."""
-    return {
-        key: decode_form_value(form_data.get(key, safe=False) or "")
-        for key in form_data.fields
-    }
+    return {key: decode_form_value(form_data[key]) for key in form_data.fields}
 
 
 def _is_hex(text: str) -> bool:
