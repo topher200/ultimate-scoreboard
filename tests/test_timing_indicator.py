@@ -3,7 +3,7 @@
 import pytest
 
 from src.display_manager import (
-    TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+    TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
 )
 from src.timing_indicator import TimingIndicatorManager
@@ -15,7 +15,7 @@ class TestTimingIndicatorManager:
     def test_initialization_defaults(self):
         """Test that TimingIndicatorManager initializes with default constants."""
         manager = TimingIndicatorManager(
-            max_dots=TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+            max_dots=TIMING_INDICATOR_PIXEL_COUNT,
             removal_interval=TIMING_INDICATOR_REMOVAL_INTERVAL,
         )
         assert manager.get_dot_count() == 0

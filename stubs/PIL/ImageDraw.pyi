@@ -18,3 +18,8 @@ class Draw:
     def textbbox(
         self, xy: tuple[int, int], text: str, font: Any | None = None
     ) -> tuple[int, int, int, int]: ...
+    def rectangle(
+        self,
+        xy: tuple[int, int, int, int],
+        fill: tuple[int, int, int] | None = None,
+    ) -> None: ...

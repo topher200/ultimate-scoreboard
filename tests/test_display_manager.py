@@ -87,59 +87,74 @@ class TestDisplayManager:
         assert label.text == "42"
         assert isinstance(label.text, str)
 
-    def test_all_labels_in_group(self, display_manager):
-        """Test that all labels are appended to the main group."""
-        from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
-        # 7 text elements + timing indicator dots
-        expected_label_count = 7 + TIMING_INDICATOR_MAX_DOTS_TO_SHOW
-        assert len(display_manager.main_group) == expected_label_count
+    def test_all_elements_in_group(self, display_manager):
+        """Test that all labels and the timing indicator are appended to the main group."""
+        # 7 text elements + timing indicator tile grid
+        assert len(display_manager.main_group) == 8
 
-    def test_timing_indicator_dots_created(self, display_manager):
-        """Test that timing indicator dots are created."""
-        from src.display_manager import TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+    def test_timing_indicator_on_bottom_row(self, display_manager):
+        """Test that the timing indicator sits on the bottom row, right-aligned."""
+        from src.display_manager import (
+            DISPLAY_HEIGHT,
+            DISPLAY_WIDTH,
+            LEFT_BORDER_MARGIN_WIDTH,
+            TIMING_INDICATOR_PIXEL_COUNT,
+        )
 
-        assert len(display_manager.timing_indicator_dots) == TIMING_INDICATOR_MAX_DOTS_TO_SHOW
-        for dot in display_manager.timing_indicator_dots:
-            assert dot is not None
+        tile_grid = display_manager.main_group[-1]
+        assert tile_grid.y == DISPLAY_HEIGHT - 1
+        assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == (
+            DISPLAY_WIDTH - LEFT_BORDER_MARGIN_WIDTH
+        )
+        assert tile_grid.bitmap.width == TIMING_INDICATOR_PIXEL_COUNT
 
-    def test_update_timing_indicator_shows_dots(self, display_manager):
-        """Test that update_timing_indicator shows correct number of dots."""
-        from src.display_manager import TIMING_INDICATOR_DOT_CHAR, TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+    def test_timing_indicator_matches_usau_pull_time(self):
+        """Test that the full timing indicator lasts 80 seconds."""
+        from src.display_manager import (
+            TIMING_INDICATOR_PIXEL_COUNT,
+            TIMING_INDICATOR_REMOVAL_INTERVAL,
+        )
 
-        display_manager.update_timing_indicator(2)
-        for i, dot in enumerate(display_manager.timing_indicator_dots):
-            if i >= (TIMING_INDICATOR_MAX_DOTS_TO_SHOW - 2):
-                assert dot.text == TIMING_INDICATOR_DOT_CHAR
-            else:
-                assert dot.text == " "
+        assert TIMING_INDICATOR_PIXEL_COUNT == 40
+        assert TIMING_INDICATOR_REMOVAL_INTERVAL == 2.0
 
-    def test_update_timing_indicator_hides_all(self, display_manager):
-        """Test that update_timing_indicator hides all dots when count is 0."""
-        from src.display_manager import TIMING_INDICATOR_DOT_CHAR
+    def _lit_pixels(self, display_manager):
+        bitmap = display_manager.timing_indicator_bitmap
+        return [bitmap[i, 0] for i in range(bitmap.width)]
+
+    def test_timing_indicator_starts_empty(self, display_manager):
+        """Test that the timing indicator shows no pixels on startup."""
+        assert sum(self._lit_pixels(display_manager)) == 0
+
+    def test_update_timing_indicator_lights_right_most_pixels(self, display_manager):
+        """Test that update_timing_indicator lights the right-most pixels."""
+        from src.display_manager import TIMING_INDICATOR_PIXEL_COUNT
 
         display_manager.update_timing_indicator(3)
+        expected = [0] * (TIMING_INDICATOR_PIXEL_COUNT - 3) + [1] * 3
+        assert self._lit_pixels(display_manager) == expected
+
+    def test_update_timing_indicator_hides_all(self, display_manager):
+        """Test that update_timing_indicator hides all pixels when count is 0."""
+        display_manager.update_timing_indicator(3)
         display_manager.update_timing_indicator(0)
-        for dot in display_manager.timing_indicator_dots:
-            assert dot.text == " "
+        assert sum(self._lit_pixels(display_manager)) == 0
 
     def test_update_timing_indicator_shows_all(self, display_manager):
-        """Test that update_timing_indicator shows all dots when count is max."""
-        from src.display_manager import TIMING_INDICATOR_DOT_CHAR, TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+        """Test that update_timing_indicator lights all pixels when count is max."""
+        from src.display_manager import TIMING_INDICATOR_PIXEL_COUNT
 
-        display_manager.update_timing_indicator(TIMING_INDICATOR_MAX_DOTS_TO_SHOW)
-        for dot in display_manager.timing_indicator_dots:
-            assert dot.text == TIMING_INDICATOR_DOT_CHAR
+        display_manager.update_timing_indicator(TIMING_INDICATOR_PIXEL_COUNT)
+        assert self._lit_pixels(display_manager) == [1] * TIMING_INDICATOR_PIXEL_COUNT
 
     def test_update_timing_indicator_clamps_to_max(self, display_manager):
         """Test that update_timing_indicator clamps count to max."""
-        from src.display_manager import TIMING_INDICATOR_DOT_CHAR, TIMING_INDICATOR_MAX_DOTS_TO_SHOW
+        from src.display_manager import TIMING_INDICATOR_PIXEL_COUNT
 
-        display_manager.update_timing_indicator(TIMING_INDICATOR_MAX_DOTS_TO_SHOW + 10)
-        for dot in display_manager.timing_indicator_dots:
-            assert dot.text == TIMING_INDICATOR_DOT_CHAR
+        display_manager.update_timing_indicator(TIMING_INDICATOR_PIXEL_COUNT + 10)
+        assert self._lit_pixels(display_manager) == [1] * TIMING_INDICATOR_PIXEL_COUNT
 
     def test_update_timing_indicator_clamps_to_zero(self, display_manager):
         """Test that update_timing_indicator clamps negative count to 0."""
         display_manager.update_timing_indicator(-5)
-        for dot in display_manager.timing_indicator_dots:
-            assert dot.text == " "
+        assert sum(self._lit_pixels(display_manager)) == 0

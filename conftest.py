@@ -7,14 +7,17 @@ from unittest.mock import MagicMock
 import pytest
 
 from fakes import (
+    FakeBitmap,
     FakeGroup,
     FakeKeys,
     FakeLabel,
     FakeMatrixPortal,
+    FakePalette,
     FakeTerminalio,
+    FakeTileGrid,
 )
 from src.display_manager import (
-    TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+    TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
     DisplayManager,
 )
@@ -44,7 +47,9 @@ for module_name in _BASIC_MOCK_MODULES:
     sys.modules[module_name] = MagicMock()
 
 # Set up specific mocks with fake implementations
-sys.modules["displayio"] = MagicMock(Group=FakeGroup)
+sys.modules["displayio"] = MagicMock(
+    Group=FakeGroup, Bitmap=FakeBitmap, Palette=FakePalette, TileGrid=FakeTileGrid
+)
 sys.modules["keypad"] = MagicMock(Keys=FakeKeys)
 sys.modules["terminalio"] = MagicMock(FONT=FakeTerminalio.FONT)
 
@@ -99,7 +104,7 @@ def gender_manager():
 def timing_indicator_manager():
     """Create TimingIndicatorManager instance."""
     return TimingIndicatorManager(
-        max_dots=TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+        max_dots=TIMING_INDICATOR_PIXEL_COUNT,
         removal_interval=TIMING_INDICATOR_REMOVAL_INTERVAL,
     )
 

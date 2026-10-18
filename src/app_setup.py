@@ -4,7 +4,7 @@ import asyncio
 
 from src.compat import Callable, NamedTuple
 from src.display_manager import (
-    TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+    TIMING_INDICATOR_PIXEL_COUNT,
     TIMING_INDICATOR_REMOVAL_INTERVAL,
     DisplayManager,
 )
@@ -44,7 +44,7 @@ def create_managers(matrixportal, keys) -> Managers:
     score_manager = ScoreManager()
     gender_manager = GenderManager()
     timing_indicator_manager = TimingIndicatorManager(
-        max_dots=TIMING_INDICATOR_MAX_DOTS_TO_SHOW,
+        max_dots=TIMING_INDICATOR_PIXEL_COUNT,
         removal_interval=TIMING_INDICATOR_REMOVAL_INTERVAL,
     )
     hardware_manager = HardwareManager(keys=keys)
