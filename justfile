@@ -26,7 +26,7 @@ ci:
 # Monitor the board over serial
 monitor:
     @echo "Monitoring serial output. Press Ctrl+] to exit."
-    python3 -m serial.tools.miniterm /dev/ttyACM0 115200 || python3 -m serial.tools.miniterm /dev/ttyACM1 115200
+    uv run python -m serial.tools.miniterm hwgrep://MatrixPortal 115200
 
 # Deploy project files to CircuitPython board
 deploy:
