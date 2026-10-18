@@ -1,6 +1,9 @@
 # Set shell for command execution
 set shell := ['bash', '-uc']
 
+# Mount point of the board's CIRCUITPY drive; override with the CIRCUITPY env var
+circuitpy := env("CIRCUITPY", `for d in /Volumes /run/media/$(id -un) /media/$(id -un); do [ -f "$d/CIRCUITPY/boot_out.txt" ] && { echo "$d/CIRCUITPY"; exit; }; done; echo /media/CIRCUITPY`)
+
 # List available commands
 default:
     @just --list
@@ -30,9 +33,9 @@ monitor:
 
 # Deploy project files to CircuitPython board
 deploy:
-    cp main.py /media/CIRCUITPY/
-    cp -r src /media/CIRCUITPY/
-    @echo "Deployed to CIRCUITPY"
+    cp main.py "{{circuitpy}}/"
+    cp -r src "{{circuitpy}}/"
+    @echo "Deployed to {{circuitpy}}"
 
 # Watch for changes and auto-deploy to CircuitPython board
 watch-deploy:
