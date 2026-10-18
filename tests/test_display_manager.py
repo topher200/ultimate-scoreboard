@@ -105,6 +105,18 @@ class TestDisplayManager:
         assert tile_grid.x + TIMING_INDICATOR_PIXEL_COUNT == DISPLAY_WIDTH - TEXT_INSET
         assert tile_grid.bitmap.width == TIMING_INDICATOR_PIXEL_COUNT
 
+    def test_mmp_timing_indicator_sits_one_row_above_the_bottom(self, display_manager):
+        """Test that an MMP point moves the timing indicator down, and a WMP point moves it back."""
+        display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 1)
+        wmp_x = display_manager._timing_indicator.x
+
+        display_manager.set_gender_matchup(GenderManager.GENDER_MMP, 1)
+        assert display_manager._timing_indicator.y == DISPLAY_HEIGHT - 2
+        assert display_manager._timing_indicator.x == wmp_x
+
+        display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 2)
+        assert display_manager._timing_indicator.y == DISPLAY_HEIGHT - FRAME_WIDTH - 1
+
     def _lit_pixels(self, display_manager):
         bitmap = display_manager._timing_indicator_bitmap
         return [bitmap[i, 0] for i in range(bitmap.width)]

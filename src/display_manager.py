@@ -71,6 +71,8 @@ RIGHT_JUSTIFY_ANCHOR_POINT = (1.0, 0.0)
 TIMING_INDICATOR_X_POSITION = DISPLAY_WIDTH - TEXT_INSET - TIMING_INDICATOR_PIXEL_COUNT
 # The row between the scores and the frame's bottom edge
 TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - FRAME_WIDTH - 1
+# The row for an MMP point, which has no frame
+MMP_TIMING_INDICATOR_Y_POSITION = DISPLAY_HEIGHT - 2
 TIMING_INDICATOR_COLOR = 0xFFFFFF
 
 # Update screen constants
@@ -263,11 +265,15 @@ class DisplayManager:
     def set_gender_matchup(self, gender: str, count: int) -> None:
         """Show the gender's first letter over the count, colored by gender.
 
-        A WMP point also frames the screen, with its dashes held still.
+        A WMP point also frames the screen, with its dashes held still. An MMP
+        point moves the timing dots down into the frame's space.
         """
         is_wmp = gender == GenderManager.GENDER_WMP
         color = WMP_GENDER_MATCHUP_COLOR if is_wmp else MMP_GENDER_MATCHUP_COLOR
         self._wmp_frame.hidden = not is_wmp
+        self._timing_indicator.y = (
+            TIMING_INDICATOR_Y_POSITION if is_wmp else MMP_TIMING_INDICATOR_Y_POSITION
+        )
         self._wmp_frame_march_start = -WMP_FRAME_MARCH_SECONDS
         for element_id, text in (
             (GENDER_MATCHUP, gender[:1]),
