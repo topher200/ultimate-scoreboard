@@ -38,8 +38,8 @@ mount:
 # Deploy project files to CircuitPython board
 deploy:
     @test -f "{{circuitpy}}/boot_out.txt" || { echo "No CircuitPython board found; mount it (just mount on Linux) or set CIRCUITPY to its path" >&2; exit 1; }
+    rsync -r --delete --delete-excluded --checksum --exclude __pycache__ --exclude .DS_Store src/ "{{circuitpy}}/src/"
     cp main.py "{{circuitpy}}/"
-    cp -r src "{{circuitpy}}/"
     sync
     @echo "Deployed to {{circuitpy}}"
 
