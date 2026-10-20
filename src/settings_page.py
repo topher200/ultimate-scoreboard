@@ -4,7 +4,9 @@ from src.compat import Callable
 from src.settings_store import (
     DEFAULT_SETTINGS,
     LEFT_TEAM_NAME,
+    MARCH_WMP_FRAME,
     RIGHT_TEAM_NAME,
+    SHOW_WMP_FRAME,
     SettingsStore,
 )
 
@@ -12,6 +14,12 @@ from src.settings_store import (
 _FIELDS = (
     (LEFT_TEAM_NAME, "Left team", "#cc0"),
     (RIGHT_TEAM_NAME, "Right team", "#ccc"),
+)
+
+# (setting key, checkbox label)
+_CHECKBOXES = (
+    (SHOW_WMP_FRAME, "Include the WMP border"),
+    (MARCH_WMP_FRAME, "Rotate the WMP border"),
 )
 
 _PAGE = """<!doctype html>
@@ -23,10 +31,12 @@ body{{font-family:sans-serif;max-width:24em;margin:0 auto;padding:1em;background
 label{{display:block;margin-top:1em;font-weight:bold}}
 input{{width:100%;box-sizing:border-box;font-size:1.5em;padding:.3em;margin-top:.2em}}
 button{{width:100%;font-size:1.5em;padding:.5em;margin-top:1.5em}}
+.check{{display:flex;align-items:center;gap:.5em;font-weight:normal}}
+.check input{{width:1.5em;height:1.5em;margin:0}}
 p{{color:#8c8}}
 </style></head><body>
 <h1>Scoreboard</h1>
-<form method="post" action="/">{fields}
+<form method="post" action="/">{fields}{checkboxes}
 <button type="submit">Save</button>
 </form>{message}
 </body></html>"""
@@ -34,6 +44,12 @@ p{{color:#8c8}}
 _FIELD = """
 <label style="color:{color}" for="{key}">{label}</label>
 <input id="{key}" name="{key}" value="{value}" maxlength="{max_length}" autocomplete="off">"""
+
+# The hidden input submits "0" when the box is unchecked; a checked box submits
+# "1" first, and the form decoders keep the first value of each field.
+_CHECKBOX = """
+<label class="check"><input type="checkbox" name="{key}" value="1"{checked}>{label}</label>
+<input type="hidden" name="{key}" value="0">"""
 
 MAX_NAME_LENGTH = 16
 
@@ -99,6 +115,9 @@ class SettingsPage:
                 continue
             value = form[key].strip()[:MAX_NAME_LENGTH]
             settings[key] = value or DEFAULT_SETTINGS[key]
+        for key, _ in _CHECKBOXES:
+            if key in form:
+                settings[key] = form[key] == "1"
         self._store.save(settings)
         self._on_save(settings)
 
@@ -120,4 +139,10 @@ class SettingsPage:
             )
             for key, label, color in _FIELDS
         )
-        return _PAGE.format(fields=fields, message=message)
+        checkboxes = "".join(
+            _CHECKBOX.format(
+                key=key, label=label, checked=" checked" if settings[key] else ""
+            )
+            for key, label in _CHECKBOXES
+        )
+        return _PAGE.format(fields=fields, checkboxes=checkboxes, message=message)

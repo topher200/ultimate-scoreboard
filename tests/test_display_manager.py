@@ -62,6 +62,32 @@ class TestDisplayManager:
         assert matchup.color == counter.color == MMP_GENDER_MATCHUP_COLOR
         assert display_manager._wmp_frame.hidden
 
+    def test_frame_hides_when_turned_off(self, display_manager):
+        display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 2)
+        display_manager.set_frame_options(show_wmp_frame=False, march_wmp_frame=True)
+        assert display_manager._wmp_frame.hidden
+
+        display_manager.set_frame_options(show_wmp_frame=True, march_wmp_frame=True)
+        assert not display_manager._wmp_frame.hidden
+
+    def test_frame_stays_hidden_until_the_first_matchup(self, display_manager):
+        display_manager.set_frame_options(show_wmp_frame=True, march_wmp_frame=True)
+        assert display_manager._wmp_frame.hidden
+
+    def test_wmp_frame_holds_still_when_marching_is_off(
+        self, display_manager, monkeypatch
+    ):
+        display_manager.set_frame_options(show_wmp_frame=True, march_wmp_frame=False)
+        display_manager.march_wmp_frame()
+        start = display_manager_module.time.monotonic()
+        monkeypatch.setattr(
+            display_manager_module.time,
+            "monotonic",
+            lambda: start + 3 * display_manager_module.WMP_FRAME_MARCH_STEP_SECONDS,
+        )
+        display_manager.animate_wmp_frame()
+        assert display_manager._wmp_frame_offset == 0
+
     def test_frame_is_dashed_at_rest(self, display_manager):
         bitmap = display_manager._wmp_frame.bitmap
         for y in range(FRAME_WIDTH):
