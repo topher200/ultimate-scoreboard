@@ -13,6 +13,7 @@ class Label(_Layer):
     color: int | None
     scale: int
     hidden: bool
+    anchored_position: tuple[int, int]
 
     def __init__(
         self,

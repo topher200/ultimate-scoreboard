@@ -7,11 +7,22 @@ from adafruit_display_text import label
 from src.display_manager import (
     DISPLAY_HEIGHT,
     DISPLAY_WIDTH,
+    GENDER_MATCHUP,
+    GENDER_MATCHUP_COUNTER,
+    LEFT_TEAM,
+    LEFT_TEAM_COLOR,
+    LEFT_TEAM_SCORE,
+    LEFT_TEAM_SCORE_BOLD,
+    RIGHT_TEAM,
+    RIGHT_TEAM_COLOR,
+    RIGHT_TEAM_SCORE,
+    RIGHT_TEAM_SCORE_BOLD,
     WMP_FRAME_MARCH_SECONDS,
     DisplayManager,
     frame_pixels,
 )
 from src.lab_font import DIGITS_3X5, DIGITS_5X7, draw_glyph, draw_segments, fill_rect
+from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
 # Colors that the matrix shows exactly with 2 bits per channel, in display order
 COLOR_LIST = (
@@ -93,6 +104,8 @@ LABELS = (LABEL_NONE, LABEL_STACKED, LABEL_UNDER)
 
 LAYOUT_LAB = "lab"
 LAYOUT_CURRENT = "current"
+# Element ID for the timing dots in a Screen's `moves`
+TIMING_DOTS = "timing_dots"
 
 
 SCORES = (13, 18)
@@ -154,6 +167,8 @@ class Screen:
         bold: bool = False,
         names_level: int = 3,
         gender_level: int = 3,
+        moves: tuple = (),
+        bright_names: bool = False,
     ):
         self.screen_id = screen_id
         self.title = title
@@ -175,17 +190,32 @@ class Screen:
         self.bold = bold
         self.names_level = names_level
         self.gender_level = gender_level
+        # (element ID, dx, dy) moves for the current scoreboard
+        self.moves = moves
+        self.bright_names = bright_names
 
 
 class Pair:
-    """Two full screens that the viewer switches between to answer `question`."""
+    """Two full screens that the viewer switches between to answer `question`.
 
-    def __init__(self, screen_id: str, title: str, question: str, a: Screen, b: Screen):
+    A pair with `rating` set asks for Good, OK, or Bad in place of A or B.
+    """
+
+    def __init__(
+        self,
+        screen_id: str,
+        title: str,
+        question: str,
+        a: Screen,
+        b: Screen,
+        rating: bool = False,
+    ):
         self.screen_id = screen_id
         self.title = title
         self.question = question
         self.a = a
         self.b = b
+        self.rating = rating
 
 
 def _scoreboard(
@@ -260,6 +290,92 @@ def round_five_screens() -> list:
     )
 
 
+def round_seven_screens() -> list:
+    """Return the seventh round of pairs, in the order the lab shows them.
+
+    The first pairs show the current scoreboard for an MMP point as A, and the
+    same scoreboard with one change as B. The rest show a WMP point as A and an
+    MMP point as B, for the current scoreboard and for each change, and ask for
+    a rating.
+    """
+    question = "For MMP points, which looks better?"
+    names = (LEFT_TEAM, RIGHT_TEAM)
+    scores = (
+        LEFT_TEAM_SCORE,
+        LEFT_TEAM_SCORE_BOLD,
+        RIGHT_TEAM_SCORE,
+        RIGHT_TEAM_SCORE_BOLD,
+        GENDER_MATCHUP,
+        GENDER_MATCHUP_COUNTER,
+    )
+    changes = (
+        ("names up 2 rows", question, tuple((e, 0, -2) for e in names), False),
+        (
+            "names 2 px out",
+            question,
+            ((LEFT_TEAM, -2, 0), (RIGHT_TEAM, 2, 0)),
+            False,
+        ),
+        ("dots down 2 rows", question, ((TIMING_DOTS, 0, 2),), False),
+        (
+            "names up 2 rows, scores up 1 row",
+            question,
+            tuple((e, 0, -2) for e in names) + tuple((e, 0, -1) for e in scores),
+            False,
+        ),
+        (
+            "bright names",
+            "From the far end zone, which team names read better?",
+            (),
+            True,
+        ),
+    )
+    current = Screen("", "current", layout=LAYOUT_CURRENT, label="M1")
+    pairs = [
+        Pair(
+            f"P{i + 1}",
+            f"current vs {title}",
+            pair_question,
+            current,
+            Screen(
+                "",
+                title,
+                layout=LAYOUT_CURRENT,
+                label="M1",
+                moves=moves,
+                bright_names=bright_names,
+            ),
+        )
+        for i, (title, pair_question, moves, bright_names) in enumerate(changes)
+    ]
+    switch_question = "Switch between WMP and MMP. How good does the MMP point look?"
+    for title, _, moves, bright_names in (("current", "", (), False),) + changes:
+        pairs.append(
+            Pair(
+                f"P{len(pairs) + 1}",
+                f"WMP to MMP, {title}",
+                switch_question,
+                Screen(
+                    "",
+                    "WMP",
+                    layout=LAYOUT_CURRENT,
+                    label="W1",
+                    bright_names=bright_names,
+                ),
+                Screen(
+                    "",
+                    f"MMP, {title}",
+                    layout=LAYOUT_CURRENT,
+                    label="M1",
+                    moves=moves,
+                    bright_names=bright_names,
+                ),
+                rating=True,
+            )
+        )
+    return pairs
+
+
 class _Capture:
     """Holds the root group that a DisplayManager sets, in place of a MatrixPortal."""
 
@@ -268,16 +384,24 @@ class _Capture:
         self.root_group = None
 
 
-def _current_scoreboard(gender: str) -> tuple:
-    """Return a DisplayManager that shows a point for `gender`, and its root group.
-
-    :param gender: "W" or "M"
-    """
+def _current_scoreboard(screen: Screen) -> tuple:
+    """Return a DisplayManager that shows `screen`'s point, and its root group."""
     capture = _Capture()
     display_manager = DisplayManager(capture)
     display_manager.set_team_names("AWAY", "HOME")
     display_manager.set_scores(*SCORES)
-    display_manager.set_gender_matchup(f"{gender}MP", 1)
+    display_manager.set_gender_matchup(f"{screen.label[:1] or 'W'}MP", 1)
+    display_manager.update_timing_indicator(TIMING_INDICATOR_PIXEL_COUNT // 2)
+    labels = display_manager._labels
+    for element_id, dx, dy in screen.moves:
+        if element_id == TIMING_DOTS:
+            display_manager._timing_indicator.y += dy
+            continue
+        x, y = labels[element_id].anchored_position
+        labels[element_id].anchored_position = (x + dx, y + dy)
+    if screen.bright_names:
+        labels[LEFT_TEAM].color = LEFT_TEAM_COLOR
+        labels[RIGHT_TEAM].color = RIGHT_TEAM_COLOR
     display_manager.march_wmp_frame()
     return display_manager, capture.root_group
 
@@ -331,7 +455,7 @@ class DrawnScreen:
         ]
         self._current: DisplayManager | None = None
         if screen.layout == LAYOUT_CURRENT:
-            self._current, self.group = _current_scoreboard(screen.label[:1] or "W")
+            self._current, self.group = _current_scoreboard(screen)
         else:
             self.group = displayio.Group()
             self._draw()

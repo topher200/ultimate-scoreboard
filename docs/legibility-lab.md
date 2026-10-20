@@ -13,6 +13,7 @@ We ran the legibility lab on a real field to find the colors, font, and layout t
 | WMP indicator | 3 px cyan dashed frame at full brightness that marches for 30 s after each point | 2, 3, 4, 5 |
 | MMP indicator | No frame | 5 |
 | Matchup label color | Cyan for WMP, magenta for MMP | 5 |
+| MMP layout | Same places as WMP | 6 |
 
 The scoreboard uses all of these. Its colors are yellow and white for the teams, cyan for WMP, and magenta for the MMP label: yellow, cyan, and magenta are the three printer primaries, and each looks unlike the others. The timing dots are white, like the right team; that is a known compromise.
 
@@ -68,6 +69,12 @@ Each pair asked one question.
 
 After round 5, we picked the MMP label color in the simulator: white matched the right team, so the label is magenta.
 
+### Round 6: MMP layout
+
+- **MMP layout** ("For MMP points, which layout looks better?"): the same places as WMP beat a layout that moved the names 2 px into the top corners and the timing dots 2 rows down, into the frame's space.
+
+That pair changed several things at once, so round 7 tests each change by itself.
+
 ## Run a round
 
 1. Hold both buttons for about 5 seconds. The scores reset at 1 second, and at 5 seconds the board restarts into the lab. Hold both buttons for 5 seconds again to go back to the scoreboard.
@@ -76,13 +83,14 @@ After round 5, we picked the MMP label color in the simulator: white matched the
 4. For each pair, tap **Show A** and **Show B** a few times, then answer the question on the page. Vote **Same** when the two are too close to call. A vote moves to the next item.
 5. Copy the votes block at the bottom of the page.
 
-The board keeps the votes across reboots. Without Wi-Fi, the left and right buttons step through the items, and holding both for 1 second turns auto-advance on or off. The board shows each item's ID in the top-left corner for a few seconds. In the lab, the board does not check for updates, so power on normally to get a new round.
+The board keeps the votes across reboots. Without Wi-Fi, the left and right buttons step through the items, and holding both for 1 second turns auto-advance on or off. In the lab, the board does not check for updates, so power on normally to get a new round.
 
 ## Write a round
 
 1. Write down the decision that is still open and the candidates for it. Leave out candidates that earlier rounds ruled out.
 2. In `src/lab_screens.py`, add a function that returns the round's items, and pass it to `Lab` in `run_lab` in `src/lab.py`:
    - A `Pair` shows two screens and asks a question; the viewer votes A, Same, or B. `_round_robin` makes a `Pair` for every two candidates.
+   - A `Pair` with `rating=True` shows two screens and asks for Good, OK, or Bad.
    - A `Screen` with `compare=True` shows a different font on each half and asks which half reads better.
    - A plain `Screen` asks for Good, OK, or Bad.
 3. Give every item an ID that no earlier round used, so old votes don't match it.

@@ -6,7 +6,6 @@ from fakes import FakeDisplay
 from src.lab import (
     AUTO_ADVANCE_SECONDS,
     CUSTOM_SCREEN_ID,
-    ID_OVERLAY_SECONDS,
     MAX_NOTE_LENGTH,
     Lab,
     VoteStore,
@@ -22,6 +21,7 @@ from src.lab_screens import (
     Pair,
     Screen,
     round_five_screens,
+    round_seven_screens,
 )
 from src.settings_store import LEFT_TEAM_NAME, SettingsStore
 from tests.test_display_renderer import _run
@@ -171,16 +171,6 @@ class TestLab:
         assert "<b>" not in html
         assert "&lt;b&gt;" in html
 
-    def test_tick_hides_the_id_after_a_few_seconds(self, lab, display, clock):
-        lab.respond(None)
-        overlay = display.root_group[len(display.root_group) - 1]
-
-        clock.now = ID_OVERLAY_SECONDS
-        lab.tick()
-
-        assert overlay.hidden
-        assert lab.screen.screen_id == "A1"
-
     def test_tick_advances_when_auto_advance_is_on(self, lab, clock):
         lab.respond({"action": "auto"})
         lab.respond(None)
@@ -220,6 +210,21 @@ class TestPairs:
 
         assert pair_lab.screen.title == "thick"
         assert pair_lab.item.screen_id == "G1"
+
+    def test_rated_pair_asks_for_a_rating(self, display, nvm, clock):
+        pair = Pair(
+            "G2",
+            "WMP to MMP",
+            "How good?",
+            Screen("", "WMP"),
+            Screen("", "MMP"),
+            rating=True,
+        )
+        html = Lab(display, [pair], VoteStore(nvm), get_time=clock).respond(None)
+
+        assert "Show B" in html
+        assert "Good" in html
+        assert "A better" not in html
 
     def test_pair_vote_is_keyed_by_pair(self, pair_lab):
         pair_lab.respond({"action": "show_b"})
@@ -287,6 +292,34 @@ def test_round_five_ids_are_unique():
     ids = [item.screen_id for item in round_five_screens()]
 
     assert len(ids) == len(set(ids))
+
+
+def test_round_seven_ids_are_new():
+    old = {item.screen_id for item in round_five_screens()} | {"S1"}
+    ids = [item.screen_id for item in round_seven_screens()]
+
+    assert len(ids) == len(set(ids))
+    assert not old & set(ids)
+
+
+def test_round_seven_pairs_show_different_screens():
+    """Test that each round seven pair lights different pixels for A and B."""
+    same = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from src.lab_screens import DrawnScreen, round_seven_screens
+
+print(json.dumps([
+    pair.screen_id
+    for pair in round_seven_screens()
+    if render_pixels(DrawnScreen(pair.a).group)
+    == render_pixels(DrawnScreen(pair.b).group)
+]))
+"""
+    )
+
+    assert same == []
 
 
 def test_round_five_text_overlaps_nothing():
