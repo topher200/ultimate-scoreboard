@@ -13,7 +13,7 @@ We ran the legibility lab on a real field to find the colors, font, and layout t
 | WMP indicator | 3 px cyan dashed frame at full brightness that marches for 30 s after each point | 2, 3, 4, 5 |
 | MMP indicator | No frame | 5 |
 | Matchup label color | Cyan for WMP, magenta for MMP | 5 |
-| MMP layout | Same places as WMP | 6 |
+| MMP layout | Same places as WMP, with the timing dots 1 row above the bottom edge | 6, 7 |
 
 The scoreboard uses all of these. Its colors are yellow and white for the teams, cyan for WMP, and magenta for the MMP label: yellow, cyan, and magenta are the three printer primaries, and each looks unlike the others. The timing dots are white, like the right team; that is a known compromise.
 
@@ -74,6 +74,17 @@ After round 5, we picked the MMP label color in the simulator: white matched the
 - **MMP layout** ("For MMP points, which layout looks better?"): the same places as WMP beat a layout that moved the names 2 px into the top corners and the timing dots 2 rows down, into the frame's space.
 
 That pair changed several things at once, so round 7 tests each change by itself.
+
+### Round 7: MMP spacing, one change at a time
+
+Each A/B pair showed today's MMP layout as A and one change as B ("For MMP points, which looks better?"). Then a pair for each layout showed a WMP point and an MMP point, and asked for Good, OK, or Bad.
+
+- **Timing dots 2 rows down**, into the frame's space: B won, and the switch from WMP was the only one rated Good.
+- **Names 2 rows up**: A won. The switch was OK.
+- **Names 2 px out to the sides**: A won. The switch was Bad.
+- **Names 2 rows up and scores 1 row up**: Same. The switch was OK.
+- **Team names at full brightness**: A won, so the names stay at 2/3.
+- **Today's layout**: the switch was OK.
 
 ## Run a round
 
