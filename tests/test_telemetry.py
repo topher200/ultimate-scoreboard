@@ -24,6 +24,7 @@ from src.ota_manager import DeviceInfo
 from src.telemetry import (
     CHUNKS_URL,
     CRASH_FILE,
+    FIRST_HEARTBEAT_S,
     HEARTBEAT_INTERVAL_S,
     MAX_PENDING_EVENTS,
     Telemetry,
@@ -317,5 +318,5 @@ class TestHeartbeat:
         with pytest.raises(asyncio.CancelledError):
             await telemetry.run(lambda: online[len(sleeps) - 1])
 
-        assert sleeps == [HEARTBEAT_INTERVAL_S] * 3
+        assert sleeps == [FIRST_HEARTBEAT_S] + [HEARTBEAT_INTERVAL_S] * 2
         assert len(event_infos(fake_http, EVENT_HEARTBEAT)) == 1
