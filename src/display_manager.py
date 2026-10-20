@@ -6,6 +6,7 @@ import terminalio
 from adafruit_display_text import label
 
 from src.gender_manager import GenderManager
+from src.proportional_font import ProportionalFont
 from src.protocols import MatrixPortalLike
 from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
@@ -41,6 +42,7 @@ TEAM_NAME_FONT_SCALE = 1
 SCORE_FONT_SCALE = 2
 GENDER_MATCHUP_FONT_SCALE = 1
 FONT_TYPE = terminalio.FONT
+TEAM_NAME_FONT = ProportionalFont(terminalio.FONT)
 
 # Display dimensions
 DISPLAY_HEIGHT = 32
@@ -95,10 +97,11 @@ QR_CODE_LIGHT_COLOR = 0x808080
 QR_CODE_QUIET_ZONE_WIDTH = 2
 
 
-# (element ID, initial text, scale, color, anchor point, anchored position)
+# (element ID, font, initial text, scale, color, anchor point, anchored position)
 _ANCHORED_LABELS = (
     (
         LEFT_TEAM,
+        TEAM_NAME_FONT,
         "",
         TEAM_NAME_FONT_SCALE,
         LEFT_TEAM_NAME_COLOR,
@@ -107,6 +110,7 @@ _ANCHORED_LABELS = (
     ),
     (
         RIGHT_TEAM,
+        TEAM_NAME_FONT,
         "",
         TEAM_NAME_FONT_SCALE,
         RIGHT_TEAM_NAME_COLOR,
@@ -115,6 +119,7 @@ _ANCHORED_LABELS = (
     ),
     (
         LEFT_TEAM_SCORE,
+        FONT_TYPE,
         "",
         SCORE_FONT_SCALE,
         LEFT_TEAM_COLOR,
@@ -123,6 +128,7 @@ _ANCHORED_LABELS = (
     ),
     (
         LEFT_TEAM_SCORE_BOLD,
+        FONT_TYPE,
         "",
         SCORE_FONT_SCALE,
         LEFT_TEAM_COLOR,
@@ -131,6 +137,7 @@ _ANCHORED_LABELS = (
     ),
     (
         RIGHT_TEAM_SCORE,
+        FONT_TYPE,
         "",
         SCORE_FONT_SCALE,
         RIGHT_TEAM_COLOR,
@@ -139,6 +146,7 @@ _ANCHORED_LABELS = (
     ),
     (
         RIGHT_TEAM_SCORE_BOLD,
+        FONT_TYPE,
         "",
         SCORE_FONT_SCALE,
         RIGHT_TEAM_COLOR,
@@ -147,6 +155,7 @@ _ANCHORED_LABELS = (
     ),
     (
         GENDER_MATCHUP,
+        FONT_TYPE,
         " ",
         GENDER_MATCHUP_FONT_SCALE,
         WMP_GENDER_MATCHUP_COLOR,
@@ -155,6 +164,7 @@ _ANCHORED_LABELS = (
     ),
     (
         GENDER_MATCHUP_COUNTER,
+        FONT_TYPE,
         " ",
         GENDER_MATCHUP_FONT_SCALE,
         WMP_GENDER_MATCHUP_COLOR,
@@ -208,11 +218,19 @@ class DisplayManager:
         self._labels: dict[str, label.Label] = {}
         self._main_group = displayio.Group()
 
-        for element_id, text, scale, color, anchor_point, position in _ANCHORED_LABELS:
+        for (
+            element_id,
+            font,
+            text,
+            scale,
+            color,
+            anchor_point,
+            position,
+        ) in _ANCHORED_LABELS:
             self._add_label(
                 element_id,
                 label.Label(
-                    FONT_TYPE,
+                    font,
                     text=text,
                     scale=scale,
                     color=color,

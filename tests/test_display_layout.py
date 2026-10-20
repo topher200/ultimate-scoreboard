@@ -114,3 +114,31 @@ print(json.dumps({"icon": ink(icon), "text": ink(text)}))
     assert text_left > 0 and text_right < 63
     assert text_bottom < 31
     assert icon_bottom < text_top
+
+
+def test_five_letter_team_names_fit_between_the_frames():
+    """Test that two five-letter names stay apart and inside the text inset."""
+    columns = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from simulator.simulator_matrixportal import SimulatorMatrixPortal
+from src.display_manager import DisplayManager, LEFT_TEAM, RIGHT_TEAM
+
+matrixportal = SimulatorMatrixPortal()
+display_manager = DisplayManager(matrixportal)
+display_manager.set_team_names("Flick", "Flick")
+root = matrixportal.display.root_group
+labels = display_manager._labels
+
+def ink_columns(element_id):
+    for item in root:
+        item.hidden = item is not labels[element_id]
+    return sorted({i % 64 for i, color in enumerate(render_pixels(root)) if color})
+
+print(json.dumps({"left": ink_columns(LEFT_TEAM), "right": ink_columns(RIGHT_TEAM)}))
+"""
+    )
+    assert columns["left"][0] == 4
+    assert columns["right"][-1] == 59
+    assert columns["right"][0] - columns["left"][-1] > 1
