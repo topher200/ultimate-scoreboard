@@ -8,6 +8,7 @@ import asyncio
 import json
 import time
 
+from src.app_version import VERSION
 from src.compat import Callable
 from src.display_manager import DisplayManager
 from src.hardware_manager import BUTTON_LEFT, BUTTON_RIGHT, HardwareManager
@@ -69,6 +70,7 @@ button,select,input{{font-size:1.3em;padding:.4em;margin:.2em 0}}
 h1{{font-size:1.4em}}pre{{white-space:pre-wrap;background:#222;padding:.5em}}
 label{{display:block}}.note{{width:100%;box-sizing:border-box}}
 </style></head><body>
+<p>{round_name} &middot; version {version}</p>
 <h1>{screen_id} ({position}/{count}): {title}</h1>{question}
 <form method="post" action="/">
 <div class="row"><button name="action" value="prev">&larr; Prev</button>
@@ -157,6 +159,7 @@ class Lab:
         items: list,
         vote_store: VoteStore,
         get_time: Callable = time.monotonic,
+        round_name: str = "",
     ):
         """Initialize Lab.
 
@@ -164,8 +167,10 @@ class Lab:
         :param items: Screens and Pairs, in the order the lab shows them
         :param vote_store: VoteStore that keeps the votes
         :param get_time: Callable returning current time in seconds
+        :param round_name: Name of the round, shown at the top of the page
         """
         self._display = display
+        self._round_name = round_name
         self._custom = Screen(
             CUSTOM_SCREEN_ID, "custom", left="yellow", right="cyan", label="W1"
         )
@@ -386,6 +391,8 @@ class Lab:
             custom_id=CUSTOM_SCREEN_ID,
             custom_fields=custom_fields,
             results=_escape(self.results()),
+            round_name=_escape(self._round_name),
+            version=VERSION,
         )
 
 
@@ -404,7 +411,12 @@ async def run_lab(
         which restarts into the scoreboard
     """
     display_manager = DisplayManager(matrixportal)
-    lab = Lab(matrixportal.display, round_eight_screens(), VoteStore(nvm))
+    lab = Lab(
+        matrixportal.display,
+        round_eight_screens(),
+        VoteStore(nvm),
+        round_name="Round 8: tall letters and the WMP frame",
+    )
     network_manager = NetworkManager(network, display_manager, web_server, lab)
     network_manager.connect()
     if not display_manager.qr_code_shown:

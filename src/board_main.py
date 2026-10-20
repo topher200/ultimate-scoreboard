@@ -13,6 +13,7 @@ from adafruit_connection_manager import get_radio_socketpool, get_radio_ssl_cont
 from adafruit_matrixportal.matrixportal import MatrixPortal
 
 from src.app_setup import create_managers, initialize_application, run_tasks
+from src.app_version import VERSION
 from src.board_network import BoardNetwork
 from src.game_controller import GameController
 from src.hardware_manager import create_keys_from_board
@@ -32,11 +33,6 @@ from src.network_patches import apply_network_patches
 from src.ota_manager import DeviceInfo, OtaManager
 from src.telemetry import Telemetry, save_crash
 from src.web_server import WebServer
-
-try:
-    from src.version import VERSION  # pyrefly: ignore[missing-import]
-except ImportError:
-    VERSION = "dev"
 
 HARDWARE_VERSION = "matrixportal-s3"
 SOFTWARE_TYPE = "scoreboard"
