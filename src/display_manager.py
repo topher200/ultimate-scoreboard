@@ -203,6 +203,26 @@ def frame_pixels(width: int) -> tuple[list, list]:
     return pixels, distances
 
 
+def lit_pixels(text: label.Label) -> set:
+    """Return the (x, y) screen pixels that `text` lights, at scale 1."""
+    pixels = set()
+    group = text._local_group
+    for i in range(len(group)):
+        face = group[i]
+        if not isinstance(face, displayio.TileGrid):
+            continue
+        bitmap = face.bitmap
+        width, height = face.tile_width, face.tile_height
+        tile = face[0]
+        tile_x = tile % (bitmap.width // width) * width
+        tile_y = tile // (bitmap.width // width) * height
+        for y in range(height):
+            for x in range(width):
+                if bitmap[tile_x + x, tile_y + y]:
+                    pixels.add((text.x + face.x + x, text.y + face.y + y))
+    return pixels
+
+
 def make_qr_matrix(text: str) -> adafruit_miniqr.QRBitMatrix:
     """Return the QR code modules for `text`, truthy where a module is dark."""
     qr = adafruit_miniqr.QRCode()
@@ -258,6 +278,7 @@ class DisplayManager:
     def set_team_names(self, left_team: str, right_team: str) -> None:
         self._labels[LEFT_TEAM].text = left_team
         self._labels[RIGHT_TEAM].text = right_team
+        self._clear_frame_around_names()
 
     def set_scores(self, left_score: int, right_score: int) -> None:
         for element_id in (LEFT_TEAM_SCORE, LEFT_TEAM_SCORE_BOLD):
@@ -382,7 +403,10 @@ class DisplayManager:
 
     def _setup_frames(self) -> None:
         """Initialize a hidden WMP frame around the edge of the screen."""
-        self._frame_pixels, self._frame_distances = frame_pixels(FRAME_WIDTH)
+        self._all_frame_pixels, self._all_frame_distances = frame_pixels(FRAME_WIDTH)
+        self._frame_pixels = self._all_frame_pixels
+        self._frame_distances = self._all_frame_distances
+        self._frame_clears_names = True
         palette = displayio.Palette(2)
         palette[0] = 0x000000
         palette[1] = WMP_GENDER_MATCHUP_COLOR
@@ -408,6 +432,34 @@ class DisplayManager:
         for i in range(len(pixels)):
             lit = (distances[i] - dash_offset) % period < FRAME_DASH_LENGTH
             bitmap[pixels[i]] = 1 if lit else 0
+
+    def _clear_frame_around_names(self) -> None:
+        """Keep the WMP frame dark within 1 px of each team name pixel."""
+        near = set()
+        if self._frame_clears_names:
+            inner = range(FRAME_WIDTH + 1, DISPLAY_WIDTH - FRAME_WIDTH - 1)
+            for element_id in (LEFT_TEAM, RIGHT_TEAM):
+                for x, y in lit_pixels(self._labels[element_id]):
+                    if (
+                        x in inner
+                        and FRAME_WIDTH < y < DISPLAY_HEIGHT - FRAME_WIDTH - 1
+                    ):
+                        continue
+                    for dx in (-1, 0, 1):
+                        for dy in (-1, 0, 1):
+                            near.add((x + dx, y + dy))
+        bitmap = self._wmp_frame.bitmap
+        pixels = []
+        distances = []
+        for i, pixel in enumerate(self._all_frame_pixels):
+            if pixel in near:
+                bitmap[pixel] = 0
+            else:
+                pixels.append(pixel)
+                distances.append(self._all_frame_distances[i])
+        self._frame_pixels = pixels
+        self._frame_distances = distances
+        self._draw_frame(bitmap, self._wmp_frame_offset)
 
     def march_wmp_frame(self) -> None:
         """March dashes around the WMP frame for WMP_FRAME_MARCH_SECONDS, if enabled."""
