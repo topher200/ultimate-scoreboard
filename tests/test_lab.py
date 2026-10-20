@@ -108,6 +108,11 @@ class TestLab:
         assert display.root_group is not None
         assert "A1 (1/3): white digits" in html
 
+    def test_page_shows_the_round_and_app_version(self, display, nvm, clock):
+        named = Lab(display, [], VoteStore(nvm), get_time=clock, round_name="Round 9")
+
+        assert "Round 9 &middot; version dev" in named.render()
+
     def test_next_and_prev_wrap_around(self, lab):
         lab.save({"action": "prev"})
         assert lab.screen.screen_id == CUSTOM_SCREEN_ID

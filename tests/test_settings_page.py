@@ -57,6 +57,9 @@ class TestSettingsPage:
         assert settings_store.load() == expected
         on_save.assert_called_once_with(expected)
 
+    def test_page_shows_the_app_version(self, settings_page):
+        assert "Version dev" in settings_page.render()
+
     def test_page_after_a_save_says_saved(self, settings_page):
         assert "Saved." in settings_page.render(saved=True)
 

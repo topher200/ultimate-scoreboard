@@ -162,7 +162,7 @@ A USB deploy puts the app in the board's root directory. A board with a dev buil
 
 ### Updates over Wi-Fi (OTA)
 
-The board gets app updates from Memfault releases. Each time the board joins Wi-Fi at power-on, it asks Memfault for a newer release. If there is one, the board shows "Updating", installs the release, and restarts. Updates change only the files in `src/`. To update CircuitPython or the libraries in `lib/`, use USB.
+The board gets app updates from Memfault releases. Each time the board joins Wi-Fi at power-on, it asks Memfault for a newer release. If there is one, the board shows "Updating", installs the release, and restarts. The settings page and the lab page show the app version, or "dev" after a USB deploy. Updates change only the files in `src/`. To update CircuitPython or the libraries in `lib/`, use USB.
 
 To publish a release, put `MEMFAULT_ORG_TOKEN`, `MEMFAULT_ORG`, and `MEMFAULT_PROJECT` in a `.env` file at the root of this repo, then run:
 

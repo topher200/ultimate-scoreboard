@@ -1,5 +1,6 @@
 """Serves the settings web page and saves what the user submits."""
 
+from src.app_version import VERSION
 from src.compat import Callable
 from src.settings_store import (
     DEFAULT_SETTINGS,
@@ -34,11 +35,13 @@ button{{width:100%;font-size:1.5em;padding:.5em;margin-top:1.5em}}
 .check{{display:flex;align-items:center;gap:.5em;font-weight:normal}}
 .check input{{width:1.5em;height:1.5em;margin:0}}
 p{{color:#8c8}}
+footer{{color:#888;margin-top:2em}}
 </style></head><body>
 <h1>Scoreboard</h1>
 <form method="post" action="/">{fields}{checkboxes}
 <button type="submit">Save</button>
 </form>{message}
+<footer>Version {version}</footer>
 </body></html>"""
 
 _FIELD = """
@@ -145,4 +148,6 @@ class SettingsPage:
             )
             for key, label in _CHECKBOXES
         )
-        return _PAGE.format(fields=fields, checkboxes=checkboxes, message=message)
+        return _PAGE.format(
+            fields=fields, checkboxes=checkboxes, message=message, version=VERSION
+        )
