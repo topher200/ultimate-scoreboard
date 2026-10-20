@@ -20,6 +20,7 @@ from src.lab_screens import (
     DrawnScreen,
     Pair,
     Screen,
+    round_eight_screens,
     round_five_screens,
     round_seven_screens,
 )
@@ -323,6 +324,91 @@ print(json.dumps([
     )
 
     assert same == []
+
+
+def test_round_eight_ids_are_new():
+    old = (
+        {item.screen_id for item in round_five_screens()}
+        | {item.screen_id for item in round_seven_screens()}
+        | {"S1"}
+    )
+    ids = [item.screen_id for item in round_eight_screens()]
+
+    assert len(ids) == len(set(ids))
+    assert not old & set(ids)
+
+
+def test_round_eight_pairs_show_different_screens():
+    """Test that each round eight pair lights different pixels for A and B, at
+    rest or at some step of the frame's march."""
+    same = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from src.display_manager import FRAME_DASH_LENGTH, FRAME_GAP_LENGTH
+from src.lab_screens import DrawnScreen, round_eight_screens
+
+def frames(screen):
+    drawn = DrawnScreen(screen)
+    for offset in range(FRAME_DASH_LENGTH + FRAME_GAP_LENGTH):
+        drawn._current._draw_frame(drawn._current._wmp_frame.bitmap, offset)
+        yield render_pixels(drawn.group)
+
+print(json.dumps([
+    pair.screen_id
+    for pair in round_eight_screens()
+    if list(frames(pair.a)) == list(frames(pair.b))
+]))
+"""
+    )
+
+    assert same == []
+
+
+def test_frame_clears_the_names_by_a_pixel():
+    """Test that no frame pixel touches a team name pixel, at any step of the march."""
+    touching = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from src.display_manager import (
+    DISPLAY_WIDTH, FRAME_DASH_LENGTH, FRAME_GAP_LENGTH, LEFT_TEAM, RIGHT_TEAM,
+)
+from src.lab_screens import DrawnScreen, round_eight_screens
+
+screen = next(
+    s for p in round_eight_screens() for s in (p.a, p.b) if s.frame_clears_names
+)
+drawn = DrawnScreen(screen)
+manager = drawn._current
+names = [manager._labels[LEFT_TEAM], manager._labels[RIGHT_TEAM]]
+others = [l for l in manager._labels.values() if l not in names]
+for l in others:
+    l.hidden = True
+manager._timing_indicator.hidden = True
+
+def lit():
+    return {
+        (i % DISPLAY_WIDTH, i // DISPLAY_WIDTH)
+        for i, c in enumerate(render_pixels(drawn.group)) if c
+    }
+
+manager._wmp_frame.hidden = True
+name_pixels = lit()
+manager._wmp_frame.hidden = False
+for l in names:
+    l.hidden = True
+touching = []
+for offset in range(FRAME_DASH_LENGTH + FRAME_GAP_LENGTH):
+    manager._draw_frame(manager._wmp_frame.bitmap, offset)
+    for x, y in lit():
+        if any((x + dx, y + dy) in name_pixels for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+            touching.append([offset, x, y])
+print(json.dumps(touching))
+"""
+    )
+
+    assert touching == []
 
 
 def test_round_five_text_overlaps_nothing():

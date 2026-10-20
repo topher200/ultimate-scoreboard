@@ -21,7 +21,7 @@ from src.lab_screens import (
     DrawnScreen,
     Pair,
     Screen,
-    round_seven_screens,
+    round_eight_screens,
 )
 from src.network_manager import NetworkManager
 from src.settings_page import _escape
@@ -404,7 +404,7 @@ async def run_lab(
         which restarts into the scoreboard
     """
     display_manager = DisplayManager(matrixportal)
-    lab = Lab(matrixportal.display, round_seven_screens(), VoteStore(nvm))
+    lab = Lab(matrixportal.display, round_eight_screens(), VoteStore(nvm))
     network_manager = NetworkManager(network, display_manager, web_server, lab)
     network_manager.connect()
     if not display_manager.qr_code_shown:
