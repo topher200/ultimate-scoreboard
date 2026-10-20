@@ -468,21 +468,10 @@ def _current_scoreboard(screen: Screen) -> tuple:
     if screen.bright_names:
         labels[LEFT_TEAM].color = LEFT_TEAM_COLOR
         labels[RIGHT_TEAM].color = RIGHT_TEAM_COLOR
+    display_manager._frame_clears_names = screen.frame_clears_names
+    display_manager._clear_frame_around_names()
     if screen.frame_widths is not None:
         _set_frame_widths(display_manager, *screen.frame_widths)
-    if screen.frame_clears_names:
-        near = set()
-        for element_id in (LEFT_TEAM, RIGHT_TEAM):
-            for x, y in _lit_pixels(labels[element_id]):
-                for dx in (-1, 0, 1):
-                    for dy in (-1, 0, 1):
-                        near.add((x + dx, y + dy))
-        _keep_frame_pixels(
-            display_manager,
-            display_manager._frame_pixels,
-            display_manager._frame_distances,
-            lambda x, y: (x, y) not in near,
-        )
     if screen.names_over_frame:
         group = display_manager._main_group
         for element_id in (LEFT_TEAM, RIGHT_TEAM):
@@ -515,26 +504,6 @@ def _keep_frame_pixels(display_manager, pixels, distances, keep) -> None:
     display_manager._frame_pixels = [pixels[i] for i in kept]
     display_manager._frame_distances = [distances[i] for i in kept]
     display_manager._draw_frame(bitmap, 0)
-
-
-def _lit_pixels(text: label.Label) -> set:
-    """Return the (x, y) screen pixels that `text` lights, at scale 1."""
-    pixels = set()
-    group = text._local_group
-    for i in range(len(group)):
-        face = group[i]
-        if not isinstance(face, displayio.TileGrid):
-            continue
-        bitmap = face.bitmap
-        width, height = face.tile_width, face.tile_height
-        tile = face[0]
-        tile_x = tile % (bitmap.width // width) * width
-        tile_y = tile // (bitmap.width // width) * height
-        for y in range(height):
-            for x in range(width):
-                if bitmap[tile_x + x, tile_y + y]:
-                    pixels.add((text.x + face.x + x, text.y + face.y + y))
-    return pixels
 
 
 def _draw_digit(

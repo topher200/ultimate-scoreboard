@@ -14,6 +14,7 @@ We ran the legibility lab on a real field to find the colors, font, and layout t
 | MMP indicator | No frame | 5 |
 | Matchup label color | Cyan for WMP, magenta for MMP | 5 |
 | MMP layout | Same places as WMP, with the timing dots 1 row above the bottom edge | 6, 7 |
+| Team names near the WMP frame | The frame stays dark within 1 px of each letter | 8 |
 
 The scoreboard uses all of these. Its colors are yellow and white for the teams, cyan for WMP, and magenta for the MMP label: yellow, cyan, and magenta are the three printer primaries, and each looks unlike the others. The timing dots are white, like the right team; that is a known compromise.
 
@@ -85,6 +86,20 @@ Each A/B pair showed today's MMP layout as A and one change as B ("For MMP point
 - **Names 2 rows up and scores 1 row up**: Same. The switch was OK.
 - **Team names at full brightness**: A won, so the names stay at 2/3.
 - **Today's layout**: the switch was OK.
+
+### Round 8: tall letters and the WMP frame
+
+On the board, the tops of tall letters such as "i" and "l" touched the WMP frame. Each pair showed a WMP point with the names "Flick" and "Bluff", in two of seven layouts ("For WMP points, which looks better? Look where the team names meet the frame."). Every two layouts made a pair.
+
+The votes ranked the layouts in one order, and each layout beat every layout below it:
+
+1. The frame stays dark within 1 px of each letter: 6 wins.
+2. The top edge of the frame is 2 px: 5 wins.
+3. The names are drawn over the frame: 4 wins.
+4. Today's layout: 3 wins.
+5. The names 1 row down; a 2 px frame; and everything 1 row down with a 2 px bottom edge: 1 win each.
+
+Moving the names or thinning the whole frame lost to today's layout.
 
 ## Run a round
 

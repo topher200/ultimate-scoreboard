@@ -15,7 +15,7 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 
 - **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page. Scan it with a phone on the same network, then enter the names and tap Save. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
-- **Border** frames the screen in cyan for WMP points. After each score, its dashes rotate for a short time. Two checkboxes on the settings page turn off the border or the rotation.
+- **Border** frames the screen in cyan for WMP points, and stays dark next to the team names. After each score, its dashes rotate for a short time. Two checkboxes on the settings page turn off the border or the rotation.
 - **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
 
 ## Legibility Lab

@@ -142,3 +142,50 @@ print(json.dumps({"left": ink_columns(LEFT_TEAM), "right": ink_columns(RIGHT_TEA
     assert columns["left"][0] == 4
     assert columns["right"][-1] == 59
     assert columns["right"][0] - columns["left"][-1] > 1
+
+
+def test_wmp_frame_keeps_clear_of_the_team_names():
+    """Test that no WMP frame pixel touches a team name pixel at any step of
+    the march, and that the whole frame returns when the names are blank."""
+    result = _run(
+        """
+import json
+from simulator.display_renderer import render_pixels
+from simulator.simulator_matrixportal import SimulatorMatrixPortal
+from src.display_manager import (
+    DISPLAY_WIDTH, FRAME_DASH_LENGTH, FRAME_GAP_LENGTH, LEFT_TEAM, RIGHT_TEAM,
+    DisplayManager,
+)
+from src.gender_manager import GenderManager
+
+matrixportal = SimulatorMatrixPortal()
+display_manager = DisplayManager(matrixportal)
+display_manager.set_gender_matchup(GenderManager.GENDER_WMP, 1)
+display_manager.set_team_names("Flick", "Bluff")
+root = matrixportal.display.root_group
+names = [display_manager._labels[LEFT_TEAM], display_manager._labels[RIGHT_TEAM]]
+frame = display_manager._wmp_frame
+
+def lit(shown):
+    for item in root:
+        item.hidden = all(item is not s for s in shown)
+    return {
+        (i % DISPLAY_WIDTH, i // DISPLAY_WIDTH)
+        for i, color in enumerate(render_pixels(root)) if color
+    }
+
+name_pixels = lit(names)
+touching = []
+for offset in range(FRAME_DASH_LENGTH + FRAME_GAP_LENGTH):
+    display_manager._draw_frame(frame.bitmap, offset)
+    for x, y in lit([frame]):
+        if any((x + dx, y + dy) in name_pixels for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+            touching.append([offset, x, y])
+cleared = len(display_manager._frame_pixels) < len(display_manager._all_frame_pixels)
+display_manager.set_team_names("", "")
+restored = display_manager._frame_pixels == display_manager._all_frame_pixels
+print(json.dumps({"touching": touching, "cleared": cleared, "restored": restored}))
+"""
+    )
+
+    assert result == {"touching": [], "cleared": True, "restored": True}

@@ -34,6 +34,7 @@ class FakeLabel:
         self.hidden = False
         self.x = 0
         self.y = 0
+        self._local_group = ()
 
     @property
     def text(self):
