@@ -22,6 +22,7 @@ from fakes import (
 _BASIC_MOCK_MODULES = [
     "board",
     "busio",
+    "fontio",
     "framebufferio",
     "rgbmatrix",
     "adafruit_matrixportal",
