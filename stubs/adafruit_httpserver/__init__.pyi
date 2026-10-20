@@ -16,13 +16,24 @@ class FormData:
     ) -> str | None: ...
     def __getitem__(self, field_name: str) -> str: ...
 
+class QueryParams:
+    def get(
+        self, field_name: str, default: str | None = None, *, safe: bool = True
+    ) -> str | None: ...
+
 class Request:
     method: str
     form_data: FormData | None
+    query_params: QueryParams
 
 class Response:
     def __init__(
         self, request: Request, body: str = "", *, content_type: str | None = None
+    ) -> None: ...
+
+class Redirect(Response):
+    def __init__(
+        self, request: Request, url: str, *, status: tuple[int, str] | None = None
     ) -> None: ...
 
 class Server:

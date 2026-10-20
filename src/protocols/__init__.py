@@ -8,7 +8,7 @@ from src.protocols.board import BoardLike
 from src.protocols.http import HttpLike, ResponseLike
 from src.protocols.keypad import EventLike, EventQueueLike, KeysLike
 from src.protocols.matrixportal import MatrixPortalLike
-from src.protocols.network import NetworkLike, WebServerLike
+from src.protocols.network import NetworkLike, PageLike, WebServerLike
 
 __all__ = [
     "BoardLike",
@@ -18,6 +18,7 @@ __all__ = [
     "KeysLike",
     "MatrixPortalLike",
     "NetworkLike",
+    "PageLike",
     "ResponseLike",
     "WebServerLike",
 ]

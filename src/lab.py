@@ -245,7 +245,11 @@ class Lab:
             self.tick()
             await asyncio.sleep(LAB_POLL_INTERVAL)
 
-    def _apply(self, form: dict) -> None:
+    def save(self, form: dict) -> None:
+        """Apply the submitted form.
+
+        :param form: Submitted values by field name
+        """
         action = form.get("action")
         if action == "prev":
             self.show(self._index - 1)
@@ -308,17 +312,14 @@ class Lab:
                 lines.append(f"{item.screen_id} {item.title}: {vote[0]}{note}")
         return "\n".join(lines) or "No votes yet."
 
-    def respond(self, form: dict | None) -> str:
-        """Apply the submitted form, if any, and return the lab page HTML.
+    def render(self, saved: bool = False) -> str:
+        """Show the current screen, if the lab is not showing, and return the lab page HTML.
 
-        :param form: Submitted values by field name, or None to only show the page
+        :param saved: Unused; the lab page shows its own state
         :return: HTML for the lab page
         """
-        if form is None:
-            if not self.shown:
-                self.show(self._index)
-        else:
-            self._apply(form)
+        if not self.shown:
+            self.show(self._index)
         item = self.item
         vote = self._votes.get(item.screen_id)
         custom = self._custom
@@ -404,7 +405,7 @@ async def run_lab(
     """
     display_manager = DisplayManager(matrixportal)
     lab = Lab(matrixportal.display, round_seven_screens(), VoteStore(nvm))
-    network_manager = NetworkManager(network, display_manager, web_server, lab.respond)
+    network_manager = NetworkManager(network, display_manager, web_server, lab)
     network_manager.connect()
     if not display_manager.qr_code_shown:
         lab.show(0)

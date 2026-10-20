@@ -106,7 +106,7 @@ class TestCreateManagers:
         assert labels[LEFT_TEAM].text == "Phoenix"
         assert managers.display_manager.qr_code_shown
 
-        fake_web_server.respond({LEFT_TEAM_NAME: "Fury", RIGHT_TEAM_NAME: "Riot"})
+        fake_web_server.page.save({LEFT_TEAM_NAME: "Fury", RIGHT_TEAM_NAME: "Riot"})
 
         assert labels[LEFT_TEAM].text == "Fury"
         assert labels[RIGHT_TEAM].text == "Riot"

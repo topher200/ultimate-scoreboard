@@ -1,6 +1,6 @@
 """Protocol definitions for the Wi-Fi network and web server."""
 
-from src.compat import Callable, Protocol
+from src.compat import Protocol
 
 
 class NetworkLike(Protocol):
@@ -15,16 +15,30 @@ class NetworkLike(Protocol):
         ...
 
 
+class PageLike(Protocol):
+    """Protocol defining the page that a WebServerLike serves."""
+
+    def save(self, form: dict) -> None:
+        """Save the submitted form dict."""
+        ...
+
+    def render(self, saved: bool = False) -> str:
+        """Return the page HTML, with a note that the last submit saved."""
+        ...
+
+
 class WebServerLike(Protocol):
     """Protocol defining the settings page server."""
 
-    def start(self, host: str, port: int, respond: Callable) -> str:
+    def start(self, host: str, port: int, page: PageLike) -> str:
         """Start serving.
+
+        A submit saves the form, then redirects the browser to settings_page.SAVED_PATH so
+        that a reload does not submit again.
 
         :param host: IP address of the board, which the URL uses
         :param port: TCP port to listen on
-        :param respond: Called with the submitted form dict, or None for a
-            plain page view; returns the page HTML
+        :param page: Page to serve at "/"
         :return: URL of the page
         """
         ...

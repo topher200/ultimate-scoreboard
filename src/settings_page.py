@@ -37,6 +37,9 @@ _FIELD = """
 
 MAX_NAME_LENGTH = 16
 
+# Where the server sends the browser after a submit
+SAVED_PATH = "/?saved=1"
+
 
 def decode_form_value(text: str) -> str:
     """Decode one value from an application/x-www-form-urlencoded body."""
@@ -85,23 +88,28 @@ class SettingsPage:
         self._store = store
         self._on_save = on_save
 
-    def respond(self, form: dict | None) -> str:
-        """Save the submitted form, if any, and return the page HTML.
+    def save(self, form: dict) -> None:
+        """Save the submitted form.
 
-        :param form: Submitted values by setting key, or None to only show the page
+        :param form: Submitted values by setting key
+        """
+        settings = self._store.load()
+        for key, _, _ in _FIELDS:
+            if key not in form:
+                continue
+            value = form[key].strip()[:MAX_NAME_LENGTH]
+            settings[key] = value or DEFAULT_SETTINGS[key]
+        self._store.save(settings)
+        self._on_save(settings)
+
+    def render(self, saved: bool = False) -> str:
+        """Return the page HTML.
+
+        :param saved: Whether to tell the user that the last submit saved
         :return: HTML for the settings page
         """
         settings = self._store.load()
-        message = ""
-        if form is not None:
-            for key, _, _ in _FIELDS:
-                if key not in form:
-                    continue
-                value = form[key].strip()[:MAX_NAME_LENGTH]
-                settings[key] = value or DEFAULT_SETTINGS[key]
-            self._store.save(settings)
-            self._on_save(settings)
-            message = "<p>Saved.</p>"
+        message = "<p>Saved.</p>" if saved else ""
         fields = "".join(
             _FIELD.format(
                 key=key,

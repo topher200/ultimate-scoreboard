@@ -20,20 +20,20 @@ class FakeNetwork:
 
 
 class FakeWebServer:
-    """Fake settings page server that records its handler for tests to call."""
+    """Fake settings page server that records its page for tests to call."""
 
     def __init__(self):
         """Initialize a fake server that has not started."""
-        self.respond = None
+        self.page = None
         self.host = None
         self.port = None
         self.poll_count = 0
 
-    def start(self, host, port, respond):
-        """Record the host, port, and handler and return the URL."""
+    def start(self, host, port, page):
+        """Record the host, port, and page and return the URL."""
         self.host = host
         self.port = port
-        self.respond = respond
+        self.page = page
         return f"http://{host}:{port}/"
 
     def poll(self):

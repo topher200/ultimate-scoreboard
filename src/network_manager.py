@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import asyncio
 
-from src.compat import TYPE_CHECKING, Callable
+from src.compat import TYPE_CHECKING
 from src.log import WARNING, log
-from src.protocols import NetworkLike, WebServerLike
+from src.protocols import NetworkLike, PageLike, WebServerLike
 
 if TYPE_CHECKING:
     from src.display_manager import DisplayManager
@@ -26,19 +26,19 @@ class NetworkManager:
         network: NetworkLike,
         display_manager: DisplayManager,
         web_server: WebServerLike,
-        respond: Callable,
+        page: PageLike,
     ):
         """Initialize NetworkManager.
 
         :param network: Network that joins the Wi-Fi in settings.toml
         :param display_manager: DisplayManager for the Wi-Fi search screen and QR code
         :param web_server: Server for the settings page
-        :param respond: Request handler for the settings page; see WebServerLike.start
+        :param page: Settings page to serve
         """
         self._network = network
         self._display_manager = display_manager
         self._web_server = web_server
-        self._respond = respond
+        self._page = page
         self._url: str | None = None
 
     @property
@@ -56,7 +56,7 @@ class NetworkManager:
         self._display_manager.show_wifi_search()
         try:
             host = self._network.connect()
-            self._url = self._web_server.start(host, SETTINGS_PAGE_PORT, self._respond)
+            self._url = self._web_server.start(host, SETTINGS_PAGE_PORT, self._page)
         except Exception as e:
             log(f"Failed to start the settings page: {e}", WARNING)
             return

@@ -27,37 +27,37 @@ class TestSettingsPage:
     def test_page_shows_saved_names(self, settings_page, settings_store):
         settings_store.save({LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"})
 
-        html = settings_page.respond(None)
+        html = settings_page.render()
 
         assert 'value="Phoenix"' in html
         assert 'value="Tigers"' in html
+        assert "Saved." not in html
 
     def test_viewing_the_page_saves_nothing(self, settings_page, on_save):
-        settings_page.respond(None)
+        settings_page.render()
 
         on_save.assert_not_called()
 
     def test_submit_saves_and_reports_settings(
         self, settings_page, settings_store, on_save
     ):
-        html = settings_page.respond(
-            {LEFT_TEAM_NAME: " Phoenix ", RIGHT_TEAM_NAME: "Tigers"}
-        )
+        settings_page.save({LEFT_TEAM_NAME: " Phoenix ", RIGHT_TEAM_NAME: "Tigers"})
 
         expected = {LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"}
         assert settings_store.load() == expected
         on_save.assert_called_once_with(expected)
-        assert "Saved." in html
+
+    def test_page_after_a_save_says_saved(self, settings_page):
+        assert "Saved." in settings_page.render(saved=True)
 
     def test_blank_names_fall_back_to_defaults(self, settings_page, settings_store):
-        settings_page.respond({LEFT_TEAM_NAME: "  "})
+        settings_page.save({LEFT_TEAM_NAME: "  "})
 
         assert settings_store.load() == DEFAULT_SETTINGS
 
     def test_names_are_escaped(self, settings_page):
-        html = settings_page.respond(
-            {LEFT_TEAM_NAME: '<b>"A&B"</b>', RIGHT_TEAM_NAME: "Tigers"}
-        )
+        settings_page.save({LEFT_TEAM_NAME: '<b>"A&B"</b>', RIGHT_TEAM_NAME: "Tigers"})
+        html = settings_page.render()
 
         assert 'value="&lt;b&gt;&quot;A&amp;B&quot;&lt;/b&gt;"' in html
 
@@ -66,7 +66,7 @@ class TestSettingsPage:
     ):
         settings_store.save({LEFT_TEAM_NAME: "Phoenix", RIGHT_TEAM_NAME: "Tigers"})
 
-        settings_page.respond({})
+        settings_page.save({})
 
         assert settings_store.load() == {
             LEFT_TEAM_NAME: "Phoenix",
@@ -74,7 +74,7 @@ class TestSettingsPage:
         }
 
     def test_long_names_are_cut_to_max_length(self, settings_page, settings_store):
-        settings_page.respond({LEFT_TEAM_NAME: "x" * 100})
+        settings_page.save({LEFT_TEAM_NAME: "x" * 100})
 
         assert settings_store.load()[LEFT_TEAM_NAME] == "x" * MAX_NAME_LENGTH
 

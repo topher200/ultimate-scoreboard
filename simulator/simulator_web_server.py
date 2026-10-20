@@ -2,9 +2,10 @@
 
 import socket
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlsplit
 
-from src.compat import Callable
+from src.protocols import PageLike
+from src.settings_page import SAVED_PATH
 
 
 def _lan_address() -> str:
@@ -31,13 +32,12 @@ class SimulatorWebServer:
     def __init__(self):
         self._server: HTTPServer | None = None
 
-    def start(self, host: str, port: int, respond: Callable) -> str:
+    def start(self, host: str, port: int, page: PageLike) -> str:
         """Start serving on all interfaces.
 
         :param host: IP address in the returned URL
         :param port: TCP port to listen on
-        :param respond: Called with the submitted form dict, or None for a
-            plain page view; returns the page HTML
+        :param page: Page to serve at "/"; see WebServerLike.start
         :return: URL of the page
         """
 
@@ -46,13 +46,17 @@ class SimulatorWebServer:
             timeout = 0.2
 
             def do_GET(self):
-                self._send(respond(None))
+                query = parse_qs(urlsplit(self.path).query)
+                self._send(page.render(query.get("saved") == ["1"]))
 
             def do_POST(self):
                 length = int(self.headers.get("Content-Length", 0))
                 body = self.rfile.read(length).decode()
-                form = {key: values[0] for key, values in parse_qs(body).items()}
-                self._send(respond(form))
+                page.save({key: values[0] for key, values in parse_qs(body).items()})
+                self.send_response(303)
+                self.send_header("Location", SAVED_PATH)
+                self.send_header("Content-Length", "0")
+                self.end_headers()
 
             def _send(self, html: str) -> None:
                 data = html.encode()
