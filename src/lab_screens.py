@@ -7,6 +7,7 @@ from adafruit_display_text import label
 from src.display_manager import (
     DISPLAY_HEIGHT,
     DISPLAY_WIDTH,
+    FRAME_WIDTH,
     GENDER_MATCHUP,
     GENDER_MATCHUP_COUNTER,
     LEFT_TEAM,
@@ -169,6 +170,10 @@ class Screen:
         gender_level: int = 3,
         moves: tuple = (),
         bright_names: bool = False,
+        team_names: tuple = ("AWAY", "HOME"),
+        frame_widths: tuple | None = None,
+        names_over_frame: bool = False,
+        frame_clears_names: bool = False,
     ):
         self.screen_id = screen_id
         self.title = title
@@ -193,6 +198,11 @@ class Screen:
         # (element ID, dx, dy) moves for the current scoreboard
         self.moves = moves
         self.bright_names = bright_names
+        self.team_names = team_names
+        # (top, sides, bottom) widths of the current scoreboard's WMP frame
+        self.frame_widths = frame_widths
+        self.names_over_frame = names_over_frame
+        self.frame_clears_names = frame_clears_names
 
 
 class Pair:
@@ -376,6 +386,62 @@ def round_seven_screens() -> list:
     return pairs
 
 
+def round_eight_screens() -> list:
+    """Return the eighth round of pairs, in the order the lab shows them.
+
+    Each pair shows a WMP point with names that reach the top of the font, in
+    two of the candidate ways to keep the names off the frame.
+    """
+    names = (LEFT_TEAM, RIGHT_TEAM)
+    everything = names + (
+        LEFT_TEAM_SCORE,
+        LEFT_TEAM_SCORE_BOLD,
+        RIGHT_TEAM_SCORE,
+        RIGHT_TEAM_SCORE_BOLD,
+        GENDER_MATCHUP,
+        GENDER_MATCHUP_COUNTER,
+        TIMING_DOTS,
+    )
+    candidates = (
+        _round_eight_screen("today"),
+        _round_eight_screen("names down 1 row", moves=tuple((e, 0, 1) for e in names)),
+        _round_eight_screen("2 px frame", frame_widths=(2, 2, 2)),
+        _round_eight_screen("names over the frame", names_over_frame=True),
+        _round_eight_screen("frame clears the names", frame_clears_names=True),
+        _round_eight_screen("2 px frame top", frame_widths=(2, 3, 3)),
+        _round_eight_screen(
+            "all down 1 row, 2 px frame bottom",
+            moves=tuple((e, 0, 1) for e in everything),
+            frame_widths=(3, 3, 2),
+        ),
+    )
+    return _round_robin(
+        "N",
+        "For WMP points, which looks better? Look where the team names meet the frame.",
+        candidates,
+    )
+
+
+def _round_eight_screen(
+    title: str,
+    moves: tuple = (),
+    frame_widths: tuple | None = None,
+    names_over_frame: bool = False,
+    frame_clears_names: bool = False,
+) -> Screen:
+    return Screen(
+        "",
+        title,
+        layout=LAYOUT_CURRENT,
+        label="W1",
+        moves=moves,
+        team_names=("Flick", "Bluff"),
+        frame_widths=frame_widths,
+        names_over_frame=names_over_frame,
+        frame_clears_names=frame_clears_names,
+    )
+
+
 class _Capture:
     """Holds the root group that a DisplayManager sets, in place of a MatrixPortal."""
 
@@ -388,7 +454,7 @@ def _current_scoreboard(screen: Screen) -> tuple:
     """Return a DisplayManager that shows `screen`'s point, and its root group."""
     capture = _Capture()
     display_manager = DisplayManager(capture)
-    display_manager.set_team_names("AWAY", "HOME")
+    display_manager.set_team_names(*screen.team_names)
     display_manager.set_scores(*SCORES)
     display_manager.set_gender_matchup(f"{screen.label[:1] or 'W'}MP", 1)
     display_manager.update_timing_indicator(TIMING_INDICATOR_PIXEL_COUNT // 2)
@@ -402,8 +468,73 @@ def _current_scoreboard(screen: Screen) -> tuple:
     if screen.bright_names:
         labels[LEFT_TEAM].color = LEFT_TEAM_COLOR
         labels[RIGHT_TEAM].color = RIGHT_TEAM_COLOR
+    if screen.frame_widths is not None:
+        _set_frame_widths(display_manager, *screen.frame_widths)
+    if screen.frame_clears_names:
+        near = set()
+        for element_id in (LEFT_TEAM, RIGHT_TEAM):
+            for x, y in _lit_pixels(labels[element_id]):
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        near.add((x + dx, y + dy))
+        _keep_frame_pixels(
+            display_manager,
+            display_manager._frame_pixels,
+            display_manager._frame_distances,
+            lambda x, y: (x, y) not in near,
+        )
+    if screen.names_over_frame:
+        group = display_manager._main_group
+        for element_id in (LEFT_TEAM, RIGHT_TEAM):
+            group.append(group.pop(group.index(labels[element_id])))
     display_manager.march_wmp_frame()
     return display_manager, capture.root_group
+
+
+def _set_frame_widths(display_manager, top: int, sides: int, bottom: int) -> None:
+    """Thin the WMP frame of `display_manager` to the given width on each edge."""
+    _keep_frame_pixels(
+        display_manager,
+        display_manager._frame_pixels,
+        display_manager._frame_distances,
+        lambda x, y: (
+            y < top
+            or y >= DISPLAY_HEIGHT - bottom
+            or x < sides
+            or x >= DISPLAY_WIDTH - sides
+        ),
+    )
+
+
+def _keep_frame_pixels(display_manager, pixels, distances, keep) -> None:
+    """Draw the WMP frame of `display_manager` on only the `pixels` where `keep(x, y)`."""
+    bitmap = display_manager._wmp_frame.bitmap
+    kept = [i for i, (x, y) in enumerate(pixels) if keep(x, y)]
+    for x, y in pixels:
+        bitmap[x, y] = 0
+    display_manager._frame_pixels = [pixels[i] for i in kept]
+    display_manager._frame_distances = [distances[i] for i in kept]
+    display_manager._draw_frame(bitmap, 0)
+
+
+def _lit_pixels(text: label.Label) -> set:
+    """Return the (x, y) screen pixels that `text` lights, at scale 1."""
+    pixels = set()
+    group = text._local_group
+    for i in range(len(group)):
+        face = group[i]
+        if not isinstance(face, displayio.TileGrid):
+            continue
+        bitmap = face.bitmap
+        width, height = face.tile_width, face.tile_height
+        tile = face[0]
+        tile_x = tile % (bitmap.width // width) * width
+        tile_y = tile // (bitmap.width // width) * height
+        for y in range(height):
+            for x in range(width):
+                if bitmap[tile_x + x, tile_y + y]:
+                    pixels.add((text.x + face.x + x, text.y + face.y + y))
+    return pixels
 
 
 def _draw_digit(

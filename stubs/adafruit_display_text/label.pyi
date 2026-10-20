@@ -2,7 +2,7 @@
 
 from typing import Any
 
-from displayio import _Layer
+from displayio import Group, _Layer
 
 class Label(_Layer):
     """Label class for displaying text on displays."""
@@ -14,6 +14,7 @@ class Label(_Layer):
     scale: int
     hidden: bool
     anchored_position: tuple[int, int]
+    _local_group: Group
 
     def __init__(
         self,
