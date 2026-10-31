@@ -56,6 +56,16 @@ _CHECKBOX = """
 
 MAX_NAME_LENGTH = 16
 
+
+def page_url(host: str, port: int) -> str:
+    """Return the URL of the settings page.
+
+    Uppercase and without a trailing slash, so its QR code fits alphanumeric
+    mode, which makes the code small enough to scan off the LED matrix.
+    """
+    return f"HTTP://{host}:{port}"
+
+
 # Where the server sends the browser after a submit
 SAVED_PATH = "/?saved=1"
 
