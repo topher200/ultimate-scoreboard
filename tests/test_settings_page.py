@@ -4,11 +4,13 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from src.qr_matrix import is_alphanumeric
 from src.settings_page import (
     MAX_NAME_LENGTH,
     SettingsPage,
     decode_form,
     decode_form_value,
+    page_url,
 )
 from src.settings_store import (
     DEFAULT_SETTINGS,
@@ -162,3 +164,11 @@ def test_decode_form_prints_no_xss_warning(capsys):
     decode_form(_FakeFormData({LEFT_TEAM_NAME: "Red+Team"}))
 
     assert not capsys.readouterr().out
+
+
+class TestPageUrl:
+    def test_url_is_uppercase_without_a_trailing_slash(self):
+        assert page_url("192.168.1.50", 81) == "HTTP://192.168.1.50:81"
+
+    def test_url_is_alphanumeric_for_its_qr_code(self):
+        assert is_alphanumeric(page_url("255.255.255.255", 81))

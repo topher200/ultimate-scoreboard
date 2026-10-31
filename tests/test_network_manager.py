@@ -7,9 +7,10 @@ import pytest
 
 from fakes import FakeNetwork
 from src.network_manager import SETTINGS_PAGE_PORT
+from src.settings_page import page_url
 from tests.qr_code import shows_qr_code
 
-URL = f"http://{FakeNetwork.IP_ADDRESS}:{SETTINGS_PAGE_PORT}/"
+URL = page_url(FakeNetwork.IP_ADDRESS, SETTINGS_PAGE_PORT)
 
 
 async def _serve_briefly(network_manager):
