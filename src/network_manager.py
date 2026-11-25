@@ -11,7 +11,9 @@ from src.protocols import NetworkLike, PageLike, WebServerLike
 if TYPE_CHECKING:
     from src.display_manager import DisplayManager
 
-SETTINGS_PAGE_PORT = 8080
+# Two digits keep the QR code at 21x21 for every IPv4 address. Port 80 is
+# CircuitPython's web workflow.
+SETTINGS_PAGE_PORT = 81
 SERVER_POLL_INTERVAL = 0.1
 
 

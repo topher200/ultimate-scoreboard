@@ -5,7 +5,11 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import parse_qs, urlsplit
 
 from src.protocols import PageLike
-from src.settings_page import SAVED_PATH
+from src.settings_page import SAVED_PATH, page_url
+
+# Where the simulator serves when the laptop does not allow the board's port,
+# which is below 1024
+FALLBACK_PORT = 8081
 
 
 def _lan_address() -> str:
@@ -36,7 +40,7 @@ class SimulatorWebServer:
         """Start serving on all interfaces.
 
         :param host: IP address in the returned URL
-        :param port: TCP port to listen on
+        :param port: TCP port to listen on, or FALLBACK_PORT when it needs privileges
         :param page: Page to serve at "/"; see WebServerLike.start
         :return: URL of the page
         """
@@ -66,9 +70,13 @@ class SimulatorWebServer:
                 self.end_headers()
                 self.wfile.write(data)
 
-        self._server = HTTPServer(("0.0.0.0", port), Handler)
+        try:
+            self._server = HTTPServer(("0.0.0.0", port), Handler)
+        except PermissionError:
+            port = FALLBACK_PORT
+            self._server = HTTPServer(("0.0.0.0", port), Handler)
         self._server.timeout = 0
-        return f"http://{host}:{port}/"
+        return page_url(host, port)
 
     def poll(self) -> None:
         """Handle a waiting request, if there is one."""

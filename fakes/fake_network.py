@@ -1,5 +1,7 @@
 """Fake network and web server for testing without hardware."""
 
+from src.settings_page import page_url
+
 
 class FakeNetwork:
     """Fake Wi-Fi network for testing."""
@@ -34,7 +36,7 @@ class FakeWebServer:
         self.host = host
         self.port = port
         self.page = page
-        return f"http://{host}:{port}/"
+        return page_url(host, port)
 
     def poll(self):
         """Count the poll."""

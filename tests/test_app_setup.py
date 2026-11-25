@@ -20,7 +20,7 @@ from src.settings_store import LEFT_TEAM_NAME, RIGHT_TEAM_NAME, SettingsStore
 class TestDismissQrCodeFirst:
     async def test_press_while_qr_code_shows_only_hides_it(self, display_manager):
         callback = AsyncMock()
-        display_manager.show_qr_code("http://192.168.1.50:8080/")
+        display_manager.show_qr_code("HTTP://192.168.1.50:81")
 
         await dismiss_qr_code_first(display_manager, callback)()
 

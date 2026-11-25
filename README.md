@@ -13,7 +13,7 @@ A wireless scoreboard for Ultimate, built on an Adafruit MatrixPortal S3 driving
 | Hold Right, tap Left | Undo last point |
 | Both held ~5s | Restart into the legibility lab, or back to the scoreboard |
 
-- **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page. Scan it with a phone on the same network, then enter the names and tap Save. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
+- **Team names** are set from a web page that the board serves. When the board joins Wi-Fi, it shows a QR code for the page, with the page's address below it. Scan the code, or type the address into a browser, on a phone on the same network. Then enter the names and tap Save. Saving or pressing any button hides the QR code; that press does nothing else. The board keeps the names across reboots.
 - **Gender matchup** cycles automatically (WMP2 → MMP1 → MMP2 → WMP1). Use the toggle chord to switch whether the first point starts as WMP or MMP.
 - **Border** frames the screen in cyan for WMP points, and stays dark next to the team names. After each score, its dashes rotate for a short time. Two checkboxes on the settings page turn off the border or the rotation.
 - **Timing dots** appear after each score and fade out — a visual indicator that the score was registered.
@@ -45,7 +45,7 @@ MEMFAULT_PROJECT_KEY = ""
 
 Leave out `MEMFAULT_PROJECT_KEY` to turn off updates over Wi-Fi.
 
-The settings page uses port 8080, so it does not conflict with the CircuitPython web workflow on port 80.
+The settings page uses port 81, so it does not conflict with the CircuitPython web workflow on port 80. A two-digit port keeps the QR code at its smallest size, 21x21, for every address, which leaves room for the address on one line below it.
 
 ## Development Setup
 
@@ -134,7 +134,7 @@ This command will automatically install simulator dependencies if needed and the
 2. Run the full application with fake hardware
 3. Update the display in real-time as the application runs
 4. Allow you to test all features without physical hardware
-5. Serve the settings page from your laptop on port 8080, and show its QR code
+5. Serve the settings page from your laptop on port 81, or on port 8081 when the laptop does not allow port 81, and show its QR code
 
 ## Development Commands
 

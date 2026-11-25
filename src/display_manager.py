@@ -1,13 +1,14 @@
 import time
 
-import adafruit_miniqr
 import displayio
 import terminalio
 from adafruit_display_text import label
 
 from src.gender_manager import GenderManager
+from src.lab_font import DIGITS_3X5, draw_glyph
 from src.proportional_font import ProportionalFont
 from src.protocols import MatrixPortalLike
+from src.qr_matrix import make_qr_matrix
 from src.timing_indicator import TIMING_INDICATOR_PIXEL_COUNT
 
 # Text element IDs
@@ -97,6 +98,25 @@ WIFI_ICON = (
 # QR code constants
 QR_CODE_LIGHT_COLOR = 0x808080
 QR_CODE_QUIET_ZONE_WIDTH = 2
+# Beside its address, the code sits at the left edge, with its quiet zone
+# starting at column 0
+QR_CODE_LEFT = QR_CODE_QUIET_ZONE_WIDTH
+# Palette indexes of the QR code screen
+QR_CODE_DARK_INDEX = 0
+QR_CODE_LIGHT_INDEX = 1
+ADDRESS_TEXT_INDEX = 2
+
+# Address beside the QR code, for typing in when the code does not scan
+ADDRESS_TEXT_COLOR = 0xFFFFFF
+# Blank pixels between the quiet zone and the address
+ADDRESS_GAP = 1
+ADDRESS_LETTER_SPACING = 1
+ADDRESS_LINE_SPACING = 2
+ADDRESS_GLYPH_HEIGHT = 5
+# 3x5 digits, plus a one-column dot and colon
+ADDRESS_GLYPHS = dict(DIGITS_3X5)
+ADDRESS_GLYPHS["."] = ("0", "0", "0", "0", "1")
+ADDRESS_GLYPHS[":"] = ("0", "1", "0", "1", "0")
 
 
 # (element ID, font, initial text, scale, color, anchor point, anchored position)
@@ -223,14 +243,58 @@ def lit_pixels(text: label.Label) -> set:
     return pixels
 
 
-def make_qr_matrix(text: str) -> adafruit_miniqr.QRBitMatrix:
-    """Return the QR code modules for `text`, truthy where a module is dark."""
-    qr = adafruit_miniqr.QRCode()
-    qr.add_data(text.encode())
-    qr.make()
-    matrix = qr.matrix
-    assert matrix is not None
-    return matrix
+def address_line(url: str) -> str:
+    """Return the host and port of `url`: "HTTP://1.2.3.4:81/" gives "1.2.3.4:81"."""
+    return url.split("://", 1)[-1].rstrip("/")
+
+
+def address_lines(url: str) -> list[str]:
+    """Split the host and port of `url` into the lines shown beside its QR code.
+
+    An IPv4 address shows two parts per line, with the port on its own line:
+    "HTTP://10.115.170.193:81" shows "10.115.", "170.193" and ":81".
+    """
+    address = address_line(url)
+    host, separator, port = address.rpartition(":")
+    if not separator:
+        host, port = address, ""
+    parts = host.split(".")
+    if len(parts) == 4:
+        lines = [".".join(parts[:2]) + ".", ".".join(parts[2:])]
+    else:
+        lines = [host]
+    if port:
+        lines.append(":" + port)
+    return lines
+
+
+def address_text_width(text: str) -> int:
+    """Return the pixels that `text` spans in the address font."""
+    glyphs = [ADDRESS_GLYPHS[char] for char in text if char in ADDRESS_GLYPHS]
+    if not glyphs:
+        return 0
+    widths = sum(len(glyph[0]) for glyph in glyphs)
+    return widths + ADDRESS_LETTER_SPACING * (len(glyphs) - 1)
+
+
+def address_fits_below(matrix, url: str) -> bool:
+    """True when the address of `url` fits on one line below `matrix`."""
+    code_height = matrix.height + 2 * QR_CODE_QUIET_ZONE_WIDTH
+    return (
+        address_text_width(address_line(url)) <= DISPLAY_WIDTH
+        and code_height + ADDRESS_GAP + ADDRESS_GLYPH_HEIGHT <= DISPLAY_HEIGHT
+    )
+
+
+def qr_code_origin(matrix, url: str) -> tuple[int, int]:
+    """Return the column and row of the top-left module of `url`'s QR code.
+
+    With the address below, the code is centered at the top. Otherwise it sits
+    at the left edge, centered vertically.
+    """
+    if address_fits_below(matrix, url):
+        return (DISPLAY_WIDTH - matrix.width) // 2, QR_CODE_QUIET_ZONE_WIDTH
+    return QR_CODE_LEFT, (DISPLAY_HEIGHT - matrix.height) // 2
 
 
 class DisplayManager:
@@ -510,11 +574,12 @@ class DisplayManager:
 
     def _setup_qr_code(self) -> None:
         """Initialize a hidden, full-screen QR code that covers everything else."""
-        palette = displayio.Palette(2)
-        palette[0] = 0x000000
-        palette[1] = QR_CODE_LIGHT_COLOR
+        palette = displayio.Palette(3)
+        palette[QR_CODE_DARK_INDEX] = 0x000000
+        palette[QR_CODE_LIGHT_INDEX] = QR_CODE_LIGHT_COLOR
+        palette[ADDRESS_TEXT_INDEX] = ADDRESS_TEXT_COLOR
         self._qr_code = displayio.TileGrid(
-            displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 2), pixel_shader=palette
+            displayio.Bitmap(DISPLAY_WIDTH, DISPLAY_HEIGHT, 3), pixel_shader=palette
         )
         self._qr_code.hidden = True
         self._main_group.append(self._qr_code)
@@ -523,11 +588,14 @@ class DisplayManager:
     def qr_code_shown(self) -> bool:
         return not self._qr_code.hidden
 
-    def show_qr_code(self, text: str) -> None:
-        """Cover the screen with a centered QR code for `text`."""
-        matrix = make_qr_matrix(text)
-        left = (DISPLAY_WIDTH - matrix.width) // 2
-        top = (DISPLAY_HEIGHT - matrix.height) // 2
+    def show_qr_code(self, url: str) -> None:
+        """Cover the screen with a QR code for `url` and its address as text.
+
+        The address goes on one line below the code when it fits, and beside
+        the code otherwise.
+        """
+        matrix = make_qr_matrix(url)
+        left, top = qr_code_origin(matrix, url)
         margin = QR_CODE_QUIET_ZONE_WIDTH
         bitmap = self._qr_code.bitmap
         for y in range(DISPLAY_HEIGHT):
@@ -540,8 +608,44 @@ class DisplayManager:
                 )
                 in_code = 0 <= qr_x < matrix.width and 0 <= qr_y < matrix.height
                 dark = in_code and matrix[qr_x, qr_y]
-                bitmap[x, y] = 1 if in_quiet_zone and not dark else 0
+                bitmap[x, y] = (
+                    QR_CODE_LIGHT_INDEX
+                    if in_quiet_zone and not dark
+                    else QR_CODE_DARK_INDEX
+                )
+        if address_fits_below(matrix, url):
+            text_top = top + matrix.height + margin + ADDRESS_GAP
+            self._draw_address(
+                [address_line(url)], 0, text_top, DISPLAY_WIDTH, ADDRESS_GLYPH_HEIGHT
+            )
+        else:
+            text_left = left + matrix.width + margin + ADDRESS_GAP
+            self._draw_address(
+                address_lines(url),
+                text_left,
+                0,
+                DISPLAY_WIDTH - text_left,
+                DISPLAY_HEIGHT,
+            )
         self._qr_code.hidden = False
+
+    def _draw_address(
+        self, lines: list[str], left: int, top: int, width: int, height: int
+    ) -> None:
+        """Draw `lines` centered in the area at `left`, `top` of `width` by
+        `height` pixels."""
+        bitmap = self._qr_code.bitmap
+        block_height = len(lines) * (ADDRESS_GLYPH_HEIGHT + ADDRESS_LINE_SPACING)
+        y = top + (height - block_height + ADDRESS_LINE_SPACING) // 2
+        for line in lines:
+            x = left + (width - address_text_width(line)) // 2
+            for char in line:
+                glyph = ADDRESS_GLYPHS.get(char)
+                if glyph is None:
+                    continue
+                draw_glyph(bitmap, glyph, x, y, 1, 1, ADDRESS_TEXT_INDEX)
+                x += len(glyph[0]) + ADDRESS_LETTER_SPACING
+            y += ADDRESS_GLYPH_HEIGHT + ADDRESS_LINE_SPACING
 
     def hide_qr_code(self) -> None:
         self._qr_code.hidden = True

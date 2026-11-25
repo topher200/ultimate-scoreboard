@@ -5,7 +5,7 @@ from adafruit_connection_manager import get_radio_socketpool
 from adafruit_httpserver import GET, POST, Redirect, Request, Response, Server
 
 from src.protocols import PageLike
-from src.settings_page import SAVED_PATH, decode_form
+from src.settings_page import SAVED_PATH, decode_form, page_url
 
 # Seconds the server waits on a connection that sends nothing
 SOCKET_TIMEOUT = 0.2
@@ -39,7 +39,7 @@ class WebServer:
 
         server.start(host, port)
         self._server = server
-        return f"http://{host}:{port}/"
+        return page_url(host, port)
 
     def poll(self) -> None:
         """Handle a waiting request, if there is one."""
