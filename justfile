@@ -86,11 +86,11 @@ bundle version:
 
 # Build the OTA bundle and upload it to Memfault as a release
 release version: (bundle version)
-    uvx --from memfault-cli memfault --org-token "$MEMFAULT_ORG_TOKEN" --org "$MEMFAULT_ORG" --project "$MEMFAULT_PROJECT" upload-ota-payload --hardware-version matrixportal-s3 --software-type scoreboard --software-version {{version}} build/scoreboard-{{version}}.bundle
+    uv run memfault --org-token "$MEMFAULT_ORG_TOKEN" --org "$MEMFAULT_ORG" --project "$MEMFAULT_PROJECT" upload-ota-payload --hardware-version matrixportal-s3 --software-type scoreboard --software-version {{version}} build/scoreboard-{{version}}.bundle
 
 # Activate a Memfault release for the default cohort, so boards install it
 activate version:
-    uvx --from memfault-cli memfault --org-token "$MEMFAULT_ORG_TOKEN" --org "$MEMFAULT_ORG" --project "$MEMFAULT_PROJECT" deploy-release --release-version {{version}} --cohort default
+    uv run memfault --org-token "$MEMFAULT_ORG_TOKEN" --org "$MEMFAULT_ORG" --project "$MEMFAULT_PROJECT" deploy-release --release-version {{version}} --cohort default
 
 # Install packages on CircuitPython board
 install-packages-on-circuitpy:
